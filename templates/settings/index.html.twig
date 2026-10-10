@@ -157,6 +157,7 @@
                                     { label: 'settings.nav.group.access', items: [
                                         { section: 'integrations',  icon: 'fa-solid fa-plug' },
                                         { section: 'app-passwords', icon: 'fa-solid fa-key',   label: 'settings.nav.app_passwords' },
+                                        { section: 'smtp-keys',     icon: 'fa-solid fa-paper-plane', label: 'settings.nav.smtp_keys' },
                                         { section: 'security',      icon: 'fa-solid fa-shield-halved' },
                                     ] },
                                 ] %}
@@ -526,6 +527,22 @@
                                             {% endblock %}
                                         {% endembed %}
 
+                                    {% elseif section == 'smtp-keys' %}
+                                        {# Loaded into its own frame: create and revoke
+                                           answer with the frame, so the secret shown once
+                                           after creating never lands in a URL or history. #}
+                                        {% embed 'settings/_card.html.twig' with {
+                                            heading:    'smtp_key.title'|trans,
+                                            subheading: 'smtp_key.intro'|trans,
+                                        } %}
+                                            {% block body %}
+                                                <turbo-frame id="settings-smtp-keys" src="{{ path('app_smtp_key_list') }}" loading="lazy">
+                                                    <p class="px-4 py-8 text-center text-sm text-ink-faint">
+                                                        <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'modal.loading'|trans }}
+                                                    </p>
+                                                </turbo-frame>
+                                            {% endblock %}
+                                        {% endembed %}
                                     {% elseif section == 'app-passwords' %}
                                         <div class="space-y-4">
                                             {% embed 'settings/_card.html.twig' with {

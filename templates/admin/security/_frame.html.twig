@@ -1,0 +1,54 @@
+{% import '_partials/_card_chrome.html.twig' as chrome %}
+{#
+admin/security/_frame.html.twig — Admin → Security.
+#}
+<turbo-frame id="admin-security">
+
+    {# Suspicious IPs #}
+    {% if suspiciousIps is not empty %}
+        <div class="{{ chrome.shell() }} mb-3">
+            <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+                <i class="fa-solid fa-triangle-exclamation text-xs text-red-500" aria-hidden="true"></i>
+                <h2 class="text-sm font-semibold text-ink">{{ 'admin.security.suspicious.title'|trans }}</h2>
+            </div>
+            <div class="px-4 py-3 space-y-2">
+                {% for entry in suspiciousIps %}
+                    <div class="flex items-center justify-between text-sm">
+                        <code class="font-mono text-ink">{{ entry.ip }}</code>
+                        <span class="text-xs text-red-600 font-medium">{{ entry.attempts }} {{ 'admin.security.suspicious.attempts'|trans }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# Recent events #}
+    <div class="{{ chrome.shell() }}">
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-shield-halved text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.security.events.title'|trans }}</h2>
+        </div>
+        {% if events is not empty %}
+            <div class="divide-y divide-line">
+                {% for event in events %}
+                    <div class="px-4 py-2.5 flex items-center gap-3 text-sm">
+                        <i class="fa-solid {{ event.type == 'login_failure' ? 'fa-xmark text-red-500' : 'fa-check text-emerald-500' }} w-4" aria-hidden="true"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-ink">{{ ('admin.security.events.' ~ event.type)|trans }}</p>
+                            {% if event.details %}
+                                <p class="text-xs text-ink-faint truncate">{{ event.details }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="text-xs text-ink-faint text-right shrink-0">
+                            {% if event.ipAddress %}<p class="font-mono">{{ event.ipAddress }}</p>{% endif %}
+                            <p>{{ event.createdAt|date('Y-m-d H:i') }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="px-4 py-6 text-sm text-ink-faint text-center">{{ 'admin.security.events.none'|trans }}</p>
+        {% endif %}
+    </div>
+
+</turbo-frame>

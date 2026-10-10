@@ -131,6 +131,8 @@ from the environment, or reach the setup page through the address you actually i
 | `worker` | `app:work`: every background process, one process each | Everything that is not the web server. It answers to `mercure` on the network, because it runs the hub |
 | `database` | `postgres:18-alpine` with `pg_stat_statements` preloaded | — |
 | `ntfy` | ntfy, under the `push` profile | Optional. Android push without Google — start it with `docker compose --profile push up -d` |
+| `mta` | Postfix + OpenDKIM, under the `mail` profile | Optional. Your domain's MX: receives internet mail on port 25 and sends it, DKIM-signed — start it with `docker compose --profile mail up -d`. See [self-hosted mail server](self-hosted-mail-server.md) |
+| `mailstore` | Dovecot, under the `mail` profile | Optional. The local mailbox server the `mta` delivers to and plMail syncs from over IMAP |
 
 The worker's processes. Each is started again when it stops: at once when it stopped cleanly (a
 consumer recycling at its time or memory limit), after a backoff of up to thirty seconds when it
@@ -177,7 +179,7 @@ reminders, no pruning — and there is no error anywhere, because nothing failed
 
 ## Storage, and what the stock file does not persist
 
-The compose file declares ten named volumes:
+The compose file declares fourteen named volumes:
 
 | Volume | Holds |
 |---|---|
@@ -187,6 +189,10 @@ The compose file declares ten named volumes:
 | `caddy_data`, `caddy_config` | Caddy's TLS material and state |
 | `mercure_data`, `mercure_config` | Hub state, mounted by the worker |
 | `ntfy_data` | Notification topic state |
+| `mail_data` | The local mailboxes (Maildir), mounted by `mailstore` |
+| `mail_dkim` | The DKIM signing keys, mounted by `mta` |
+| `mail_config` | Relay settings and SMTP keys written by plMail's UI, read by `mta` and `mailstore` |
+| `app_drive` | Drive files, mounted by `php` and `worker` (its own volume: `app:prune-blobs` sweeps `app_uploads`) |
 
 The three blob volumes were missing until recently, and the failure was silent in an instructive
 way. The Dockerfile deliberately has no `VOLUME /app/var/` — an anonymous volume there gave every

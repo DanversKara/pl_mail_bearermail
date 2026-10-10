@@ -708,12 +708,80 @@ admin:
         insight_reports: Reported mail
         integrations: Integrations
         logs: Logs
+        mail_server: Mail server
         performance: Performance
+        security: Security
         push: Push
         reset: Reset
         system: System
         updates: Updates
         users: Users
+    mail_server:
+        relay:
+            heading: Outbound relay
+            intro: >-
+                Where your mail server sends outgoing mail. Leave this empty to
+                deliver directly, or point it at a provider like Mailjet for
+                better deliverability. Changes apply within seconds — no restart.
+            host_label: Relay host
+            host_help: 'The provider’s SMTP server, in brackets with the port — e.g. [in-v3.mailjet.com]:587.'
+            username_label: Username
+            username_help: 'The provider’s API key (Mailjet) or username.'
+            password_label: Password
+            password_help: 'The provider’s secret key. Leave blank to keep the one on file.'
+            password_set: 'A password is on file.'
+            save: Save relay
+            saved: 'Relay saved. The mail server picks it up within seconds.'
+            status:
+                active: Relay active
+                direct: Direct delivery
+        dmarc:
+            heading: DMARC reports
+            intro: >-
+                Receivers (Google, Microsoft, …) send daily reports showing who
+                sent mail as your domain. Upload a report (.zip, .gz, .xml) to
+                see which IPs passed and which failed.
+            upload: Parse report
+            upload_invalid: 'Choose a report file first.'
+            uploaded: 'Report parsed.'
+            none: 'No reports yet. They arrive daily at the address in your DMARC rua tag.'
+            messages: Messages
+            failed: Failed
+            ip: IP
+            count: Count
+        dns:
+            no_domain: Set MAIL_DOMAIN in .env.mail.local to check your DNS records.
+            heading: DNS records
+            intro: >-
+                The records your domain needs for mail to work. Hit Check DNS
+                to verify they resolve.
+            check: Check DNS
+            hint: 'Press Check DNS to look up the records for %domain%.'
+            expected: Expected
+            actual: Found
+            ok: OK
+            missing: Missing
+        dynamic_dns:
+            heading: Dynamic DNS
+            intro: >-
+                If your server is on home internet with a changing IP, this
+                keeps your Cloudflare DNS A records pointed at it.
+            setup: 'Put these in .env.mail.local (next to compose.yaml), then recreate the containers:'
+            cron: 'plMail checks every 5 minutes on its own — no cron job needed. Only Cloudflare is contacted, and only once these are set.'
+    security:
+        suspicious:
+            title: Suspicious addresses
+            attempts: failed logins in the last hour
+        events:
+            title: Recent security events
+            none: 'No security events yet.'
+            login_success: 'Successful login'
+            login_failure: 'Failed login attempt'
+            password_change: 'Password changed'
+            2fa_enabled: 'Two-factor authentication enabled'
+            2fa_disabled: 'Two-factor authentication disabled'
+            api_token_created: 'API token created'
+            api_token_revoked: 'API token revoked'
     performance:
         hold:
             col:
@@ -1631,6 +1699,22 @@ clipboard:
     copy_failed: Copy failed
 
 compose:
+    drive_picker:
+        title: Insert from Drive
+        search: Search your files…
+        empty: Nothing in your Drive yet. Upload files there first.
+        open: Open Drive
+        failed: 'Couldn''t reach your Drive. Try again.'
+        copied: Link copied — paste it into your message.
+    calendar_picker:
+        title: Calendar links
+        calendars: Shared calendars
+        booking: Booking pages
+        hint: For your security, a link is only shown once, when it is made. Make a fresh one in Settings → Sharing and paste it here.
+        empty: No shared calendars or booking pages yet. Create one in Settings → Sharing.
+        open: Open Sharing settings
+        close: Close
+        failed: 'Couldn''t load your sharing links.'
     # Shown in the dock when clicking Compose does not produce a window —
     # a 5xx, an expired session, a dead connection. Turbo's own answer to all
     # three is four words of untranslated English in the corner.
@@ -1814,6 +1898,8 @@ compose:
     indent: Indent
     insert_emoji: Insert emoji
     insert_link: Insert link
+    insert_drive_file: Insert file from Drive
+    insert_calendar_link: Insert calendar share link
     invalid_address: "“%address%” is not a valid email address"
     italic: Italic
     # The insert-link popover, both of its faces. Nothing here is spelled in
@@ -2055,8 +2141,16 @@ header:
 inbox:
     empty: No messages in this tab.
     empty_account: Nothing has arrived in this account yet.
+    flood:
+        title: 'Unusual mail burst detected.'
+        body: '%count% messages arrived in the last 15 minutes on %account%. Floods are sometimes used to hide security alerts — check for password resets or notifications you didn’t expect.'
 
 insights:
+    otp:
+        heading: Verification code
+        copy: Copy code
+        code_aria: 'Code %code%'
+        expires: '{1}Expires in 1 minute|]1,Inf[Expires in %count% minutes'
     card:
         heading: Found in this conversation
     kind:
@@ -2235,6 +2329,12 @@ message:
         show_original: Show original
         star: Star
         unstar: Remove star
+    forged_sender:
+        title: 'This message may not be from who it claims.'
+        body: 'The mail server checked the sender’s identity (SPF, DKIM, DMARC) and it did not pass. Be careful with links and attachments.'
+    deceptive_link:
+        title: 'This message contains a misleading link.'
+        body: 'A link’s text shows one address but it actually goes somewhere else. Hover before you click.'
     attachments: Attachments
     back: Back
     body_frame: Message content
@@ -3610,6 +3710,7 @@ settings:
         heading: Language
         subheading: The language plMail's interface is shown in. Your mail is left as it was written.
     nav:
+        smtp_keys: SMTP keys
         accounts: Mail accounts
         ai: 'Assistant'
         aliases: Aliases
@@ -3977,6 +4078,7 @@ sidebar:
         archive: Archive
         calendar: Calendar
         drafts: Drafts
+        drive: Drive
         inbox: Inbox
         more: More
         sent: Sent
@@ -4200,3 +4302,110 @@ templates:
         sender_email: 'Your address'
         sender_name: 'Your name'
         signature: 'Signature'
+
+drive:
+    title: Drive
+    breadcrumbs: Folder path
+    usage: '%used% of %quota% used'
+    usage_unlimited: '%used% used'
+    storage: Storage used
+    max_upload: 'Up to %size% per file'
+    quota_exceeded: 'Not enough space left in your Drive for that file.'
+    upload: Upload
+    upload_files: Upload files
+    upload_invalid: 'Choose a file first.'
+    upload_too_large: 'That file is larger than the server accepts.'
+    upload_failed: 'Upload failed.'
+    upload_done: Uploaded
+    uploading: Uploading…
+    uploaded: 'File uploaded.'
+    uploaded_many: 'Files uploaded.'
+    drop_here: 'Drop to upload to %folder%'
+    empty: 'Your Drive is empty'
+    empty_folder: 'This folder is empty'
+    empty_hint: 'Upload files with the button, or drag them anywhere onto this page.'
+    no_match: 'No files or folders match.'
+    view: View
+    list_view: List view
+    grid_view: Grid view
+    search: Search this folder
+    name: Name
+    size: Size
+    modified: Modified
+    actions: Actions
+    more: More actions
+    folders: Folders
+    files: Files
+    new_folder: New folder
+    folder_name: Folder name
+    create: Create
+    rename: Rename
+    rename_file: Rename file
+    rename_folder: Rename folder
+    folder_created: 'Folder created.'
+    folder_deleted: 'Folder deleted.'
+    folder_delete_confirm: 'Delete the folder “%name%” and everything in it? This cannot be undone.'
+    download: Download
+    delete: Delete
+    delete_confirm: 'Delete “%name%”? Any share links to it stop working. This cannot be undone.'
+    deleted: 'File deleted.'
+    share: Share
+    share_title: 'Share “%name%”'
+    shared_count: '{1}Shared with 1 link|]1,Inf[Shared with %count% links'
+    active_links: Active links
+    no_links: 'No links yet. Anyone with a link can download the file, so only share it with people you trust.'
+    new_link: New link
+    share_password: Password (optional)
+    share_expires: Expires on (optional)
+    share_hint: 'Anyone with the link can download the file.'
+    share_bad_date: 'Pick an expiry date in the future.'
+    create_link: Create link
+    share_created: Link created
+    share_created_hint: 'Copy it now and send it to whoever needs the file.'
+    share_created_protected: 'Copy it now. Send the password separately — not in the same message.'
+    copy_link: Copy link
+    copy: Copy
+    link_meta: '{0}Created %date% · not downloaded yet|{1}Created %date% · 1 download|]1,Inf[Created %date% · %count% downloads'
+    link_expires: 'Expires %date%'
+    link_protected: Password
+    revoke: Revoke
+    revoke_confirm: 'Revoke this link? Anyone who has it can no longer download the file.'
+    protected_hint: 'This file is protected. Enter the password to download it.'
+    wrong_password: 'That password is not right.'
+    public:
+        too_many: 'Too many attempts. Wait a few minutes and try again.'
+smtp_key:
+    title: SMTP keys
+    intro: >-
+        Credentials for scripts and devices (a printer, a backup job) to send
+        mail through your own mail server without your mailbox password. Each
+        key may only send as the address it was made for, and can be revoked
+        on its own. Needs the self-hosted mail server.
+    name: Name
+    name_placeholder: 'e.g. Nightly backup script'
+    account: Sends as
+    create: Create key
+    none: 'No SMTP keys yet.'
+    no_accounts: 'Add a mail account first.'
+    created: Created
+    last_used: 'Last used'
+    revoke: Revoke
+    revoke_confirm: 'Revoke this key? Anything using it stops being able to send.'
+    revoked: 'SMTP key revoked.'
+    name_required: 'Give the key a name.'
+    account_invalid: 'Choose one of your mail accounts.'
+    created_title: 'SMTP key created'
+    shown_once: 'Copy the password now — it cannot be shown again.'
+    server: Server
+    username: Username
+    secret: Password
+    use: >-
+        Sends as %email%. The submission port is only open inside the Docker
+        network (host mta, port 587, no TLS); to use the key from another
+        machine, publish port 587 with real certificates first — see the
+        self-hosted mail server guide.
+    not_synced: >-
+        The key was saved, but the mail server could not be told about it: the
+        shared mail_config volume is not mounted. Start the stack with
+        --profile mail.
+    done: Done

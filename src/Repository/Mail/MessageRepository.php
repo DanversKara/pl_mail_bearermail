@@ -159,6 +159,22 @@ class MessageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Messages received for one account since a time — for flood detection.
+     */
+    public function countForAccountSince(int $accountId, \DateTimeImmutable $since): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->join('m.thread', 't')
+            ->where('t.account = :account')
+            ->andWhere('m.receivedAt >= :since')
+            ->setParameter('account', $accountId)
+            ->setParameter('since', $since, Types::DATETIME_IMMUTABLE)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function candidateTypes(): array

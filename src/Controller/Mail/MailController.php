@@ -22,7 +22,10 @@ use App\Security\Voter\OwnershipVoter;
 use App\Service\Ai\ThreadSummariser;
 use App\Service\Ai\ThreadSummaryStore;
 use App\Service\Ai\ThreadTranscript;
+use App\Service\Mail\DeceptiveLinkChecker;
+use App\Service\Mail\FloodDetector;
 use App\Service\Mail\NewMailMarkers;
+use App\Service\Mail\SenderAuthentication;
 use App\Service\Mail\SidebarCounts;
 use App\Service\Mail\ThreadListRenderer;
 use App\Service\Mail\ThreadRows;
@@ -53,6 +56,9 @@ final class MailController extends AbstractController
         private readonly ThreadSummaryStore $summaries,
         private readonly ThreadRows $threadRows,
         private readonly ThreadSenderFacts $senderFacts,
+        private readonly SenderAuthentication $senderAuthentication,
+        private readonly DeceptiveLinkChecker $linkChecker,
+        private readonly FloodDetector $floodDetector,
     )
     {
     }
@@ -280,6 +286,18 @@ final class MailController extends AbstractController
 
         $this->threadRows->preload($threads);
 
+        // Flood check: a burst of mail may be trying to bury a security alert.
+        $flood = null;
+        if ($user instanceof User) {
+            foreach ($this->accountRepository->findBy(['usr' => $user]) as $account) {
+                $result = $this->floodDetector->check($account);
+                if (null !== $result) {
+                    $flood = $result + ['account' => $account->email];
+                    break;
+                }
+            }
+        }
+
         return $this->renderList($request, 'mail/inbox.html.twig', $threads, [
             'tab'         => $tab,
             'tabs'        => $tabs,
@@ -290,6 +308,7 @@ final class MailController extends AbstractController
             'per_page'    => self::PER_PAGE,
             'list_sort'   => $sort,
             'unread_only' => $unreadOnly,
+            'flood'       => $flood,
         ]);
     }
 
@@ -826,11 +845,20 @@ final class MailController extends AbstractController
         // read by thread, empty for almost every thread and cheap when it is.
         $insights = $this->insightRepository->forThread($thread);
 
+        // Whether the From domain is authentic, per the receiving server's
+        // Authentication-Results header. A Fail gets a banner in the template.
+        $senderVerdict = $this->senderAuthentication->verdict($message);
+
+        // Links whose text claims a different destination than their href.
+        $deceptiveLinks = $this->linkChecker->check($message->bodyHtmlSafe);
+
         if ($request->headers->get('X-Requested-With') === 'fetch') {
             // JS fetch — return just the message content fragment
             return $this->render('mail/_message_content.html.twig', [
-                'message'  => $message,
-                'insights' => $insights,
+                'message'        => $message,
+                'insights'       => $insights,
+                'senderVerdict'  => $senderVerdict,
+                'deceptiveLinks' => $deceptiveLinks,
             ]);
         }
 
@@ -841,6 +869,8 @@ final class MailController extends AbstractController
             'account' => $account,
             'selectedMessage' => $message,
             'insights' => $insights,
+            'senderVerdict' => $senderVerdict,
+            'deceptiveLinks' => $deceptiveLinks,
         ]);
     }
 

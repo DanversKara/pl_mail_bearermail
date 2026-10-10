@@ -2058,6 +2058,11 @@ inbox:
     empty_account: In diesem Konto ist noch nichts angekommen.
 
 insights:
+    otp:
+        heading: Bestätigungscode
+        copy: Code kopieren
+        code_aria: 'Code %code%'
+        expires: '{1}Läuft in 1 Minute ab|]1,Inf[Läuft in %count% Minuten ab'
     card:
         heading: In dieser Konversation gefunden
     kind:

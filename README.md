@@ -1,3 +1,111 @@
+# plMail — Bearer Mail edition
+
+**This is a fork of [plMail](https://github.com/karatektus/pl_mail) by
+[karatektus](https://github.com/karatektus)**, adapted to run a complete mail service for
+`bearermail.com`: its own mail server, plus the additions listed below.
+
+All credit for plMail itself goes to its author. This fork keeps the original licence
+(**AGPL-3.0**, see [`LICENSE`](LICENSE)) and the original README, which follows further down,
+unchanged. Anything not listed under "What this fork adds" is the original project's work.
+
+> **Not the official project.** For plMail itself, its handbook, releases, the Android and iOS
+> apps, and support, go to [karatektus/pl_mail](https://github.com/karatektus/pl_mail). Please
+> report problems with the additions below here, not upstream.
+
+---
+
+## What this fork adds
+
+Changes made in October 2026, on top of upstream plMail at commit `0056fc09`.
+
+### Its own mail server
+Upstream plMail is a mail *client*: it reads mailboxes hosted somewhere else. This fork adds an
+optional mail *server* to the same Docker stack, so your own domain can receive and send mail with
+no outside mail host:
+
+- **Postfix** receives internet mail on port 25 and sends outgoing mail, **DKIM-signed**
+  (OpenDKIM), either directly or through a relay such as Mailjet.
+- **Dovecot** stores the mailboxes and serves IMAP to plMail (and to phones and Thunderbird on
+  port 993).
+- **Aliases from Settings → Aliases are applied to the server automatically.** An alias receives
+  into its mailbox and can be sent from, and disabling it in plMail stops it receiving.
+- **Each login may only send as its own addresses**, so a leaked password or SMTP key cannot be
+  used to fake another sender on the domain.
+- **Admin → Mail server:** set the outbound relay in the UI, check your MX/SPF/DKIM/DMARC records,
+  and read DMARC reports.
+- **Settings → SMTP keys:** separate, revocable credentials for scripts and devices, each locked to
+  one sending address.
+- **Dynamic DNS:** keeps a Cloudflare A record pointed at a home connection's changing IP, checked
+  every five minutes. It only ever contacts Cloudflare, and only once it's configured.
+
+Off by default: start it with `docker compose --profile mail up -d`. Setup, DNS and testing are in
+[`docs/install/self-hosted-mail-server.md`](docs/install/self-hosted-mail-server.md).
+
+### Drive
+Personal file storage inside plMail: folders, drag-and-drop uploads with progress, list or grid
+view, search, rename, and share links with an optional password and expiry date. Recipients
+download without an account. **Insert from Drive** in the composer drops a share link into a
+message. Files have their own Docker volume and are included in `app:backup`.
+
+### Security additions
+- Warning banners on mail that **fails sender authentication** (SPF/DKIM/DMARC), on mail with
+  **links that pretend to go somewhere else**, and on sudden **floods of mail** that can be used to
+  bury a security alert.
+- **Admin → Security:** recent sign-ins, failed attempts, and addresses with repeated failures.
+
+### Smaller things
+- **Login codes** found in mail get a card with the code in large type and a one-click **Copy code**
+  button.
+- **No automatic calls home:** upstream's hourly update check (to GitHub and ghcr.io) is removed;
+  Admin → Updates can still check on demand.
+- **Secrets stay out of git:** mail-server passwords, relay keys and the Cloudflare token live in
+  `.env.mail.local`, which is ignored by git and never copied into the Docker image. A template is
+  in [`.env.mail.dist`](.env.mail.dist).
+- Fixes found along the way: translation strings that had broken the Appearance settings page and
+  the message menu, and two harmless browser notices no longer filling Admin → Logs.
+
+---
+
+## Install this fork
+
+```bash
+git clone https://github.com/DanversKara/pl_mail_bearermail.git
+cd pl_mail_bearermail
+
+# Mail-server settings and secrets: copy the template and fill it in
+cp .env.mail.dist .env.mail.local
+nano .env.mail.local      # MAIL_DOMAIN, MAIL_ACCOUNTS, relay, Cloudflare…
+
+# Build and start plMail plus the mail server
+docker compose --profile mail up -d --build
+```
+
+This fork builds its image from source (`compose.yaml` builds `plmail-fork:latest`) rather than
+pulling upstream's published image, so the additions above are included. Database changes are
+applied automatically on start.
+
+**Back up** the database (`docker compose exec php php bin/console app:backup`), the secrets in
+`var/secrets/generated.env`, and your `.env.mail.local`. The last one holds your mailbox passwords
+and is deliberately not in git.
+
+---
+
+## Licence and credit
+
+plMail is © its author, [karatektus](https://github.com/karatektus), and licensed under the
+**GNU Affero General Public License v3.0**. The additions in this fork are released under the same
+licence. AGPL-3.0 means:
+
+- the full licence text stays in [`LICENSE`](LICENSE), unchanged;
+- this README says what was changed and when (above);
+- if you run this fork as a service other people use, you must offer them its source code. This
+  public repository does that.
+
+---
+
+<details open>
+<summary><strong>Original plMail README</strong> (from upstream, unchanged)</summary>
+
 # plMail
 
 Self-hosted mail with a calendar beside it. Connect the mailboxes you already have — IMAP, Gmail,
@@ -139,3 +247,5 @@ the test suites and the console commands.
 ## License
 
 AGPL-3.0.
+
+</details>

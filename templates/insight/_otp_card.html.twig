@@ -1,0 +1,54 @@
+{#
+insight/_otp_card.html.twig — a login code as its own card: what it is, the
+code in large type, and one wide button that copies it.
+
+Used in place of the compact insight chip whenever the insight is a login code,
+because the code is the whole point and is typed somewhere else within
+minutes. The digits are the copy SOURCE, so what is on screen is exactly what
+lands on the clipboard; the spaced-out look is letter-spacing only, never
+characters added to the text.
+
+Colours come from the success token (green on every stock theme, and dark-mode
+aware), not hard-coded greens.
+
+Accepts:
+  insight  MailInsight of kind otp, with payload.code
+  class    string  optional extra classes (width at the call site)
+#}
+{% set code = insight.payload.code %}
+{% set issuer = insight.payload.issuer|default(null) %}
+{% set minutes = insight.payload.expiresInMinutes|default(null) %}
+
+<div data-insight-card
+     data-insight-kind="otp"
+     data-controller="ui--clipboard"
+     data-ui--clipboard-confirm-text-value="{{ 'clipboard.copied'|trans }}"
+     data-ui--clipboard-failed-text-value="{{ 'clipboard.copy_failed'|trans }}"
+     data-ui--clipboard-idle-icon-value="fa-clipboard"
+     class="{{ class|default('') }} w-full max-w-sm rounded-pane border border-success/30 bg-success/5 p-4 shadow-sm">
+
+    <p class="flex items-center gap-2 text-sm font-semibold text-success">
+        <i class="fa-solid fa-shield-halved text-[13px]" aria-hidden="true"></i>
+        {{ 'insights.otp.heading'|trans }}
+        {% if issuer %}<span class="font-normal text-ink-faint truncate">· {{ issuer }}</span>{% endif %}
+    </p>
+
+    <p class="mt-2 text-[2rem] leading-tight font-bold text-ink tabular-nums tracking-[0.3em]"
+       aria-label="{{ 'insights.otp.code_aria'|trans({'%code%': code}) }}">
+        <span data-ui--clipboard-target="source" class="select-all">{{ code }}</span>
+    </p>
+
+    {% if minutes %}
+        <p class="mt-1 text-xs text-ink-faint">{{ 'insights.otp.expires'|trans({'%count%': minutes}) }}</p>
+    {% endif %}
+
+    <button type="button"
+            data-action="click->ui--clipboard#copy"
+            data-insight-copy-code
+            class="mt-4 w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-success
+                   text-base font-semibold text-white hover:brightness-110 active:brightness-95 transition
+                   cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2">
+        <i data-ui--clipboard-target="icon" class="fa-regular fa-clipboard" aria-hidden="true"></i>
+        <span data-ui--clipboard-target="label">{{ 'insights.otp.copy'|trans }}</span>
+    </button>
+</div>

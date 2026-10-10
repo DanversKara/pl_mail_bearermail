@@ -1,0 +1,45 @@
+# plMail MTA — stock Postfix master.cf with the submission service enabled.
+# @MAILSTORE_HOST@ is replaced by the entrypoint.
+smtp      inet  n       -       n       -       -       smtpd
+submission inet n       -       n       -       -       smtpd
+  -o syslog_name=postfix/submission
+  # No STARTTLS advertised here on purpose: this port stays inside the compose
+  # network (it is not published), and Symfony Mailer opportunistically tries
+  # STARTTLS even for accounts set to "None" — against the self-signed cert
+  # that fails verification. Plaintext submission on a docker-internal port.
+  # (The value is "none", not "no" — "no" is invalid and crashes smtpd.)
+  # If you ever publish 587, mount real certs and set this back to `encrypt`.
+  -o smtpd_tls_security_level=none
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=inet:@MAILSTORE_HOST@:12345
+  -o smtpd_sasl_security_options=noanonymous
+  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_sender_restrictions=reject_authenticated_sender_login_mismatch
+  -o smtpd_milters=inet:127.0.0.1:8891
+  -o milter_macro_daemon_name=ORIGINATING
+pickup    unix  n       -       n       60      1       pickup
+cleanup   unix  n       -       n       -       0       cleanup
+qmgr      unix  n       -       n       300     1       qmgr
+tlsmgr    unix  -       -       n       1000?   1       tlsmgr
+rewrite   unix  -       -       n       -       -       trivial-rewrite
+bounce    unix  -       -       n       -       0       bounce
+defer     unix  -       -       n       -       0       bounce
+trace     unix  -       -       n       -       0       bounce
+verify    unix  -       -       n       -       1       verify
+flush     unix  n       -       n       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+proxywrite unix -       -       n       -       1       proxymap
+smtp      unix  -       -       n       -       -       smtp
+relay     unix  -       -       n       -       -       smtp
+showq     unix  n       -       n       -       -       showq
+error     unix  -       -       n       -       -       error
+retry     unix  -       -       n       -       -       error
+discard   unix  -       -       n       -       -       discard
+lmtp      unix  -       -       n       -       -       lmtp
+anvil     unix  -       -       n       -       1       anvil
+scache    unix  -       -       n       -       1       scache
+# postlogd writes to maillog_file (see main.cf.tpl). The service must be named
+# "postlog" — that is the name the postlog(1) client looks up.
+postlog   unix-dgram n -       n       -       1       postlogd

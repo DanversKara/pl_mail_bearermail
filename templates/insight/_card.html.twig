@@ -99,8 +99,28 @@ enough.
                 {% endif %}
             </p>
 
+            {% set otpCode = insight.kind.value == 'otp' ? insight.payload.code|default(null) : null %}
+            {% if otpCode is not empty %}
+                {# Login code: big digits and a wide Copy button, as in the mail. #}
+                <div class="mt-2"
+                     data-controller="ui--clipboard"
+                     data-ui--clipboard-confirm-text-value="{{ 'clipboard.copied'|trans }}"
+                     data-ui--clipboard-failed-text-value="{{ 'clipboard.copy_failed'|trans }}"
+                     data-ui--clipboard-idle-icon-value="fa-clipboard">
+                    <p class="text-2xl leading-tight font-bold text-ink tabular-nums tracking-[0.3em]">
+                        <span data-ui--clipboard-target="source" class="select-all">{{ otpCode }}</span>
+                    </p>
+                    <button type="button" data-action="click->ui--clipboard#copy" data-insight-copy-code
+                            class="mt-2 w-full inline-flex items-center justify-center gap-2 h-9 rounded-lg bg-success
+                                   text-sm font-semibold text-white hover:brightness-110 transition cursor-pointer">
+                        <i data-ui--clipboard-target="icon" class="fa-regular fa-clipboard" aria-hidden="true"></i>
+                        <span data-ui--clipboard-target="label">{{ 'insights.otp.copy'|trans }}</span>
+                    </button>
+                </div>
+            {% endif %}
             {% if trackingUrl is not empty or url is not empty or insight.thread is not null %}
                 <div class="mt-2 flex flex-wrap items-center gap-1.5">
+
                     {% if trackingUrl is not empty %}
                         <a href="{{ trackingUrl }}"
                            target="_blank" rel="noopener noreferrer"

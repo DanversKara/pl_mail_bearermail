@@ -95,6 +95,15 @@ window.addEventListener("error", (event) => {
         return;
     }
 
+    // Chrome's "ResizeObserver loop completed with undelivered notifications"
+    // is a notice, not a failure: a layout settled one frame later than the
+    // observer would have liked. The spec says so, every browser recovers on
+    // its own, and nothing the user sees is wrong. Reporting it only buries
+    // real errors in Admin → Logs.
+    if (event.message.startsWith("ResizeObserver loop")) {
+        return;
+    }
+
     send({
         kind: "error",
         message: event.message,
@@ -109,6 +118,14 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
     const reason = event.reason;
     const stack = reason?.stack ?? null;
+
+    // A request the page cancelled on purpose — Turbo aborts the previous
+    // frame load when you click the next link before it finished. Nothing
+    // failed, and reporting it filled Admin → Logs with "signal is aborted
+    // without reason" for every quick click.
+    if ("AbortError" === reason?.name) {
+        return;
+    }
 
     // No filename on a rejection — it carries a reason, not a file — so the
     // stack is the only handle on where it came from. Without one there is

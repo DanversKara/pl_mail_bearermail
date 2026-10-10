@@ -30,6 +30,41 @@
             {{ message.subject ?: ('thread.no_subject'|trans) }}
         </h1>
 
+        {# Forged sender warning: the receiving server checked SPF/DKIM/DMARC
+           and the From domain did not pass. A believed Authentication-Results
+           header says so — see App\Service\Mail\SenderAuthentication. #}
+        {% if senderVerdict is defined and senderVerdict.value == 'fail' %}
+            <div class="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5" aria-hidden="true"></i>
+                <div class="text-[13px]">
+                    <p class="font-semibold text-red-600">{{ 'message.forged_sender.title'|trans }}</p>
+                    <p class="text-ink-muted mt-0.5">{{ 'message.forged_sender.body'|trans }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        {# Deceptive link warning: a link's text claims one destination but its
+           href goes elsewhere — the classic phish. See
+           App\Service\Mail\DeceptiveLinkChecker. #}
+        {% if deceptiveLinks is defined and deceptiveLinks is not empty %}
+            <div class="mb-4 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <i class="fa-solid fa-link-slash text-amber-600 mt-0.5" aria-hidden="true"></i>
+                <div class="text-[13px]">
+                    <p class="font-semibold text-amber-700">{{ 'message.deceptive_link.title'|trans }}</p>
+                    <p class="text-ink-muted mt-0.5">{{ 'message.deceptive_link.body'|trans }}</p>
+                    <ul class="mt-2 space-y-1">
+                        {% for link in deceptiveLinks|slice(0, 3) %}
+                            <li class="font-mono text-xs">
+                                <span class="text-ink">{{ link.textDomain }}</span>
+                                <i class="fa-solid fa-arrow-right mx-1 text-ink-faint" aria-hidden="true"></i>
+                                <span class="text-red-600">{{ link.hrefDomain }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
         {# Sticky within this pane's scroller (H-14) — same reasoning as the
            conversation view: sender and date stay put while the mail moves.
            min-w-0 on the inner column is the recipient line's truncation. #}

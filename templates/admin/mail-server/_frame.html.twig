@@ -1,0 +1,229 @@
+{% import '_partials/_card_chrome.html.twig' as chrome %}
+{#
+admin/mail-server/_frame.html.twig — Admin → Mail server: the outbound relay.
+
+Accepts:
+  form         — App\Form\Admin\RelayConfigType
+  saved        — true immediately after a successful save
+  isConfigured — whether a relay host is currently on file
+  hasPassword  — whether a relay password is on file (never rendered)
+  dmarcReports — recent DmarcReport rows
+  dnsResults   — DnsChecker results, or null until "Check DNS" is pressed
+  mailDomain   — MAIL_DOMAIN from .env.mail.local, or null
+
+The password field is write-only: an empty submission keeps the stored value.
+Clearing the host field removes the relay (direct delivery). The mta container
+watches the config file and applies changes within seconds — no restart.
+
+No auto-refresh wraps this frame — it is configuration, not telemetry, and a
+poll would empty a field mid-paste.
+#}
+<turbo-frame id="admin-mail-server">
+
+    <div class="{{ chrome.shell() }}">
+
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-envelope-circle-check text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_server.relay.heading'|trans }}</h2>
+
+            {% if isConfigured %}
+                <span class="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500">
+                    {{ 'admin.mail_server.relay.status.active'|trans }}
+                </span>
+            {% else %}
+                <span class="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-full bg-raised text-ink-muted">
+                    {{ 'admin.mail_server.relay.status.direct'|trans }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="px-4 py-3 text-[13px] text-ink-muted">
+            {{ 'admin.mail_server.relay.intro'|trans }}
+        </div>
+
+        {% if saved %}
+            <div class="mx-4 mb-3 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-600 text-[13px]">
+                {{ 'admin.mail_server.relay.saved'|trans }}
+            </div>
+        {% endif %}
+
+        {{ form_start(form) }}
+            <div class="px-4 pb-4 space-y-4">
+                {% if form.vars.errors|length %}
+                    <div role="alert" class="rounded-lg alert-danger px-3 py-2 text-[13px] text-danger">
+                        {% for error in form.vars.errors %}<p>{{ error.message }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+                <div>
+                    {{ form_label(form.host) }}
+                    {{ form_widget(form.host, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink'}}) }}
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.host) }}</p>
+                    {{ form_errors(form.host) }}
+                </div>
+                <div>
+                    {{ form_label(form.username) }}
+                    {{ form_widget(form.username, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink'}}) }}
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.username) }}</p>
+                    {{ form_errors(form.username) }}
+                </div>
+                <div>
+                    {{ form_label(form.password) }}
+                    {{ form_widget(form.password, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink', 'placeholder': hasPassword ? ('admin.mail_server.relay.password_set'|trans) : ''}}) }}
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.password) }}</p>
+                    {{ form_errors(form.password) }}
+                </div>
+                <div>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-strong text-accent-ink text-sm font-medium">
+                        {{ 'admin.mail_server.relay.save'|trans }}
+                    </button>
+                </div>
+            </div>
+        {{ form_end(form) }}
+
+    </div>
+
+    {# DMARC reports: who sends mail as your domain. #}
+    <div class="{{ chrome.shell() }} mt-3">
+
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-shield-halved text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_server.dmarc.heading'|trans }}</h2>
+        </div>
+
+        <div class="px-4 py-3 text-[13px] text-ink-muted">
+            {{ 'admin.mail_server.dmarc.intro'|trans }}
+        </div>
+
+        {# _top: the upload redirects to the full admin page, which has no
+           admin-mail-server frame in its response to swap into. #}
+        <form method="post" action="{{ path('app_admin_mail_server_dmarc_upload') }}" enctype="multipart/form-data" class="px-4 pb-3"
+              data-turbo-frame="_top">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_server') }}">
+            <div class="flex items-center gap-3">
+                <input type="file" name="dmarc_report" accept=".zip,.gz,.xml" required
+                       class="text-sm text-ink-muted file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-accent file:text-accent-ink file:text-xs file:font-medium hover:file:opacity-90">
+                <button type="submit" class="px-3 py-1.5 rounded-lg bg-raised border border-line text-xs font-medium text-ink hover:bg-hover">
+                    {{ 'admin.mail_server.dmarc.upload'|trans }}
+                </button>
+            </div>
+        </form>
+
+        {% if dmarcReports is not empty %}
+            <div class="px-4 pb-4 space-y-3">
+                {% for report in dmarcReports %}
+                    <div class="p-3 rounded-lg bg-raised border border-line">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-medium text-ink">{{ report.domain }}</p>
+                            <span class="text-xs text-ink-faint">{{ report.reporter }} · {{ report.dateFrom|date('Y-m-d') }}</span>
+                        </div>
+                        <div class="flex gap-4 text-xs text-ink-muted mb-2">
+                            <span>{{ 'admin.mail_server.dmarc.messages'|trans }}: <strong class="text-ink">{{ report.messageCount }}</strong></span>
+                            <span>{{ 'admin.mail_server.dmarc.failed'|trans }}: <strong class="{{ report.failCount > 0 ? 'text-red-600' : 'text-ink' }}">{{ report.failCount }}</strong></span>
+                        </div>
+                        {% if report.records is not empty %}
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="text-ink-faint border-b border-line">
+                                        <th class="text-left py-1 font-medium">{{ 'admin.mail_server.dmarc.ip'|trans }}</th>
+                                        <th class="text-right py-1 font-medium">{{ 'admin.mail_server.dmarc.count'|trans }}</th>
+                                        <th class="text-center py-1 font-medium">SPF</th>
+                                        <th class="text-center py-1 font-medium">DKIM</th>
+                                        <th class="text-center py-1 font-medium">DMARC</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in report.records|slice(0, 10) %}
+                                        <tr class="border-b border-line/50">
+                                            <td class="py-1 font-mono">{{ record.ip }}</td>
+                                            <td class="py-1 text-right">{{ record.count }}</td>
+                                            <td class="py-1 text-center">
+                                                <span class="{{ record.spf == 'pass' ? 'text-emerald-600' : 'text-red-600' }}">{{ record.spf }}</span>
+                                            </td>
+                                            <td class="py-1 text-center">
+                                                <span class="{{ record.dkim == 'pass' ? 'text-emerald-600' : 'text-red-600' }}">{{ record.dkim }}</span>
+                                            </td>
+                                            <td class="py-1 text-center">
+                                                <span class="{{ record.dmarc == 'pass' ? 'text-emerald-600' : 'text-red-600 font-semibold' }}">{{ record.dmarc }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="px-4 pb-4 text-[13px] text-ink-faint">{{ 'admin.mail_server.dmarc.none'|trans }}</p>
+        {% endif %}
+
+    </div>
+
+    {# DNS records: what to set and whether they resolve. #}
+    <div class="{{ chrome.shell() }} mt-3">
+
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-globe text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_server.dns.heading'|trans }}</h2>
+            <a href="{{ path('app_admin_mail_server_settings', {check_dns: 1}) }}"
+               class="ml-auto px-3 py-1.5 rounded-lg bg-accent hover:bg-accent-strong text-accent-ink text-xs font-medium">
+                {{ 'admin.mail_server.dns.check'|trans }}
+            </a>
+        </div>
+
+        <div class="px-4 py-3 text-[13px] text-ink-muted">
+            {{ 'admin.mail_server.dns.intro'|trans }}
+        </div>
+
+        {% if dnsResults is not null %}
+            <div class="px-4 pb-4 space-y-3">
+                {% for result in dnsResults %}
+                    <div class="p-3 rounded-lg bg-raised border border-line">
+                        <div class="flex items-center justify-between mb-1">
+                            <p class="text-sm font-medium text-ink">{{ result.type }} <span class="font-mono text-xs text-ink-faint">{{ result.name }}</span></p>
+                            {% if result.ok %}
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">{{ 'admin.mail_server.dns.ok'|trans }}</span>
+                            {% else %}
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-red-500/15 text-red-600">{{ 'admin.mail_server.dns.missing'|trans }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-ink-faint mb-1">{{ 'admin.mail_server.dns.expected'|trans }}:</p>
+                        <code class="block text-xs font-mono bg-surface px-2 py-1 rounded mb-2 break-all">{{ result.expected }}</code>
+                        {% if result.actual %}
+                            <p class="text-xs text-ink-faint mb-1">{{ 'admin.mail_server.dns.actual'|trans }}:</p>
+                            <code class="block text-xs font-mono bg-surface px-2 py-1 rounded break-all">{{ result.actual }}</code>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% elseif not mailDomain %}
+            <p class="px-4 pb-4 text-[13px] text-ink-faint">{{ 'admin.mail_server.dns.no_domain'|trans }}</p>
+        {% else %}
+            <p class="px-4 pb-4 text-[13px] text-ink-faint">{{ 'admin.mail_server.dns.hint'|trans({'%domain%': mailDomain}) }}</p>
+        {% endif %}
+
+    </div>
+
+    {# Dynamic DNS: for home internet with changing IPs. #}
+    <div class="{{ chrome.shell() }} mt-3">
+
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-arrows-rotate text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_server.dynamic_dns.heading'|trans }}</h2>
+        </div>
+
+        <div class="px-4 py-3 text-[13px] text-ink-muted">
+            {{ 'admin.mail_server.dynamic_dns.intro'|trans }}
+        </div>
+
+        <div class="px-4 pb-4 text-[13px]">
+            <p class="text-ink-muted mb-2">{{ 'admin.mail_server.dynamic_dns.setup'|trans }}</p>
+            <code class="block text-xs font-mono bg-raised px-3 py-2 rounded border border-line whitespace-pre-wrap">CLOUDFLARE_API_TOKEN=…
+CLOUDFLARE_ZONE_ID=…
+DYNAMIC_DNS_HOSTS=mail.bearermail.com</code>
+            <p class="text-ink-faint text-xs mt-2">{{ 'admin.mail_server.dynamic_dns.cron'|trans }}</p>
+        </div>
+
+    </div>
+
+</turbo-frame>

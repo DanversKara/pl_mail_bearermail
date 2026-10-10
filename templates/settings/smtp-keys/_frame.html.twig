@@ -1,0 +1,108 @@
+{#
+settings/smtp-keys/_frame.html.twig — Settings → SMTP keys, inside its card.
+
+A frame of its own (loaded lazily by settings/index): creating and revoking
+post into it and get it back, so the secret shown once after creating is
+never in a URL, a redirect or the history.
+
+Variables: keys, accounts, created ({key, secret, username}|null), error, synced
+#}
+{% extends '_layout/app.html.twig' %}
+
+{% set field = 'block w-full h-9 rounded-lg border border-field bg-field px-3 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent' %}
+
+{% block body %}
+<turbo-frame id="settings-smtp-keys">
+
+    {% if not synced %}
+        <div role="alert" class="mx-4 mt-3.5 rounded-lg alert-danger px-3 py-2 text-sm text-danger">
+            {{ 'smtp_key.not_synced'|trans }}
+        </div>
+    {% endif %}
+
+    {% if created %}
+        <div class="px-4 py-3.5 border-b border-line bg-accent-soft/40">
+            <p class="text-xs font-semibold text-ink mb-1">
+                <i class="fa-solid fa-key text-[11px] mr-1" aria-hidden="true"></i>{{ 'smtp_key.created_title'|trans }}
+            </p>
+            <p class="text-[11px] text-ink-muted mb-3">{{ 'smtp_key.shown_once'|trans }}</p>
+            {% for row in [
+                { label: 'smtp_key.server'|trans,   value: 'mta:587' },
+                { label: 'smtp_key.username'|trans, value: created.username },
+                { label: 'smtp_key.secret'|trans,   value: created.secret },
+            ] %}
+                <div class="flex items-center gap-2 mb-2"
+                     data-controller="ui--clipboard"
+                     data-ui--clipboard-confirm-text-value="{{ 'clipboard.copied'|trans }}"
+                     data-ui--clipboard-failed-text-value="{{ 'clipboard.copy_failed'|trans }}">
+                    <span class="w-20 shrink-0 text-[11px] text-ink-faint">{{ row.label }}</span>
+                    <code data-ui--clipboard-target="source"
+                          class="flex-1 min-w-0 break-all rounded-lg bg-zinc-500/10 px-3 py-1.5 text-xs font-mono text-ink select-all">{{ row.value }}</code>
+                    <button type="button" data-action="click->ui--clipboard#copy"
+                            class="shrink-0 inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium bg-raised hover:bg-hover text-ink border border-line cursor-pointer">
+                        <i class="fa-solid fa-copy text-[11px]" aria-hidden="true"></i>
+                        <span data-ui--clipboard-target="label" class="sr-only sm:not-sr-only">{{ 'settings.app_passwords.copy'|trans }}</span>
+                    </button>
+                </div>
+            {% endfor %}
+            <p class="text-[11px] text-ink-muted mt-2">{{ 'smtp_key.use'|trans({'%email%': created.key.account.email}) }}</p>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_smtp_key_create') }}" class="px-4 py-3.5 border-b border-line">
+        <input type="hidden" name="_token" value="{{ csrf_token('smtp_key_create') }}">
+        {% if error %}
+            <p role="alert" class="mb-3 rounded-lg alert-danger px-3 py-2 text-sm text-danger">{{ error|trans }}</p>
+        {% endif %}
+        {% if accounts is empty %}
+            <p class="text-sm text-ink-faint">{{ 'smtp_key.no_accounts'|trans }}</p>
+        {% else %}
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                <div>
+                    <label for="smtp-key-name" class="block text-[13px] font-medium text-ink-soft mb-1.5">{{ 'smtp_key.name'|trans }}</label>
+                    <input id="smtp-key-name" type="text" name="name" required maxlength="100" placeholder="{{ 'smtp_key.name_placeholder'|trans }}"
+                           autocomplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" class="{{ field }}">
+                </div>
+                <div>
+                    <label for="smtp-key-account" class="block text-[13px] font-medium text-ink-soft mb-1.5">{{ 'smtp_key.account'|trans }}</label>
+                    <select id="smtp-key-account" name="account_id" required class="{{ field }}">
+                        {% for account in accounts %}
+                            <option value="{{ account.id }}">{{ account.email }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit"
+                        class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg text-sm font-medium bg-accent hover:bg-accent-strong text-accent-ink transition-colors cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i>{{ 'smtp_key.create'|trans }}
+                </button>
+            </div>
+        {% endif %}
+    </form>
+
+    {% if keys is empty %}
+        <p class="px-4 py-8 text-center text-sm text-ink-faint italic">{{ 'smtp_key.none'|trans }}</p>
+    {% else %}
+        <ul class="divide-y divide-line">
+            {% for key in keys %}
+                <li class="flex items-center gap-3 px-4 py-3">
+                    <i class="fa-solid fa-paper-plane text-ink-faint text-xs shrink-0" aria-hidden="true"></i>
+                    <div class="flex-1 min-w-0">
+                        <span class="block truncate text-sm text-ink">{{ key.name }}</span>
+                        <span class="block text-[11px] text-ink-faint truncate">
+                            <span class="font-mono">smtp_{{ key.id }}</span> · {{ key.account.email }} · {{ key.keyPrefix }}…
+                        </span>
+                    </div>
+                    <span class="shrink-0 text-[11px] text-ink-faint hidden sm:block">
+                        {{ 'smtp_key.created'|trans }} {{ key.createdAt|date('Y-m-d') }}
+                    </span>
+                    <form method="post" action="{{ path('app_smtp_key_revoke', {id: key.id}) }}" class="shrink-0"
+                          data-turbo-confirm="{{ 'smtp_key.revoke_confirm'|trans }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('smtp_key_revoke_' ~ key.id) }}">
+                        <button type="submit" class="text-[11px] text-ink-faint hover:text-danger transition-colors cursor-pointer">{{ 'smtp_key.revoke'|trans }}</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</turbo-frame>
+{% endblock %}

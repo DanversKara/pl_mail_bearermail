@@ -1,4 +1,8 @@
-x-app-image: &app-image ghcr.io/karatektus/pl_mail:latest
+x-app-image: &app-image
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: plmail-fork:latest
 
 # Every secret below is blank by default and generated on first start by the
 # secrets-init service, into the shared app_secrets volume. Set any of them in
@@ -73,7 +77,7 @@ services:
   #
   # Idempotent: on every later start it finds the file and does nothing.
   secrets-init:
-    image: *app-image
+    <<: *app-image
     restart: "no"
     entrypoint: ["generate-secrets"]
     environment:
@@ -85,8 +89,14 @@ services:
       - app_secrets:/app/var/secrets
 
   php:
-    image: *app-image
+    <<: *app-image
     restart: unless-stopped
+    # Mail-server settings and secrets (relay login, mailbox passwords,
+    # Cloudflare token). A file of their own, ignored by git and the image
+    # build, so no secret lives in the tracked .env. See .env.mail.dist.
+    env_file:
+      - path: .env.mail.local
+        required: false
     environment:
       <<: *app-env
       # `localhost` is the name Caddy makes its self-signed certificate for.
@@ -108,6 +118,11 @@ services:
       - app_attachments:/app/var/attachments
       - app_raw:/app/var/raw
       - app_uploads:/app/var/uploads
+      # Drive files. Their own volume, not app_uploads: app:prune-blobs sweeps
+      # app_uploads for files no row references and would delete them.
+      - app_drive:/app/var/drive
+      # Shared with mta/mailstore: relay.conf and smtp_keys written by the UI.
+      - mail_config:/etc/plmail-mail-config
     ports:
       - target: 80
         published: ${HTTP_PORT:-80}
@@ -138,9 +153,13 @@ services:
   # container proxies /.well-known/mercure there and MERCURE_URL publishes
   # there, exactly as they did to a hub container of that name.
   worker:
-    image: *app-image
+    <<: *app-image
     restart: unless-stopped
     command: php bin/console app:work
+    # Same mail settings file as php (see the note there).
+    env_file:
+      - path: .env.mail.local
+        required: false
     # The IMAP supervisor's children are this container's grandchildren; if
     # the supervisor dies hard, something has to reap them. Docker's own init.
     init: true
@@ -165,6 +184,10 @@ services:
       - app_attachments:/app/var/attachments
       - app_raw:/app/var/raw
       - app_uploads:/app/var/uploads
+      # Drive files, so app:backup (run here by the scheduler) includes them.
+      - app_drive:/app/var/drive
+      # The scheduler syncs Settings → Aliases to the mail server from here.
+      - mail_config:/etc/plmail-mail-config
     healthcheck:
       disable: true
     depends_on:
@@ -280,8 +303,75 @@ services:
       retries: 5
       start_period: 20s
 
+  # ── Self-hosted mail server ─────────────────────────────────────────────
+  # Postfix (SMTP) + Dovecot (IMAP/LMTP) + OpenDKIM, so plMail can receive
+  # mail for your own domain and send it without any third party.
+  #
+  # Optional and off by default: `docker compose --profile mail up -d`.
+  # Nobody who does not host their own domain pays for containers they
+  # never use.
+  #
+  # How it fits together:
+  #   internet --port 25--> mta (Postfix) --LMTP--> mailstore (Dovecot)
+  #   plMail --IMAP 143--> mailstore            (reading, like any account)
+  #   plMail --SMTP 587--> mta                 (sending, DKIM-signed)
+  #
+  # Port 587 is deliberately NOT published: submission stays inside the
+  # compose network, where plMail reaches it as `mta:587` with no TLS
+  # needed. See docs/install/self-hosted-mail-server.md for DNS, mailboxes,
+  # testing, and how to expose submission later.
+  mta:
+    build: ./docker/mail/postfix
+    profiles: [mail]
+    hostname: mail
+    restart: unless-stopped
+    ports:
+      - "25:25"
+    # MAIL_DOMAIN, MAIL_HELO, MAIL_ACCOUNTS and the relay come from
+    # .env.mail.local. Not repeated under `environment`: a key there beats
+    # env_file even when blank, and would hide the file's value.
+    env_file:
+      - path: .env.mail.local
+        required: false
+    environment:
+      MAILSTORE_HOST: mailstore
+      DKIM_SELECTOR: ${MAIL_DKIM_SELECTOR:-mail}
+      TLS_CERT: /certs/fullchain.pem
+      TLS_KEY: /certs/privkey.pem
+    volumes:
+      - mail_dkim:/etc/opendkim/keys
+      - ${MAIL_CERTS_PATH:-./docker/mail/certs}:/certs:ro
+      # relay.conf from Admin -> Mail server. Without this mount the UI wrote
+      # a file the mta never saw.
+      - mail_config:/etc/plmail-mail-config
+    depends_on:
+      mailstore:
+        condition: service_started
+
+  mailstore:
+    build: ./docker/mail/dovecot
+    profiles: [mail]
+    hostname: mailstore
+    restart: unless-stopped
+    ports:
+      - "993:993"
+    env_file:
+      - path: .env.mail.local
+        required: false
+    environment:
+      TLS_CERT: /certs/fullchain.pem
+      TLS_KEY: /certs/privkey.pem
+    volumes:
+      - mail_data:/var/mail/vhosts
+      - ${MAIL_CERTS_PATH:-./docker/mail/certs}:/certs:ro
+      - mail_config:/etc/plmail-mail-config
+
 volumes:
   app_secrets:
+  app_drive:
+  mail_data:
+  mail_dkim:
+  mail_config:
   app_attachments:
   app_raw:
   app_uploads:

@@ -202,13 +202,23 @@ final class MaintenanceSchedule implements ScheduleProviderInterface
                 // is the mechanism and stays.
                 RecurringMessage::cron('*/10 * * * *', new RunCommandMessage('app:upgrade:run')),
 
-                // Whether the update channel has a newer build (Admin →
-                // Updates). Hourly, at an odd minute: the registry and GitHub's
-                // unauthenticated API are shared with everybody else's
-                // installations, and on the hour is when everything else asks.
-                // One check is a handful of small requests; each new build is
-                // announced once, however often it is found.
-                RecurringMessage::cron('37 * * * *', new RunCommandMessage('app:updates:check')),
+                // Dynamic DNS for a home connection: keeps the Cloudflare A
+                // records on the current public IP. Does nothing at all — no
+                // request leaves the box — until CLOUDFLARE_API_TOKEN,
+                // CLOUDFLARE_ZONE_ID and DYNAMIC_DNS_HOSTS are set, so it costs
+                // an install that never uses it one process spawn per run.
+                RecurringMessage::cron('*/5 * * * *', new RunCommandMessage('app:mail:update-dynamic-dns')),
+
+                // Settings → Aliases, mirrored to the self-hosted mail server.
+                // Every save already does this; the schedule is the safety net
+                // for a container that was down at the time. A no-op without
+                // the mail profile.
+                RecurringMessage::cron('*/5 * * * *', new RunCommandMessage('app:mail:sync-aliases')),
+
+                // No automatic update check. Upstream polled the image registry and
+                // the GitHub API hourly; this install makes no outbound calls
+                // it was not asked to. Admin → Updates can still check on
+                // demand, which is the only time those hosts are contacted.
 
                 // Expired JMAP uploads and files orphaned by deleted rows.
                 // Weekly: it walks three directory trees, and a week of

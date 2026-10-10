@@ -10,7 +10,7 @@ a different machine.
 |---|---|---|
 | **The database** | the `database_data` volume | Every message, thread, label, filter, calendar, user and app password |
 | **The encryption key** | `APP_ENCRYPTION_KEY` in `var/secrets/generated.env`, on the `app_secrets` volume | Without it every mailbox password and OAuth token in the database is permanently unreadable |
-| **The blobs** | `attachments/`, `raw/` and `uploads/` under `APP_STORAGE_DIR` | Attachment paths are stored in the database relative to the project root, so without the files every attachment 404s after a restore |
+| **The blobs** | `attachments/`, `raw/`, `uploads/` and `drive/` (Drive files) under `APP_STORAGE_DIR` | Attachment paths are stored in the database relative to the project root, so without the files every attachment 404s after a restore |
 
 The secrets file holds more than the key — `APP_SECRET`, `POSTGRES_PASSWORD`, `MERCURE_JWT_SECRET`,
 the VAPID keypair and the `APP_PUBLIC_URL` saved during setup — and the JWT keypair sits beside it,

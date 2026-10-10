@@ -158,6 +158,18 @@
                                         <i class="fa-solid fa-bell w-4 {{ section == 'push' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
                                         {{ 'admin.nav.push'|trans }}
                                     </a>
+                                    {# After push: the outbound mail relay is another
+                                       outside service credential, like push. #}
+                                    <a href="{{ path('app_admin_dashboard', { section: 'mail-server' }) }}"
+                                       class="{{ section == 'mail-server' ? navActive : navInactive }}">
+                                        <i class="fa-solid fa-envelope-circle-check w-4 {{ section == 'mail-server' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
+                                        {{ 'admin.nav.mail_server'|trans }}
+                                    </a>
+                                    <a href="{{ path('app_admin_dashboard', { section: 'security' }) }}"
+                                       class="{{ section == 'security' ? navActive : navInactive }}">
+                                        <i class="fa-solid fa-shield-halved w-4 {{ section == 'security' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
+                                        {{ 'admin.nav.security'|trans }}
+                                    </a>
                                     {# After push and before users: it configures
                                        an outside service the way push does, and
                                        everything below this point is about people
@@ -347,6 +359,28 @@
                                         <turbo-frame id="admin-push-deliveries"
                                                      src="{{ path('app_admin_push_deliveries') }}"
                                                      class="block mt-3"
+                                                     loading="lazy">
+                                            <div class="py-10 text-center text-sm text-ink-faint">
+                                                <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}
+                                            </div>
+                                        </turbo-frame>
+
+                                    {% elseif section == 'mail-server' %}
+
+                                        <turbo-frame id="admin-mail-server"
+                                                     class="block space-y-3"
+                                                     src="{{ path('app_admin_mail_server_settings') }}"
+                                                     loading="lazy">
+                                            <div class="py-10 text-center text-sm text-ink-faint">
+                                                <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}
+                                            </div>
+                                        </turbo-frame>
+
+                                    {% elseif section == 'security' %}
+
+                                        <turbo-frame id="admin-security"
+                                                     class="block space-y-3"
+                                                     src="{{ path('app_admin_security_overview') }}"
                                                      loading="lazy">
                                             <div class="py-10 text-center text-sm text-ink-faint">
                                                 <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}

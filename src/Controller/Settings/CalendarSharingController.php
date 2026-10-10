@@ -20,6 +20,7 @@ use App\Service\User\UserTimezoneResolver;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -84,6 +85,26 @@ final class CalendarSharingController extends AbstractController
     }
 
     // ── Share links ───────────────────────────────────────────────────────────
+
+    #[Route('/list.json', name: 'list_json', methods: ['GET'])]
+    public function listJson(): JsonResponse
+    {
+        $user = $this->currentUser();
+        $links = [];
+        foreach ($this->links->findForUser($user) as $link) {
+            $links[] = ['id' => $link->id, 'name' => $link->name, 'type' => 'share'];
+        }
+        $pages = [];
+        foreach ($this->pages->findForUser($user) as $page) {
+            $pages[] = ['id' => $page->id, 'name' => $page->name, 'type' => 'booking'];
+        }
+
+        return $this->json([
+            'links' => $links,
+            'pages' => $pages,
+            'settingsUrl' => $this->generateUrl('app_settings_sharing_link_new'),
+        ]);
+    }
 
     #[Route('/link/new', name: 'link_new', methods: ['GET', 'POST'])]
     public function linkNew(Request $request): Response

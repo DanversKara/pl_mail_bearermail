@@ -15,6 +15,18 @@
 {% block title_count_key %}role:inbox{% endblock %}
 
 {% block inbox_tabs %}
+    {# Flood warning: a burst of mail may be trying to bury a security alert.
+       Check for password resets or security notifications you didn't expect. #}
+    {% if flood is defined and flood is not null %}
+        <div class="mx-4 mt-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5" aria-hidden="true"></i>
+            <div class="text-[13px]">
+                <p class="font-semibold text-amber-700">{{ 'inbox.flood.title'|trans }}</p>
+                <p class="text-ink-muted mt-0.5">{{ 'inbox.flood.body'|trans({'%count%': flood.count, '%account%': flood.account}) }}</p>
+            </div>
+        </div>
+    {% endif %}
+
     {# Imported inside the block rather than at the top of the file: this
        template only ever renders through a block, and a macro imported at
        template scope is not reliably in scope inside one. #}

@@ -37,6 +37,10 @@ the Happening Soon rows give for their provenance link.
 
         <div class="flex flex-wrap gap-2">
             {% for insight in insights %}
+                {# A login code gets its own larger card with a Copy button. #}
+                {% if insight.kind.value == 'otp' and insight.payload.code|default(null) is not empty %}
+                    {% include 'insight/_otp_card.html.twig' with { insight: insight } only %}
+                {% else %}
                 {% set trackingUrl = insight.payload.trackingUrl|default(null) %}
                 {% set externalUrl = insight.payload.url|default(null) %}
                 {% set status = insight.payload.status|default(null) %}
@@ -97,6 +101,7 @@ the Happening Soon rows give for their provenance link.
                             with { url: externalUrl, kind: insight.kind, class: 'ml-1' } only %}
                     {% endif %}
                 </div>
+                {% endif %}
             {% endfor %}
         </div>
     </div>
