@@ -45,7 +45,24 @@ Off by default: start it with `docker compose --profile mail up -d`. Setup, DNS 
 Personal file storage inside plMail: folders, drag-and-drop uploads with progress, list or grid
 view, search, rename, and share links with an optional password and expiry date. Recipients
 download without an account. **Insert from Drive** in the composer drops a share link into a
-message. Files have their own Docker volume and are included in `app:backup`.
+message, and **Add from Drive** in a calendar event puts a link in its description. Files have
+their own Docker volume and are included in `app:backup`.
+
+The Drive also has a small API for the phone app (`/jmap/drive`, announced in the JMAP session as
+`urn:bearermail:params:drive`), using the same app password as mail.
+
+### BearerMail name and Android app
+- The web app calls itself **BearerMail** (page titles, the installable web app, emails it sends).
+  Set `APP_BRAND_NAME` in `.env.local` to use another name.
+- A matching build of the plMail Android app (kept separately) is renamed BearerMail and installs
+  as its own app (`com.bearermail.mail`), next to stock plMail. It adds:
+  - **Drive:** browse folders, upload from the phone, open, save or send files, rename, move,
+    delete, and make share links with a password and expiry.
+  - **Share to "BearerMail Drive"** from any app's share sheet uploads straight into Drive.
+  - **Insert Drive link** in the composer and **Add from Drive** in the event editor.
+  - **On-the-spot aliases:** "New alias" in the drawer or the composer's From menu. Type a name or
+    make a random one in one tap. It's copied to the clipboard, receives mail within seconds, and
+    can be sent from right away.
 
 ### Security additions
 - Warning banners on mail that **fails sender authentication** (SPF/DKIM/DMARC), on mail with
