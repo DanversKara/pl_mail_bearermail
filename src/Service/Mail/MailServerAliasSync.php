@@ -78,8 +78,15 @@ final readonly class MailServerAliasSync
 
         ksort($lines);
 
+        $content = implode("\n", $lines) . "\n";
+
+        // Most saves of an Account change nothing here; skip the write then.
+        if (is_file(self::PATH) && @file_get_contents(self::PATH) === $content) {
+            return \count($lines);
+        }
+
         $tmp = self::PATH . '.tmp';
-        if (false === @file_put_contents($tmp, implode("\n", $lines) . "\n")) {
+        if (false === @file_put_contents($tmp, $content)) {
             return null;
         }
         @chmod($tmp, 0644);

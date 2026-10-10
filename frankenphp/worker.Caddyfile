@@ -1,3 +1,17 @@
+# BearerMail: more PHP threads.
+#
+# A phone with the app open keeps a live update stream (/jmap/eventsource)
+# that holds one PHP thread for up to five minutes at a time. FrankenPHP's
+# default is two threads per CPU, so on a small server two phones and a
+# calendar were enough to use them all, and every other request — the web
+# page, sending mail — waited in line behind them: the slow blue bar.
+#
+# 16 workers handle the web and API; num_threads must be larger than that.
+# Each worker costs roughly 40-60 MB of RAM. Lower `num` on a server with
+# under 2 GB free.
+num_threads 20
+
 worker {
 	file ./public/index.php
+	num 16
 }
