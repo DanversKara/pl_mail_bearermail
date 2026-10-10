@@ -17,13 +17,13 @@ const CURSOR = `${ROWS}[data-kbd-cursor]`;
 const COUNT = '[data-mail--list-toolbar-target="selectionCount"]';
 
 async function setShortcuts(page: Page, option: "On" | "Off"): Promise<void> {
-    await page.goto("/settings?section=general");
+    await page.goto("/settings?section=shortcuts");
 
     const group = page.getByRole("radiogroup", { name: "Shortcuts" });
 
     if (false === (await group.getByRole("radio", { name: option, exact: true }).isChecked())) {
         await Promise.all([
-            page.waitForURL(/section=general/),
+            page.waitForURL(/section=shortcuts/),
             group.getByText(option, { exact: true }).click(),
         ]);
     }
@@ -124,6 +124,33 @@ test.describe("keyboard shortcuts", () => {
         await expect(page.locator(ROWS)).toHaveCount(before - 2);
     });
 
+    /**
+     * `s` on a selection stars the selection.
+     *
+     * It did nothing: a key presses the control that is there, each row has a
+     * star and the toolbar above a selection had none. Found by trying every
+     * key in every context after `a` turned out to have the same shape of gap.
+     */
+    test("s stars everything that is ticked", async ({ page }) => {
+        await inbox(page);
+
+        await page.keyboard.press("j");
+        await page.keyboard.press("x");
+        await page.keyboard.press("j");
+        await page.keyboard.press("x");
+
+        const ticked = await page.locator(`${ROWS}:has([data-thread-select]:checked)`).evaluateAll((rows) =>
+            rows.map((row) => row.getAttribute("data-mail--message-row-id-value")));
+        expect(ticked).toHaveLength(2);
+
+        await page.keyboard.press("s");
+
+        for (const id of ticked) {
+            await expect(page.locator(`${ROWS}[data-mail--message-row-id-value="${id}"]`))
+                .toHaveAttribute("data-starred", "true");
+        }
+    });
+
     test("keys typed into a field are text", async ({ page }) => {
         await inbox(page);
 
@@ -163,6 +190,53 @@ test.describe("keyboard shortcuts", () => {
         await expect(page.locator('body[data-controller~="ui--shortcuts"]')).toHaveCount(1);
         await page.keyboard.press("c");
         await expect(page.locator("turbo-frame#compose_dock form").first()).toBeVisible();
+    });
+
+    /**
+     * `a` answers on every message, not only on one with several recipients.
+     *
+     * Reported from the demo within a day: r and f worked and a did not. The
+     * Reply-all link is only drawn when there is more than one recipient, and
+     * `a` pressed a link that was not there. It replies instead, which is what
+     * "all" comes to when all is one person.
+     */
+    test("a replies even where there is nobody else to reply to", async ({ page }) => {
+        await inbox(page);
+        await mailRow(page, INBOX_SUBJECTS.read).click();
+
+        await expect(page.locator('[data-shortcut="reply"]')).toBeVisible();
+        await expect(page.locator('[data-shortcut="reply-all"]'), "this fixture has one recipient").toHaveCount(0);
+
+        await page.keyboard.press("a");
+        await expect(page.locator(".compose-window").first()).toBeVisible();
+    });
+
+    /**
+     * `b` snoozes the conversation that is open.
+     *
+     * It did nothing there: every row had a snooze menu and the open
+     * conversation had none, so there was no control for the key to press. The
+     * toolbar has one now, and the mail leaves the inbox for Snoozed.
+     */
+    test("b snoozes the open conversation", async ({ page }) => {
+        await inbox(page);
+
+        const subject = INBOX_SUBJECTS.read;
+        await mailRow(page, subject).click();
+        await expect(page.locator('[data-shortcut="reply"]')).toBeVisible();
+
+        await page.keyboard.press("b");
+
+        const option = page.locator('[data-surface="reading"] [data-snooze-key="tomorrow"]');
+        await expect(option).toBeVisible();
+        await option.click();
+
+        // Back on the list, without it.
+        await expect(page.locator(ROWS).first()).toBeVisible();
+        await expect(mailRow(page, subject)).toHaveCount(0);
+
+        await page.goto("/mail/snoozed");
+        await expect(mailRow(page, subject)).toHaveCount(1);
     });
 
     test("switched off, a key is only a key", async ({ page }) => {

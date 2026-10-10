@@ -7,6 +7,7 @@ namespace App\Tests\Service\Backup;
 use App\Domain\Enum\Account\MailProvider;
 use App\Domain\Enum\Ai\PromptSlot;
 use App\Domain\Enum\Integration\Provider;
+use App\Domain\Enum\Mail\CategorySource;
 use App\Entity\Ai\AiSettings;
 use App\Entity\Integration\IntegrationProviderConfig;
 use App\Entity\Integration\MailProviderConfig;
@@ -157,12 +158,19 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
         $this->check('user.appearance.fontScale', 1.125, $user->appearance->fontScale);
         $this->check('user.appearance.previewLines', 2, $user->appearance->previewLines);
         $this->check('user.aiPreferences.aboutMe', 'Ich baue Fahrräder.', $user->aiPreferences->aboutMe);
+        $this->check('user.categorySorting.source', CategorySource::Assistant->value, $user->categorySorting->source);
+        $this->check('user.categorySorting.overrideProvider', true, $user->categorySorting->overrideProvider);
+        $this->check('user.categorySorting.tabs', false, $user->categorySorting->tabs);
         $this->check('user.signature (file)', 'anna-signature.png', $user->signature);
 
         // ── The user settings bag ─────────────────────────────────────────
         $this->check('setting display.clock', '24h', $user->getSetting(User::SETTING_CLOCK));
         $this->check('setting search.sort', 'oldest', $user->getSetting(User::SETTING_SEARCH_SORT));
         $this->check('setting calendar.pane_width', 420, $user->getSetting(User::SETTING_CALENDAR_PANE_WIDTH));
+        // Neither value is the default (off, 55), so a restore that dropped the
+        // keys and read the defaults back would fail here rather than pass.
+        $this->check('setting reading.pane_mode', 'right', $user->getSetting(User::SETTING_READING_PANE_MODE));
+        $this->check('setting reading.pane_width_pct', 40, $user->getSetting(User::SETTING_READING_PANE_WIDTH));
         $this->check('setting sidebar.collapsed_sections', ['section:labels'], $user->getSetting(User::SETTING_SIDEBAR_COLLAPSED));
         $this->check('setting onboarding.completed_at', '2026-02-01T00:00:00+00:00', $user->getSetting(User::SETTING_ONBOARDING_COMPLETED_AT));
         $this->check('setting admin.collapsed_panels', ['health'], $user->getSetting(User::SETTING_ADMIN_COLLAPSED_PANELS));
@@ -371,9 +379,15 @@ final class ConfigBackupRoundTripTest extends KernelTestCase
 
         $user->aiPreferences->aboutMe = 'Ich baue Fahrräder.';
 
+        $user->categorySorting->source           = CategorySource::Assistant->value;
+        $user->categorySorting->overrideProvider = true;
+        $user->categorySorting->tabs             = false;
+
         $user->setSetting(User::SETTING_CLOCK, '24h');
         $user->setSetting(User::SETTING_SEARCH_SORT, 'oldest');
         $user->setSetting(User::SETTING_CALENDAR_PANE_WIDTH, 420);
+        $user->setSetting(User::SETTING_READING_PANE_MODE, 'right');
+        $user->setSetting(User::SETTING_READING_PANE_WIDTH, 40);
         $user->setSetting(User::SETTING_SIDEBAR_COLLAPSED, ['section:labels']);
         $user->setSetting(User::SETTING_ONBOARDING_COMPLETED_AT, '2026-02-01T00:00:00+00:00');
         $user->setSetting(User::SETTING_ADMIN_COLLAPSED_PANELS, ['health']);

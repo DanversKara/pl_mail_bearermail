@@ -186,6 +186,24 @@ export default class extends Controller {
     }
 
     /**
+     * A row of the "More" menu that is itself a menu: Snooze, Label.
+     *
+     * The row closes "More" (its own second action) and this opens the panel
+     * it names, by pressing that panel's trigger — laid unseen over the same
+     * button, and also what the `b` and `l` keys press.
+     *
+     * A tick later, not now. This click is still on its way up the document,
+     * and to a menu opened in the middle of it it is a click outside: both
+     * menus close on one, so the panel would open and shut in the same event.
+     */
+    openFlyout(event) {
+        const { flyout } = event.params;
+        const trigger = this.element.querySelector(`[data-toolbar-flyout="${flyout}"]`);
+
+        setTimeout(() => trigger?.click(), 0);
+    }
+
+    /**
      * The toolbar's spam button: the selection goes to Spam, and that is all.
      *
      * The same move "Move to → Spam" makes, without opening the picker. No
@@ -194,6 +212,22 @@ export default class extends Controller {
      */
     async spamSelected() {
         await this._bulkPost("move-to", { role: "spam" });
+    }
+
+    /**
+     * Stars everything ticked. Only ever on, like the drop on Starred whose
+     * endpoint this is.
+     *
+     * Not for a whole-view selection: the server takes a star for named
+     * conversations only (BulkStatusController::EXPLICIT_ONLY), and would
+     * answer that with an error about a button somebody simply pressed.
+     */
+    async starSelected() {
+        if (true === this.#allInView) {
+            return;
+        }
+
+        await this._bulkPost("star");
     }
 
     async markReadSelected() {

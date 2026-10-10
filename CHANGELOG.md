@@ -8,14 +8,101 @@ The published image tags: `latest` follows the most recent release below,
 
 ## Unreleased
 
+**One message could stop an IMAP folder from syncing, for good.** A multipart message whose
+header puts spaces around the equals sign — `boundary = "…"`, which the standard allows and some
+mailers write — could not be read, and because that failed while a page of mail was being fetched,
+the whole folder's sync failed with `no content found` on every poll until the message was deleted
+on the server. Nothing newer in that folder arrived, and nothing in plMail said so. Such a message
+is read now. And a message that cannot be read for any other reason no longer takes its folder with
+it: the rest of the page is stored, the message is asked for again on the next five syncs, and then
+it is skipped with an error in the log naming the folder and the UID. A folder that was stuck this
+way catches up by itself on the next poll after upgrading. No migration.
+[#45](https://github.com/karatektus/pl_mail/issues/45).
+
+**A reading pane beside the message list.** Opening a message used to replace the list; Settings →
+Reading pane now offers **Right**, which puts the message beside the list on a screen
+that has room for both. The open row is marked, the back arrow closes the message and leaves the
+list where it was, and the divider between the two can be dragged (or moved with the arrow keys;
+double-click resets it). Its position is stored as a percentage of the mail card, 25 to 75, rather
+than in pixels, so it keeps its meaning when the calendar pane opens or is resized. It is drawn only
+while the card is at least 52rem wide — a narrow window, a phone, or a docked calendar that leaves
+the mail too little room fall back to one pane at a time. Off by default, so nothing changes until
+someone chooses it. Per person, not part of an exported theme, and carried by a config backup. No migration.
+
+**Settings has a Features group**, with a page each for the reading pane and the keyboard
+shortcuts. The shortcuts switch moved there from General.
+
+**Above a selection the toolbar is three buttons and a menu.** Archive, Delete and Move to stay;
+star, mark as read or unread, snooze, label and spam are under **More**. Nine buttons in a row were
+wider than the list whenever it shared its card — with a docked calendar, or now with a message
+open beside it — and the row was cut off at the edge. The keys still reach all of them directly.
+
+**Keys work after ticking a row with the mouse.** A click left the focus on the row's checkbox,
+which counted as typing, so `e` after ticking three rows did nothing; rows ticked with `x` were
+unaffected.
+
+A message opened by its own address (a reload, a bookmark) has no list behind it, so with the
+reading pane on the right it is shown beside the Inbox, whichever folder it was opened from.
+
+**The category tabs fit a phone.** On a narrow screen the tabs (Primary, Social, Promotions, …)
+ran into each other, labels underneath the next tab's icon. They now keep their size and the strip
+scrolls sideways inside itself, opening on the tab you are on. No migration.
+
+**The Immich picker no longer lists the video half of a Live Photo.** Immich keeps it as an asset of
+its own, hidden from its timeline and without a preview, so the picker showed it as a grey tile that
+could only be attached as a three-second clip — on a library full of iPhone photos, a large share of
+the grid. Library, search, album and person views now leave those clips out. Archived photos stay,
+and so does anything a server that predates the `visibility` field sends. No migration.
+[#46](https://github.com/karatektus/pl_mail/issues/46).
+
 **Keyboard shortcuts, the ones Gmail uses.** `j` and `k` move through a list, `o` opens, `u` goes
 back, `x` selects, `e` archives, `#` deletes, `s` stars, `r` `a` `f` reply, reply to all and
 forward, `c` writes, `/` searches, `g` then a letter goes to a list, `z` undoes. **?** shows all of
-them. A key acts on the selection, otherwise on the open conversation, otherwise on the highlighted
+them, and so does the keyboard button above a mail list. A key acts on the selection, otherwise on the open conversation, otherwise on the highlighted
 row, and does exactly what the button it stands for does. Nothing happens while you are typing or
-while a dialog or menu is open. On for everyone; Settings → General → Keyboard shortcuts switches
+while a dialog or menu is open. On for everyone; Settings → Keyboard shortcuts switches
 them off per person. No migration.
 [#36](https://github.com/karatektus/pl_mail/issues/36).
+
+`a` replies on a message that has only one recipient, where there is no Reply to all to press. The
+toolbar above a selection has a **Star** button, and `s` presses it; before, `s` did nothing with
+rows ticked. An open conversation has a **Snooze** button in its toolbar, which is what `b` presses
+there.
+
+**A config backup now carries how each person sorts their mail.** Settings → Categories — rules or
+the assistant, whether that overrules the provider's own categories, and whether the inbox has tabs
+at all — was never written into the file, so a restore put everyone back on rules, the provider's
+categories and a tabbed inbox. All three now travel with the user. Backups made before this still
+restore, onto those same defaults. No migration.
+
+**The radar reads French parcels.** Colissimo, Chronopost, Mondial Relay, Colis Privé, DPD France
+and Cainiao mail now yields a parcel card, with their number shapes, French wording for the stage
+and for the day ("sera livré après-demain", "prévue le 14/11"), and Amazon.fr alongside the other
+Amazon shops — its button now opens amazon.fr, not the German site. A parcel waiting at a relay
+point or locker is a new stage, **Ready for pickup**. The satisfaction survey a carrier sends after
+delivery is ignored, where it would otherwise have turned a delivered card back. A French S10
+number from a shop of unknown carrier reads as La Poste instead of Deutsche Post. Not read yet: GLS
+France and the Pickup relay network (no number to recognise), and "returned" and "attempt failed".
+Existing mail is not re-read on its own; `app:backfill insights` picks it up. No migration.
+
+**Choose which folders an IMAP account fetches.** Settings → Accounts has a new **Choose which
+folders to sync** button on every IMAP account's row. It opens the account's folders with a switch
+beside each: switch one off and plMail stops fetching it, the mail already stored stays where it is,
+and switching it back on resumes from where it stopped. The inbox has no switch. Nested folders are
+indented under their parent, and a folder that only groups others — Gmail's `[Gmail]` — is greyed
+out with no switch to press, since the server will not open it. Gmail and Microsoft accounts, which
+sync through their provider's API, do not get the button. A message you move in another mail client
+into a folder that is switched off disappears from plMail, because the check for mail deleted
+elsewhere only looks in the folders that are on; switching the folder back on fetches it again.
+One migration adds a column to the folder table; it runs by itself and rewrites nothing.
+
+**Gmail's `[Gmail]` folder no longer fails on every poll.** Over IMAP, Gmail lists `[Gmail]` as a
+folder, but it is only a placeholder that groups All Mail, Sent Mail and the rest: the server marks
+it `\Noselect` and refuses to open it. plMail tried anyway, logged an error each time, and — because
+the folder could never be swept — withheld the check that lets mail deleted elsewhere disappear from
+the account. A folder marked `\Noselect` is now created with sync off, and one that already exists
+is switched off on the next folder sync, with nothing to do on your part. It held no mail, so
+nothing is lost. No migration.
 
 ## v0.3.2 — 2026-10-09
 

@@ -43,20 +43,29 @@ const ROW_SELECT = "[data-thread-select]";
 const CURSOR = "data-kbd-cursor";
 const TOOLBAR = "[data-mail--list-toolbar-target='actions']";
 const READING = "[data-surface='reading']";
+const LIST = "[data-surface='list']";
 
 /** How long a first key (`g`, `*`) waits for its second. */
 const SEQUENCE_MS = 1500;
 
-/** The toolbar above a selection. */
+/**
+ * The toolbar above a selection.
+ *
+ * `~=`, a whole word of the attribute: most of these are rows of the toolbar's
+ * "More" menu, which carry a second action that closes the menu. Snooze and
+ * Label are the triggers of their panels, laid unseen over that menu's
+ * button — a key opens the panel itself, not the menu that leads to it.
+ */
 const BULK = {
-    archive: "[data-action='click->mail--list-toolbar#archiveSelected']",
-    trash:   "[data-action='click->mail--list-toolbar#deleteSelected']",
-    spam:    "[data-action='click->mail--list-toolbar#spamSelected']",
-    read:    "[data-action='click->mail--list-toolbar#markReadSelected']",
-    unread:  "[data-action='click->mail--list-toolbar#markUnreadSelected']",
-    label:   "[data-action='click->mail--label-menu#toggle']",
-    move:    "[data-action='click->mail--move-menu#toggle']",
-    snooze:  "[data-action='click->ui--dropdown#toggle']",
+    archive: "[data-action~='click->mail--list-toolbar#archiveSelected']",
+    trash:   "[data-action~='click->mail--list-toolbar#deleteSelected']",
+    spam:    "[data-action~='click->mail--list-toolbar#spamSelected']",
+    star:    "[data-action~='click->mail--list-toolbar#starSelected']",
+    read:    "[data-action~='click->mail--list-toolbar#markReadSelected']",
+    unread:  "[data-action~='click->mail--list-toolbar#markUnreadSelected']",
+    label:   "[data-toolbar-flyout='label']",
+    move:    "[data-action~='click->mail--move-menu#toggle']",
+    snooze:  "[data-toolbar-flyout='snooze']",
 };
 
 /** The toolbar of the open conversation, and the links under it. */
@@ -68,6 +77,7 @@ const OPEN = {
     star:     "[data-action*='mail--message-actions#star']",
     label:    "[data-action='click->mail--label-menu#toggle']",
     move:     "[data-action='click->mail--move-menu#toggle']",
+    snooze:   "[data-shortcut='snooze']",
     back:     "[data-action='click->mail--mail-pane#close']",
     reply:    "[data-shortcut='reply']",
     replyAll: "[data-shortcut='reply-all']",
@@ -215,7 +225,14 @@ export default class extends Controller {
             case "b": return this.#act("snooze");
 
             case "r": return this.#press(this.#reading()?.querySelector(OPEN.reply));
-            case "a": return this.#press(this.#reading()?.querySelector(OPEN.replyAll));
+            // Reply to all, and a plain reply where there is nobody else to
+            // include. The Reply-all link is only drawn for a message with more
+            // than one recipient, so on every other message `a` found no button
+            // and did nothing — which reads as a broken key, not as "there is
+            // only one person here". Gmail answers `a` with a reply there too.
+            case "a": return this.#press(
+                this.#reading()?.querySelector(OPEN.replyAll) ?? this.#reading()?.querySelector(OPEN.reply),
+            );
             case "f": return this.#press(this.#reading()?.querySelector(OPEN.forward));
 
             default: return false;
@@ -238,7 +255,7 @@ export default class extends Controller {
 
         const menu = { a: "selectAll", n: "selectNone", r: "selectRead", u: "selectUnread", s: "selectStarred" }[key];
 
-        if (undefined === menu || null !== this.#reading()) {
+        if (undefined === menu || false === this.#listShowing()) {
             return false;
         }
 
@@ -248,8 +265,11 @@ export default class extends Controller {
     // ── What a key acts on ────────────────────────────────────────────────
 
     #act(name) {
-        // 1. The selection.
-        if (null === this.#reading() && selection().length > 0) {
+        // 1. The selection — wherever the list it was made in is on screen,
+        // which with the reading pane beside the list includes "while a
+        // conversation is open". Asking only whether one was open sent `#`
+        // to the open conversation with three other rows ticked beside it.
+        if (true === this.#listShowing() && selection().length > 0) {
             return this.#press(document.querySelector(TOOLBAR)?.querySelector(BULK[name]));
         }
 
@@ -354,7 +374,7 @@ export default class extends Controller {
     #tickCursor() {
         const row = this.#cursorRow();
 
-        if (null === row || null !== this.#reading()) {
+        if (null === row || false === this.#listShowing()) {
             return false;
         }
 
@@ -443,6 +463,21 @@ export default class extends Controller {
         return pane;
     }
 
+    /**
+     * Whether the list is on screen.
+     *
+     * Not the opposite of #reading(): with the reading pane beside the list
+     * both are. Asked of the computed style rather than of the `hidden` class,
+     * because beside the list mail--mail-pane still sets that class and a
+     * container query in app.css overrules it — the class says what one pane
+     * at a time would show, the style says what is drawn.
+     */
+    #listShowing() {
+        const list = document.querySelector(LIST);
+
+        return null !== list && "none" !== getComputedStyle(list).display;
+    }
+
     #focusSearch() {
         const field = document.querySelector("#search-shell input[name='q']");
 
@@ -477,9 +512,14 @@ export default class extends Controller {
      * Typing is the obvious case. The other two matter as much: a dialog owns
      * every key while it is open, and a menu that is open has its own arrows
      * and its own Escape — `e` there must not archive the mail behind it.
+     *
+     * A checkbox is an input nobody types into. Counting it as one meant that
+     * ticking a row with the mouse left the focus on its box and every key
+     * after it dead — tick three rows, press `e`, nothing — while the same
+     * rows ticked with `x` worked, because `x` never moves the focus.
      */
     #busyElsewhere(target) {
-        if (target?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox']")) {
+        if (target?.closest?.("input:not([type='checkbox']), textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox']")) {
             return true;
         }
 
