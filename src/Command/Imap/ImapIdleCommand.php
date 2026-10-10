@@ -190,6 +190,19 @@ class ImapIdleCommand extends Command
         $this->beat($mailbox, $account, true);
 
         $connection = $client->getConnection();
+
+        // BearerMail: ask for UIDs in flag notifications. Without QRESYNC,
+        // Dovecot announces a flag change as `* 4 FETCH (FLAGS (...))` — a
+        // position, not a message — and each one cost a full folder listing.
+        // On the self-hosted server that turned into a full listing every
+        // thirty seconds, around the clock. With it enabled the line carries
+        // the UID and is applied directly. A server without QRESYNC answers
+        // NO/BAD and nothing changes.
+        try {
+            $connection->requestAndResponse('ENABLE', ['QRESYNC']);
+        } catch (\Throwable) {
+        }
+
         $connection->selectFolder($folder->path);
         $connection->idle();
 
@@ -273,7 +286,9 @@ class ImapIdleCommand extends Command
             // instead of on its cadence. Backdate the sweep clock and
             // dispatch the same sync EXISTS dispatches — the deletion lands
             // in seconds instead of within two fifteen-minute cycles.
-            if (true === str_contains($line, 'EXPUNGE')) {
+            // With QRESYNC enabled (see idle()), deletions arrive as
+            // `* VANISHED <uids>` instead of `* N EXPUNGE`.
+            if (true === str_contains($line, 'EXPUNGE') || 1 === preg_match('~^\*\s+VANISHED\b~i', trim($line))) {
                 $this->beat($mailbox, $account, true);
                 $io->text(sprintf('[%s] Expunge seen — sweep queued.', date('H:i:s')));
                 // A deletion genuinely needs the listing: the line carries a
