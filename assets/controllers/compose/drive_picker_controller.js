@@ -19,6 +19,9 @@ export default class extends Controller {
     static values = {
         listUrl: String,
         linkUrl: String, // contains the placeholder 0 for the file id
+        // Optional: the id of a <textarea>/<input> to insert "name: link" into
+        // instead of the compose editor — the calendar event description uses it.
+        textTarget: String,
         i18n: Object,
     };
 
@@ -142,7 +145,12 @@ export default class extends Controller {
             if (!response.ok) throw new Error(String(response.status));
             const data = await response.json();
             close();
-            this._insertLink(data.url.replace(/\/?$/, "/download"), data.filename);
+            const link = data.url.replace(/\/?$/, "/download");
+            if (this.textTargetValue) {
+                this._insertText(link, data.filename);
+            } else {
+                this._insertLink(link, data.filename);
+            }
         } catch (e) {
             button.disabled = false;
             this._toast(this.i18nValue.failed);
@@ -152,6 +160,29 @@ export default class extends Controller {
     _editor() {
         const compose = this.element.closest('[data-controller~="compose--compose"]');
         return compose?.querySelector('[data-compose--compose-target="body"][contenteditable="true"]') || null;
+    }
+
+    /** Plain-text fields (the event description): "name: link" at the caret. */
+    _insertText(url, filename) {
+        const field = document.getElementById(this.textTargetValue);
+        if (!field) {
+            navigator.clipboard?.writeText(url);
+            this._toast(this.i18nValue.copied);
+            return;
+        }
+
+        const insert = `${filename}: ${url}`;
+        const start = field.selectionStart ?? field.value.length;
+        const end = field.selectionEnd ?? field.value.length;
+        const before = field.value.slice(0, start);
+        const after = field.value.slice(end);
+        const lead = before && !before.endsWith("\n") ? "\n" : "";
+
+        field.value = before + lead + insert + after;
+        const caret = (before + lead + insert).length;
+        field.focus();
+        field.setSelectionRange(caret, caret);
+        field.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
     _editorRange() {

@@ -1295,6 +1295,7 @@ calendar:
             Dieser Termin steht nur in Kalendern, die keine Änderungen annehmen —
             er bleibt, wo er war.
     event:
+        add_from_drive: 'Aus Drive einfügen'
         alert:
             action:
                 display: Benachrichtigung

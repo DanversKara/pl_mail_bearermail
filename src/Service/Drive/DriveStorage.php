@@ -46,6 +46,25 @@ final readonly class DriveStorage
         $uploaded->move($dir, basename($path));
     }
 
+    /**
+     * The same as store(), for bytes that arrived as a request body (the
+     * Android app uploads raw, like JMAP's own upload endpoint) rather than
+     * as a multipart form field.
+     */
+    public function storeContent(string $content, DriveFile $file): void
+    {
+        $path = $this->path($file);
+        $dir = \dirname($path);
+
+        if (false === is_dir($dir) && false === @mkdir($dir, 0750, true) && false === is_dir($dir)) {
+            throw new \RuntimeException(sprintf('Could not create %s', $dir));
+        }
+
+        if (false === file_put_contents($path, $content)) {
+            throw new \RuntimeException(sprintf('Could not write %s', $path));
+        }
+    }
+
     public function exists(DriveFile $file): bool
     {
         return is_file($this->path($file));

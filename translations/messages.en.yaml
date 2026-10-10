@@ -1346,6 +1346,7 @@ calendar:
         no_copies: 'Nothing was chosen, so nothing was changed. Tick at least one calendar.'
         read_only: 'This event is only on calendars that do not accept changes, so it was left where it was.'
     event:
+        add_from_drive: 'Add from Drive'
         alert:
             action:
                 display: Notification

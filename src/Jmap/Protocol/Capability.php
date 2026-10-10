@@ -93,6 +93,13 @@ final class Capability
     public const string TEMPLATES = 'urn:plmail:params:jmap:templates';
 
     /**
+     * Bearer Mail edition: the user's Drive, over plain REST beside JMAP
+     * (App\Controller\Drive\DriveApiController). Its presence tells a client
+     * the server has Drive; `apiUrl` is where it lives.
+     */
+    public const string DRIVE = 'urn:bearermail:params:drive';
+
+    /**
      * Capabilities a client is currently allowed to declare in "using".
      * Grow this list as new object types come online.
      *

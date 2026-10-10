@@ -1,6 +1,6 @@
 {
-    "name": "plMail",
-    "short_name": "plMail",
+    "name": "BearerMail",
+    "short_name": "BearerMail",
     "description": "Your mail, self-hosted.",
     "start_url": "/mail/inbox",
     "scope": "/",

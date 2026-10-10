@@ -145,6 +145,10 @@ final class SessionBuilder
                 Capability::SYNC => new \stdClass(),
                 Capability::CONTACTS => $this->contactsCapabilities(),
                 Capability::TEMPLATES => $this->templatesCapabilities(),
+                Capability::DRIVE => [
+                    'apiUrl'        => $base.'/jmap/drive',
+                    'maxSizeUpload' => 50_000_000,
+                ],
             ],
             'accounts' => $accountsValue,
             'primaryAccounts' => $primaryAccountsValue,
