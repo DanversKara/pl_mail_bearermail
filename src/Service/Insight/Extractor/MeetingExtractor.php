@@ -107,7 +107,7 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
         return [new InsightDraft(
             kind: InsightKind::Meeting,
             title: $title,
-            dedupeKey: 'meeting|' . sha1(mb_strtolower($title) . '|' . $start . '|' . mb_strtolower((string) $plan['location'])),
+            dedupeKey: 'meeting|' . sha1(mb_strtolower($title) . '|' . $start),
             payload: [
                 'start'       => $start,
                 'hasTime'     => $plan['hasTime'],
@@ -131,7 +131,10 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
 
         $time     = self::findTime($flat);
         $date     = self::findDate($flat, $received);
-        $location = self::findAddress($flat);
+        // Addresses are often wrapped onto two lines by the sender's mail app
+        // ("218 All America City\nHwy, Lindsay, CA"), so they are read with
+        // line breaks flattened.
+        $location = self::findAddress(preg_replace('~\s*\n\s*~u', ' ', $flat) ?? $flat);
         $hasPlan  = self::mentionsPlan($lower);
 
         // A time or date alone is everywhere ("sale ends tonight at 10pm"):
@@ -284,7 +287,7 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
 
         if (1 === preg_match('~\b(?:address|location|where|place|venue|adresse|ort)\s*[:\-]\s*([^\n]{4,160})~iu', $text, $m)) {
             // Stop at the next labelled field on the same line ("… Phone: …").
-            $line = preg_split('~\s+(?:phone|tel|telephone|time|when|date|at\s+\d)\b\s*[:\-]?~i', $m[1])[0];
+            $line = preg_split('~\s+(?:phone|tel|telephone|time|when|date|at\s+\d)\b\s*[:\-]?|[.!?](?:\s|$)~i', $m[1])[0];
 
             return '' === trim($line) ? null : self::tidy($line);
         }
