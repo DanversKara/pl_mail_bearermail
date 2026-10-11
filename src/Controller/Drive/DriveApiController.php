@@ -11,6 +11,7 @@ use App\Entity\User\User;
 use App\Repository\Drive\DriveFileRepository;
 use App\Repository\Drive\DriveFolderRepository;
 use App\Repository\Drive\DriveShareRepository;
+use App\Service\Drive\DrivePolicy;
 use App\Service\Drive\DriveStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -46,16 +47,14 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 #[Route('/jmap/drive', name: 'jmap_drive_')]
 final class DriveApiController extends AbstractController
 {
-    private const int MAX_UPLOAD = 50_000_000;
-
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly DriveFileRepository $files,
         private readonly DriveFolderRepository $folders,
         private readonly DriveShareRepository $shares,
         private readonly DriveStorage $storage,
-        #[Autowire('%env(default:drive.quota_mb_default:int:DRIVE_QUOTA_MB)%')]
-        private readonly int $quotaMb,
+        // BearerMail: quotas, file-size limit and "Drive off" per user.
+        private readonly DrivePolicy $policy,
     ) {}
 
     // ── Browsing ─────────────────────────────────────────────────────────────
@@ -64,6 +63,10 @@ final class DriveApiController extends AbstractController
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $folder = null;
         $folderId = $request->query->getInt('folder');
         if ($folderId > 0) {
@@ -86,7 +89,7 @@ final class DriveApiController extends AbstractController
                 $this->files->findForUser($user, $folder),
             ),
             'usedBytes'   => $this->files->totalSizeForUser($user),
-            'quotaBytes'  => $this->quotaMb > 0 ? $this->quotaMb * 1024 * 1024 : null,
+            'quotaBytes'  => $this->policy->quotaBytes($user),
         ]);
     }
 
@@ -94,6 +97,10 @@ final class DriveApiController extends AbstractController
     #[Route('/all', name: 'all', methods: ['GET'])]
     public function all(#[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $shareCounts = $this->shares->activeCountsForUser($user);
 
         return new JsonResponse([
@@ -109,6 +116,10 @@ final class DriveApiController extends AbstractController
     #[Route('/upload', name: 'upload', methods: ['POST'])]
     public function upload(Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $name = trim((string) $request->query->get('name', ''));
         if ('' === $name || 1 === preg_match('/[\x00-\x1f]/', $name)) {
             return $this->problem('invalidArguments', 'Give the file a name (?name=…).', Response::HTTP_BAD_REQUEST);
@@ -123,16 +134,46 @@ final class DriveApiController extends AbstractController
             }
         }
 
-        $content = $request->getContent();
-        $size = \strlen($content);
+        $max = $this->policy->maxFileBytes();
+        $declared = $request->headers->has('Content-Length') ? (int) $request->headers->get('Content-Length') : null;
+        if (null !== $declared && $declared > $max) {
+            return $this->problem('tooLarge', sprintf('Files are limited to %d MB.', intdiv($max, 1024 * 1024)), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+        }
+
+        // Streamed to a temporary file rather than held in memory, so a large
+        // upload from the phone costs disk, not RAM.
+        $temp = tempnam(sys_get_temp_dir(), 'drive');
+        $in = $request->getContent(true);
+        $out = false === $temp ? false : fopen($temp, 'wb');
+        if (false === $out || !\is_resource($in)) {
+            return $this->problem('serverFail', 'The upload could not be read.', Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+        $size = 0;
+        while (!feof($in)) {
+            $chunk = fread($in, 1024 * 1024);
+            if (false === $chunk) {
+                break;
+            }
+            $size += \strlen($chunk);
+            if ($size > $max) {
+                fclose($out);
+                @unlink($temp);
+
+                return $this->problem('tooLarge', sprintf('Files are limited to %d MB.', intdiv($max, 1024 * 1024)), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
+            }
+            fwrite($out, $chunk);
+        }
+        fclose($out);
 
         if (0 === $size) {
+            @unlink($temp);
+
             return $this->problem('invalidArguments', 'The request body is empty.', Response::HTTP_BAD_REQUEST);
         }
-        if ($size > self::MAX_UPLOAD) {
-            return $this->problem('tooLarge', sprintf('Uploads are limited to %d bytes.', self::MAX_UPLOAD), Response::HTTP_REQUEST_ENTITY_TOO_LARGE);
-        }
-        if ($this->quotaMb > 0 && $this->files->totalSizeForUser($user) + $size > $this->quotaMb * 1024 * 1024) {
+        $quota = $this->policy->quotaBytes($user);
+        if (null !== $quota && $this->files->totalSizeForUser($user) + $size > $quota) {
+            @unlink($temp);
+
             return $this->problem('overQuota', 'Not enough space left in your Drive for that file.', Response::HTTP_INSUFFICIENT_STORAGE);
         }
 
@@ -146,8 +187,9 @@ final class DriveApiController extends AbstractController
         $this->em->flush();
 
         try {
-            $this->storage->storeContent($content, $file);
+            $this->storage->storeFile($temp, $file);
         } catch (\Throwable) {
+            @unlink($temp);
             $this->em->remove($file);
             $this->em->flush();
 
@@ -160,6 +202,10 @@ final class DriveApiController extends AbstractController
     #[Route('/file/{id<\d+>}/download', name: 'download', methods: ['GET'])]
     public function download(int $id, #[CurrentUser] User $user): Response
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $file = $this->files->findOneForUser($user, $id);
         if (null === $file || false === $this->storage->exists($file)) {
             return $this->problem('notFound', 'No such file.', Response::HTTP_NOT_FOUND);
@@ -182,6 +228,10 @@ final class DriveApiController extends AbstractController
     #[Route('/folder', name: 'folder_create', methods: ['POST'])]
     public function folderCreate(Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $body = $this->body($request);
         $name = trim((string) ($body['name'] ?? ''));
         if ('' === $name) {
@@ -206,6 +256,10 @@ final class DriveApiController extends AbstractController
     #[Route('/folder/{id<\d+>}', name: 'folder_rename', methods: ['PATCH'])]
     public function folderRename(int $id, Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $folder = $this->folders->findOneForUser($user, $id);
         if (null === $folder) {
             return $this->problem('notFound', 'No such folder.', Response::HTTP_NOT_FOUND);
@@ -246,6 +300,10 @@ final class DriveApiController extends AbstractController
     #[Route('/file/{id<\d+>}', name: 'file_rename', methods: ['PATCH'])]
     public function fileRename(int $id, Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $file = $this->files->findOneForUser($user, $id);
         if (null === $file) {
             return $this->problem('notFound', 'No such file.', Response::HTTP_NOT_FOUND);
@@ -293,6 +351,10 @@ final class DriveApiController extends AbstractController
     #[Route('/file/{id<\d+>}/shares', name: 'shares', methods: ['GET'])]
     public function shares(int $id, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $file = $this->files->findOneForUser($user, $id);
         if (null === $file) {
             return $this->problem('notFound', 'No such file.', Response::HTTP_NOT_FOUND);
@@ -311,6 +373,10 @@ final class DriveApiController extends AbstractController
     #[Route('/file/{id<\d+>}/shares', name: 'share_create', methods: ['POST'])]
     public function shareCreate(int $id, Request $request, #[CurrentUser] User $user): JsonResponse
     {
+        if ($this->policy->isDisabled($user)) {
+            return $this->problem('driveDisabled', 'Drive has been switched off for your account. Contact your administrator.', Response::HTTP_FORBIDDEN);
+        }
+
         $file = $this->files->findOneForUser($user, $id);
         if (null === $file) {
             return $this->problem('notFound', 'No such file.', Response::HTTP_NOT_FOUND);

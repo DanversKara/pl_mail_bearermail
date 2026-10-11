@@ -47,5 +47,11 @@ Variables: share, file, error (translation key|null), appearance
                 <i class="fa-solid fa-download text-xs" aria-hidden="true"></i>{{ 'drive.download'|trans }}
             </a>
         {% endif %}
+
+        {# BearerMail: a recipient can flag a link to the admin. #}
+        <a href="{{ path('app_share_report', {token: share.token}) }}"
+           class="mt-5 inline-flex items-center gap-1.5 text-xs text-ink-faint hover:text-danger hover:underline">
+            <i class="fa-regular fa-flag text-[10px]" aria-hidden="true"></i>{{ 'drive.report.link'|trans }}
+        </a>
     </div>
 {% endblock %}

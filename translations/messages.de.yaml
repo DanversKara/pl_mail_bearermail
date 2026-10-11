@@ -55,6 +55,35 @@ account:
     updated: Konto aktualisiert
 
 admin:
+    drive:
+        save: Speichern
+        saved:
+            settings: Drive-Limits gespeichert.
+            user: Gespeichert.
+            report: Meldung bearbeitet.
+        limits:
+            heading: Drive-Limits
+            default_quota: Speicher pro Person (MB)
+            default_quota_help: Für alle ohne eigenes Limit. 0 = kein Limit.
+            max_file: Größte einzelne Datei (MB)
+            max_file_help: 'Größere Uploads werden abgelehnt. Der Server selbst nimmt bis zu %php% an.'
+        reports:
+            heading: Gemeldete Links
+            none: Niemand hat einen Link gemeldet.
+            owner: Eigentümer
+            reporter: Gemeldet von
+            open: Link öffnen
+            revoke: Link widerrufen
+            disable: Drive des Eigentümers abschalten
+            dismiss: Verwerfen
+        people:
+            heading: Speicher pro Person
+            help: Limit leer lassen für den Standard. Drive abschalten stoppt auch alle geteilten Links dieser Person.
+            of: von
+            files: '{1}1 Datei|]1,Inf[%count% Dateien'
+            quota: Eigenes Limit (MB)
+            default: Standard
+            disabled: Drive aus
     accounts:
         account: 'Konto'
         heading: 'Konten'
@@ -714,6 +743,7 @@ admin:
         page: 'Seite'
         refresh: 'Aktualisieren'
     nav:
+        drive: Drive
         address: Adresse
         ai: KI
         backup: Sicherung
@@ -1101,6 +1131,11 @@ admin:
         delete_confirm: '%name% entfernen? Die Mails bleiben in der Datenbank, eine Anmeldung ist aber nicht mehr möglich.'
         edit: Benutzer bearbeiten
         field:
+            drive_quota: Drive-Speicher (MB)
+            drive_quota_help: Leer = Standard aus Admin → Drive. 0 = kein Limit.
+            drive_quota_default: Standard
+            drive_disabled: Drive abschalten
+            drive_disabled_help: Sperrt Uploads und stoppt alle Links, die diese Person geteilt hat.
             email: E-Mail-Adresse
             is_admin: Administrator
             is_admin_help: 'Erreicht diesen Bereich, verwaltet Benutzer und konfiguriert Anbieter. Kann keine fremden Mails lesen.'
@@ -1663,6 +1698,9 @@ clipboard:
     copy_failed: Kopieren fehlgeschlagen
 
 compose:
+    too_large_drive:
+        note: 'Zu groß als Anhang, daher liegt es in meinem Drive. Hier herunterladen:'
+        status: Zu groß als Anhang – wird in dein Drive hochgeladen…
     event_picker:
         title: Termin einfügen
         search: Termine durchsuchen

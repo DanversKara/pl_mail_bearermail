@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
+use App\Entity\User\User;
+use App\Service\Drive\DrivePolicy;
+use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -14,6 +17,12 @@ use Twig\TwigFunction;
  */
 final class DriveExtension extends AbstractExtension
 {
+    public function __construct(
+        private readonly ?DrivePolicy $policy = null,
+        private readonly ?Security $security = null,
+    ) {
+    }
+
     private const array KINDS = [
         'image'   => ['fa-file-image', 'text-sky-500', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic', 'bmp', 'avif']],
         'pdf'     => ['fa-file-pdf', 'text-red-500', ['pdf']],
@@ -34,7 +43,18 @@ final class DriveExtension extends AbstractExtension
 
     public function getFunctions(): array
     {
-        return [new TwigFunction('drive_icon', $this->icon(...))];
+        return [
+            new TwigFunction('drive_icon', $this->icon(...)),
+            // BearerMail: false for a user whose Drive an admin switched off.
+            new TwigFunction('drive_enabled', $this->enabled(...)),
+        ];
+    }
+
+    public function enabled(): bool
+    {
+        $user = $this->security?->getUser();
+
+        return !($user instanceof User && true === $this->policy?->isDisabled($user));
     }
 
     public function size(int|float|null $bytes): string

@@ -48,6 +48,15 @@ download without an account. **Insert from Drive** in the composer drops a share
 message, and **Add from Drive** in a calendar event puts a link in its description. Files have
 their own Docker volume and are included in `app:backup`.
 
+- **Big files:** Drive takes files up to 2 GB (the admin can set a lower limit). A file too big to
+  attach to an email (over 25 MB) is uploaded to Drive automatically and linked in the message
+  instead, with a note saying why.
+- **Admin → Drive:** the default storage per person, the largest file, storage used by each person
+  with their own limit, and **reported links**. Anyone sent a link can press **Report this link**;
+  the admin can revoke the link, switch off the owner's Drive, or dismiss the report.
+- **Admin → Users → edit:** each person's own Drive limit, or switch Drive off for someone abusing
+  it. That blocks uploads and stops every link they have shared.
+
 The Drive also has a small API for the phone app (`/jmap/drive`, announced in the JMAP session as
 `urn:bearermail:params:drive`), using the same app password as mail.
 

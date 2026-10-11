@@ -165,6 +165,12 @@
                                         <i class="fa-solid fa-envelope-circle-check w-4 {{ section == 'mail-server' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
                                         {{ 'admin.nav.mail_server'|trans }}
                                     </a>
+                                    {# BearerMail: Drive limits, per-user quotas, reported links. #}
+                                    <a href="{{ path('app_admin_dashboard', { section: 'drive' }) }}"
+                                       class="{{ section == 'drive' ? navActive : navInactive }}">
+                                        <i class="fa-solid fa-hard-drive w-4 {{ section == 'drive' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
+                                        {{ 'admin.nav.drive'|trans }}
+                                    </a>
                                     <a href="{{ path('app_admin_dashboard', { section: 'security' }) }}"
                                        class="{{ section == 'security' ? navActive : navInactive }}">
                                         <i class="fa-solid fa-shield-halved w-4 {{ section == 'security' ? 'text-ink-faint' : '' }}" aria-hidden="true"></i>
@@ -370,6 +376,17 @@
                                         <turbo-frame id="admin-mail-server"
                                                      class="block space-y-3"
                                                      src="{{ path('app_admin_mail_server_settings') }}"
+                                                     loading="lazy">
+                                            <div class="py-10 text-center text-sm text-ink-faint">
+                                                <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}
+                                            </div>
+                                        </turbo-frame>
+
+                                    {% elseif section == 'drive' %}
+
+                                        <turbo-frame id="admin-drive"
+                                                     class="block space-y-3"
+                                                     src="{{ path('app_admin_drive_index') }}"
                                                      loading="lazy">
                                             <div class="py-10 text-center text-sm text-ink-faint">
                                                 <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}

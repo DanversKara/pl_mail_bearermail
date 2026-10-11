@@ -74,6 +74,12 @@ framework:
             limit: 10
             interval: '15 minutes'
 
+        # BearerMail: "Report this link" on public Drive share pages.
+        drive_share_report:
+            policy: 'fixed_window'
+            limit: 5
+            interval: '1 hour'
+
         booking_attempt:
             policy: 'fixed_window'
             limit: 6

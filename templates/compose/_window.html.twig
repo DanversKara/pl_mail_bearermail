@@ -106,6 +106,13 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
          data-compose--compose-collapse-forward-quote-value="{{ app.user and false == app.user.getSetting(constant('App\\Entity\\User\\User::SETTING_COMPOSE_FORWARD_QUOTE_COLLAPSED'), true) ? 'false' : 'true' }}"
          data-compose--compose-min-chars-value="{{ min_chars|default(5) }}"
          data-compose--compose-max-attachment-bytes-value="{{ constant('App\\Controller\\Mail\\ComposeAttachmentController::MAX_ATTACHMENT_BYTES') }}"
+         {# BearerMail: files over the attachment limit go to Drive and are linked instead. #}
+         {% if drive_enabled() %}
+         data-bearermail-drive-upload-url="{{ path('app_drive_upload') }}"
+         data-bearermail-drive-link-url="{{ path('app_drive_link_json', {id: 0}) }}"
+         data-bearermail-too-large-note="{{ 'compose.too_large_drive.note'|trans }}"
+         data-bearermail-too-large-status="{{ 'compose.too_large_drive.status'|trans }}"
+         {% endif %}
          {% if thread is not null %}data-compose--compose-thread-value="{{ thread }}"{% endif %}
         {# The schedule URL rides along with the other two because all three go
            stale together. A window opens with no id, the first autosave mints

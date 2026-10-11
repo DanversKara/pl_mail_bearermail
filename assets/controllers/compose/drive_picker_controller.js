@@ -145,7 +145,9 @@ export default class extends Controller {
             if (!response.ok) throw new Error(String(response.status));
             const data = await response.json();
             close();
-            const link = data.url.replace(/\/?$/, "/download");
+            // BearerMail: the landing page, not /download, so the recipient
+            // sees the file name and size and can report the link.
+            const link = data.url;
             if (this.textTargetValue) {
                 this._insertText(link, data.filename);
             } else {

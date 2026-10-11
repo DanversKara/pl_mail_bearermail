@@ -12,6 +12,7 @@ use App\Entity\User\User;
 use App\Repository\Drive\DriveFileRepository;
 use App\Repository\Drive\DriveFolderRepository;
 use App\Repository\Drive\DriveShareRepository;
+use App\Service\Drive\DrivePolicy;
 use App\Service\Drive\DriveStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -52,8 +53,8 @@ final class DriveController extends AbstractController
         private readonly DriveShareRepository $shares,
         private readonly DriveStorage $storage,
         private readonly TranslatorInterface $translator,
-        #[Autowire('%env(default:drive.quota_mb_default:int:DRIVE_QUOTA_MB)%')]
-        private readonly int $quotaMb,
+        // BearerMail: quotas, file-size limit and "Drive off" per user.
+        private readonly DrivePolicy $policy,
     ) {}
 
     // ── Browsing ─────────────────────────────────────────────────────────────
@@ -74,15 +75,19 @@ final class DriveController extends AbstractController
     {
         $user = $this->user();
 
+        if ($this->policy->isDisabled($user)) {
+            return $this->render('drive/disabled.html.twig', [], new Response(status: Response::HTTP_FORBIDDEN));
+        }
+
         return $this->render('drive/list.html.twig', [
             'files'         => $this->files->findForUser($user, $folder),
             'folders'       => $this->folders->findForUser($user, $folder),
             'currentFolder' => $folder,
             'breadcrumbs'   => null !== $folder ? $this->folders->breadcrumbs($folder) : [],
             'usedBytes'     => $this->files->totalSizeForUser($user),
-            'quotaBytes'    => $this->quotaMb > 0 ? $this->quotaMb * 1024 * 1024 : null,
+            'quotaBytes'    => $this->policy->quotaBytes($user),
             'shareCounts'   => $this->shares->activeCountsForUser($user),
-            'maxUpload'     => $this->maxUploadBytes(),
+            'maxUpload'     => $this->policy->maxFileBytes(),
         ]);
     }
 
@@ -115,10 +120,19 @@ final class DriveController extends AbstractController
 
         $error = null;
         $stored = 0;
+        $storedFiles = [];
+
+        if ($this->policy->isDisabled($user)) {
+            $uploads = [];
+            $error = 'drive.disabled_notice';
+        }
+
+        $quota = $this->policy->quotaBytes($user);
+        $maxFile = $this->policy->maxFileBytes();
 
         // An empty $_FILES on a POST that clearly carried a body means PHP
         // threw the whole request away for exceeding post_max_size.
-        if ([] === $uploads) {
+        if ([] === $uploads && null === $error) {
             $error = $request->server->getInt('CONTENT_LENGTH') > 0 ? 'drive.upload_too_large' : 'drive.upload_invalid';
         }
 
@@ -133,7 +147,11 @@ final class DriveController extends AbstractController
             }
 
             $size = (int) $uploaded->getSize();
-            if ($this->quotaMb > 0 && $used + $size > $this->quotaMb * 1024 * 1024) {
+            if ($size > $maxFile) {
+                $error = 'drive.upload_too_large';
+                continue;
+            }
+            if (null !== $quota && $used + $size > $quota) {
                 $error = 'drive.quota_exceeded';
                 break;
             }
@@ -161,11 +179,12 @@ final class DriveController extends AbstractController
 
             $used += $size;
             ++$stored;
+            $storedFiles[] = ['id' => $file->id, 'filename' => $file->filename, 'size' => $file->sizeBytes];
         }
 
         if ($wantsJson) {
             return $this->json(
-                ['stored' => $stored, 'error' => null !== $error ? $this->trans($error) : null],
+                ['stored' => $stored, 'files' => $storedFiles, 'error' => null !== $error ? $this->trans($error) : null],
                 null !== $error && 0 === $stored ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK,
             );
         }
@@ -357,6 +376,10 @@ final class DriveController extends AbstractController
         if ($request->isMethod('POST')) {
             $this->assertCsrf($request, 'drive_share_' . $file->id);
 
+            if ($this->policy->isDisabled($this->user())) {
+                return $this->renderShareDialog($file, null, 'drive.disabled_notice');
+            }
+
             $expiresAt = null;
             $expires = (string) $request->request->get('expires', '');
             if ('' !== $expires) {
@@ -436,6 +459,9 @@ final class DriveController extends AbstractController
         $this->assertCsrf($request, 'ajax');
 
         $file = $this->ownFile($id);
+        if ($this->policy->isDisabled($this->user())) {
+            return $this->json(['error' => $this->trans('drive.disabled_notice')], Response::HTTP_FORBIDDEN);
+        }
         $share = DriveShare::create($file, null, null);
         $this->em->persist($share);
         $this->em->flush();

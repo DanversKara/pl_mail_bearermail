@@ -65,6 +65,23 @@ final readonly class DriveStorage
         }
     }
 
+    /** Moves a finished temporary file into place (BearerMail: streamed API uploads). */
+    public function storeFile(string $tempPath, DriveFile $file): void
+    {
+        $path = $this->path($file);
+        $dir = \dirname($path);
+        if (false === is_dir($dir) && false === @mkdir($dir, 0750, true) && false === is_dir($dir)) {
+            throw new \RuntimeException(sprintf('Could not create %s', $dir));
+        }
+        if (false === @rename($tempPath, $path)) {
+            if (false === @copy($tempPath, $path)) {
+                throw new \RuntimeException(sprintf('Could not write %s', $path));
+            }
+            @unlink($tempPath);
+        }
+        @chmod($path, 0640);
+    }
+
     public function exists(DriveFile $file): bool
     {
         return is_file($this->path($file));

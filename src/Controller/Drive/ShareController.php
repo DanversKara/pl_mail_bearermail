@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Drive;
 
 use App\Entity\Drive\DriveShare;
+use App\Entity\Drive\DriveShareReport;
 use App\Repository\Drive\DriveShareRepository;
 use App\Service\Appearance\PublicAppearanceResolver;
+use App\Service\Drive\DrivePolicy;
 use App\Service\Drive\DriveStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,6 +41,9 @@ final class ShareController extends AbstractController
         private readonly PublicAppearanceResolver $appearance,
         // Bound by name to the `drive_share_password` limiter.
         private readonly RateLimiterFactoryInterface $driveSharePasswordLimiter,
+        // BearerMail: reports from recipients, and owners whose Drive is off.
+        private readonly RateLimiterFactoryInterface $driveShareReportLimiter,
+        private readonly DrivePolicy $policy,
     ) {}
 
     #[Route('/s/{token<[a-f0-9]{64}>}', name: 'app_share_access', methods: ['GET', 'POST'])]
@@ -81,11 +86,56 @@ final class ShareController extends AbstractController
         return $this->send($share);
     }
 
+    /**
+     * BearerMail: anyone who was sent the link can flag it to the admin.
+     * Rate-limited per address; a hidden field catches simple bots.
+     */
+    #[Route('/s/{token<[a-f0-9]{64}>}/report', name: 'app_share_report', methods: ['GET', 'POST'])]
+    public function report(Request $request, string $token): Response
+    {
+        $share = $this->liveShare($token);
+        $sent = false;
+        $error = null;
+
+        if ($request->isMethod('POST')) {
+            if ('' !== (string) $request->request->get('website', '')) {
+                $sent = true; // a bot filled the hidden field; pretend it worked
+            } elseif (false === $this->driveShareReportLimiter->create((string) $request->getClientIp())->consume()->isAccepted()) {
+                $error = 'drive.report.too_many';
+            } else {
+                $email = trim((string) $request->request->get('email', ''));
+                if ('' !== $email && false === filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $email = '';
+                }
+                $this->em->persist(DriveShareReport::file(
+                    $share,
+                    (string) $request->request->get('reason', 'other'),
+                    (string) $request->request->get('details', ''),
+                    $email,
+                    $request->getClientIp(),
+                ));
+                $this->em->flush();
+                $sent = true;
+            }
+        }
+
+        return $this->render('drive/share_report.html.twig', [
+            'share'      => $share,
+            'file'       => $share->file,
+            'sent'       => $sent,
+            'error'      => $error,
+            'reasons'    => DriveShareReport::REASONS,
+            'appearance' => $this->appearance->forOwner($share->file->usr),
+        ], new Response(status: null !== $error ? Response::HTTP_TOO_MANY_REQUESTS : Response::HTTP_OK));
+    }
+
     private function liveShare(string $token): DriveShare
     {
         $share = $this->shares->findByToken($token);
 
-        if (null === $share || $share->isExpired() || false === $this->storage->exists($share->file)) {
+        // BearerMail: a link whose owner has had Drive switched off is dead too.
+        if (null === $share || $share->isExpired() || false === $this->storage->exists($share->file)
+            || $this->policy->isDisabled($share->file->usr)) {
             throw $this->createNotFoundException();
         }
 
