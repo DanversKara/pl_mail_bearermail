@@ -49,6 +49,25 @@ final class DriveShareReportRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Whether this address already reported this link since $since (repeat clicks count once). */
+    public function hasRecent(int $shareId, ?string $ip, \DateTimeImmutable $since): bool
+    {
+        if (null === $ip) {
+            return false;
+        }
+
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('IDENTITY(r.share) = :share')
+            ->andWhere('r.reporterIp = :ip')
+            ->andWhere('r.createdAt >= :since')
+            ->setParameter('share', $shareId)
+            ->setParameter('ip', $ip)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
+    }
+
     public function countOpen(): int
     {
         return (int) $this->createQueryBuilder('r')

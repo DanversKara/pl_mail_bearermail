@@ -4408,7 +4408,7 @@ drive:
     report:
         title: Report this link
         link: Report this link
-        thanks: Thank you. The administrator of this server will look at it.
+        thanks: Thank you — we have received your report and will investigate it quickly. If you left your email, a confirmation is on its way.
         reason: What is wrong with it?
         details: Anything else they should know? (optional)
         email: Your email, if you would like a reply (optional)

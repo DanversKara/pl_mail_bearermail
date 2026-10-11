@@ -6,9 +6,11 @@ namespace App\Controller\Drive;
 
 use App\Entity\Drive\DriveShare;
 use App\Entity\Drive\DriveShareReport;
+use App\Repository\Drive\DriveShareReportRepository;
 use App\Repository\Drive\DriveShareRepository;
 use App\Service\Appearance\PublicAppearanceResolver;
 use App\Service\Drive\DrivePolicy;
+use App\Service\Drive\DriveReportNotifier;
 use App\Service\Drive\DriveStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -44,6 +46,8 @@ final class ShareController extends AbstractController
         // BearerMail: reports from recipients, and owners whose Drive is off.
         private readonly RateLimiterFactoryInterface $driveShareReportLimiter,
         private readonly DrivePolicy $policy,
+        private readonly DriveShareReportRepository $reports,
+        private readonly DriveReportNotifier $notifier,
     ) {}
 
     #[Route('/s/{token<[a-f0-9]{64}>}', name: 'app_share_access', methods: ['GET', 'POST'])]
@@ -94,35 +98,50 @@ final class ShareController extends AbstractController
     public function report(Request $request, string $token): Response
     {
         $share = $this->liveShare($token);
-        $sent = false;
         $error = null;
 
         if ($request->isMethod('POST')) {
+            $ip = $request->getClientIp();
+
             if ('' !== (string) $request->request->get('website', '')) {
-                $sent = true; // a bot filled the hidden field; pretend it worked
-            } elseif (false === $this->driveShareReportLimiter->create((string) $request->getClientIp())->consume()->isAccepted()) {
+                // A bot filled the hidden field; tell it it worked.
+                return $this->redirectToRoute('app_share_report', ['token' => $token, 'sent' => 1], Response::HTTP_SEE_OTHER);
+            }
+
+            if ($this->reports->hasRecent((int) $share->id, $ip, new \DateTimeImmutable('-24 hours'))) {
+                // The same person pressing Send again: one report is enough.
+                return $this->redirectToRoute('app_share_report', ['token' => $token, 'sent' => 1], Response::HTTP_SEE_OTHER);
+            }
+
+            if (false === $this->driveShareReportLimiter->create((string) $ip)->consume()->isAccepted()) {
                 $error = 'drive.report.too_many';
             } else {
                 $email = trim((string) $request->request->get('email', ''));
                 if ('' !== $email && false === filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $email = '';
                 }
-                $this->em->persist(DriveShareReport::file(
+                $report = DriveShareReport::file(
                     $share,
                     (string) $request->request->get('reason', 'other'),
                     (string) $request->request->get('details', ''),
                     $email,
-                    $request->getClientIp(),
-                ));
+                    $ip,
+                );
+                $this->em->persist($report);
                 $this->em->flush();
-                $sent = true;
+
+                $this->notifier->reportFiled($report);
+
+                // Post/Redirect/Get: Turbo only follows a form POST that
+                // redirects, which is why the thank-you never showed before.
+                return $this->redirectToRoute('app_share_report', ['token' => $token, 'sent' => 1], Response::HTTP_SEE_OTHER);
             }
         }
 
         return $this->render('drive/share_report.html.twig', [
             'share'      => $share,
             'file'       => $share->file,
-            'sent'       => $sent,
+            'sent'       => $request->query->getBoolean('sent'),
             'error'      => $error,
             'reasons'    => DriveShareReport::REASONS,
             'appearance' => $this->appearance->forOwner($share->file->usr),
