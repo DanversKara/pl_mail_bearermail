@@ -1703,6 +1703,16 @@ clipboard:
     copy_failed: Copy failed
 
 compose:
+    event_picker:
+        title: Insert an event
+        search: Search your events
+        empty: Nothing coming up in the next four months.
+        hint: Attached as an .ics, so they can add it in one tap.
+        when: When
+        where: Where
+        failed: Could not load your events.
+        attach_failed: The details were added, but the calendar file could not be attached.
+    insert_event: Insert an event from your calendar
     drive_picker:
         title: Insert from Drive
         search: Search your files…
@@ -2157,6 +2167,10 @@ insights:
         expires: '{1}Expires in 1 minute|]1,Inf[Expires in %count% minutes'
     card:
         heading: Found in this conversation
+    meeting:
+        heading: Looks like a plan
+        add: Add to calendar
+        no_time: Time not stated
     kind:
         flight: Flight
         github-issue: Issue
@@ -2165,6 +2179,7 @@ insights:
         otp: Login code
         parcel: Parcel
         subscription: Subscription
+        meeting: Plan
         ticket: Ticket
     pane:
         dismiss: Dismiss
@@ -3551,6 +3566,8 @@ settings:
             github_hint: Issues and pull requests from GitHub notification mail.
             invoice: Invoices
             invoice_hint: Amounts owed and due dates, read from bills and payment reminders.
+            meeting: Plans
+            meeting_hint: '"Meet me at … at 10am" in an ordinary email, with a button to add it to your calendar.'
             otp: Login codes
             otp_hint: One-time codes from sign-in and verification mail, with the expiry the mail states.
             parcel: Parcels

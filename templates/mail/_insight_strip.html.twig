@@ -40,6 +40,9 @@ the Happening Soon rows give for their provenance link.
                 {# A login code gets its own larger card with a Copy button. #}
                 {% if insight.kind.value == 'otp' and insight.payload.code|default(null) is not empty %}
                     {% include 'insight/_otp_card.html.twig' with { insight: insight } only %}
+                {# BearerMail: a plan in plain words gets an "Add to calendar" card. #}
+                {% elseif insight.kind.value == 'meeting' %}
+                    {% include 'insight/_meeting_card.html.twig' with { insight: insight } only %}
                 {% else %}
                 {% set trackingUrl = insight.payload.trackingUrl|default(null) %}
                 {% set externalUrl = insight.payload.url|default(null) %}

@@ -214,6 +214,19 @@ final class CalendarController extends AbstractController
 
         $startsAt = $this->startFor($request->query->getString('start'), $zone);
 
+        // BearerMail: "Add to calendar" on a mail that mentions a meeting opens
+        // this editor pre-filled — title, place and a note — for the user to
+        // check and save. Nothing is created until they press Save.
+        $prefill = static fn (string $key, int $max): string => mb_substr(trim($request->query->getString($key)), 0, $max);
+        $endsAt  = $startsAt->modify('+1 hour');
+        $askedEnd = $request->query->getString('end');
+        if ('' !== $askedEnd) {
+            $parsedEnd = $this->time->parseDateTime($askedEnd, $zone);
+            if (null !== $parsedEnd && $parsedEnd > $startsAt) {
+                $endsAt = $parsedEnd;
+            }
+        }
+
         $this->ensureCalendars($user);
 
         return $this->render('calendar/_event_modal.html.twig', [
@@ -222,9 +235,11 @@ final class CalendarController extends AbstractController
             // where a new event would land — and ticking a second calendar
             // creates it on both at once, under one UID.
             'copies'       => $this->copies->optionsFor(null, $user),
-            'title'        => '',
+            'title'        => $prefill('title', 255),
+            'location'     => $prefill('location', 500),
+            'description'  => $prefill('description', 4000),
             'startsAt'     => $startsAt,
-            'endsAt'       => $startsAt->modify('+1 hour'),
+            'endsAt'       => $endsAt,
             'timeZone'     => $zone->getName(),
             // The clock the two datetime fields are printed on, stated rather
             // than left to Twig's default — see _event_modal. Here it is the

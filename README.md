@@ -60,9 +60,18 @@ The Drive also has a small API for the phone app (`/jmap/drive`, announced in th
     delete, and make share links with a password and expiry.
   - **Share to "BearerMail Drive"** from any app's share sheet uploads straight into Drive.
   - **Insert Drive link** in the composer and **Add from Drive** in the event editor.
+  - **Plans in emails** get an Add to calendar card, and **Insert event** in the composer's menu
+    adds one of your events (details plus an `.ics`).
   - **On-the-spot aliases:** "New alias" in the drawer or the composer's From menu. Type a name or
     make a random one in one tap. It's copied to the clipboard, receives mail within seconds, and
     can be sent from right away.
+
+### Calendar from mail, and mail from calendar
+- **Plans in ordinary emails** ("meet me at 218 Main St at 10am", "lunch Friday at 12:30") get a
+  card with **Add to calendar**, which opens the event editor already filled in: title, time,
+  place and a note. Nothing is added until you press Save. Turn it off under Settings → Insights.
+- **Insert an event** in the composer puts one of your upcoming events into the message and
+  attaches it as an `.ics`, so the recipient can add it to their own calendar in one tap.
 
 ### Security additions
 - Warning banners on mail that **fails sender authentication** (SPF/DKIM/DMARC), on mail with

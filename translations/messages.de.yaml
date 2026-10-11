@@ -1663,6 +1663,16 @@ clipboard:
     copy_failed: Kopieren fehlgeschlagen
 
 compose:
+    event_picker:
+        title: Termin einfügen
+        search: Termine durchsuchen
+        empty: In den nächsten vier Monaten steht nichts an.
+        hint: Als .ics angehängt – mit einem Tipp in den eigenen Kalender übernehmbar.
+        when: Wann
+        where: Wo
+        failed: Termine konnten nicht geladen werden.
+        attach_failed: Die Details wurden eingefügt, die Kalenderdatei konnte aber nicht angehängt werden.
+    insert_event: Termin aus dem Kalender einfügen
     # Wird im Dock gezeigt, wenn ein Klick auf „Schreiben“ kein Fenster
     # hervorbringt — ein 5xx, eine abgelaufene Sitzung, eine tote Verbindung.
     ai:
@@ -2069,6 +2079,10 @@ insights:
         expires: '{1}Läuft in 1 Minute ab|]1,Inf[Läuft in %count% Minuten ab'
     card:
         heading: In dieser Konversation gefunden
+    meeting:
+        heading: Sieht nach einer Verabredung aus
+        add: Zum Kalender hinzufügen
+        no_time: Keine Uhrzeit angegeben
     kind:
         flight: Flug
         github-issue: Issue
@@ -2077,6 +2091,7 @@ insights:
         otp: Anmeldecode
         parcel: Paket
         subscription: Abo
+        meeting: Verabredung
         ticket: Ticket
     pane:
         dismiss: Ausblenden
@@ -3465,6 +3480,8 @@ settings:
             github_hint: Issues und Pull Requests aus GitHub-Benachrichtigungen.
             invoice: Rechnungen
             invoice_hint: Beträge und Fälligkeiten aus Rechnungen und Zahlungserinnerungen.
+            meeting: Verabredungen
+            meeting_hint: '„Treffen wir uns um 10 Uhr …" in einer normalen Mail, mit einem Knopf zum Eintragen in den Kalender.'
             otp: Anmeldecodes
             otp_hint: Einmalcodes aus Anmelde- und Bestätigungsmails, mit der Gültigkeit, die die Mail nennt.
             parcel: Pakete

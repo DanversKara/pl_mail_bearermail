@@ -25,6 +25,8 @@ enum InsightKind: string
     case Otp = 'otp';
     case Invoice = 'invoice';
     case Subscription = 'subscription';
+    /** BearerMail: a plan written in plain words — see MeetingExtractor. */
+    case Meeting = 'meeting';
 
     /** Font Awesome icon, so a card or a chip can render without a match arm. */
     public function icon(): string
@@ -38,6 +40,7 @@ enum InsightKind: string
             self::Otp => 'fa-solid fa-key',
             self::Invoice => 'fa-solid fa-file-invoice',
             self::Subscription => 'fa-solid fa-arrows-rotate',
+            self::Meeting => 'fa-solid fa-calendar-plus',
         };
     }
 

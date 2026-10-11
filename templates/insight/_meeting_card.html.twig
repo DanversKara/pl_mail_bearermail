@@ -1,0 +1,48 @@
+{#
+insight/_meeting_card.html.twig — BearerMail: a plan found in plain words
+("meet me at 218 Main St at 10am"), with one button that opens the event
+editor already filled in. Nothing is added to the calendar until the user
+presses Save there. See MeetingExtractor.
+
+Accepts:
+  insight  MailInsight of kind meeting
+#}
+{% set p = insight.payload %}
+{% set when = insight.happensAt %}
+<div data-insight-card
+     data-insight-kind="meeting"
+     class="w-full max-w-sm rounded-pane border border-emerald-600/30 bg-emerald-600/5 p-4 shadow-sm">
+    <p class="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+        <i class="fa-solid fa-calendar-plus text-[13px]" aria-hidden="true"></i>
+        {{ 'insights.meeting.heading'|trans }}
+    </p>
+    <p class="mt-2 text-base font-semibold text-ink truncate" title="{{ insight.title }}">{{ insight.title }}</p>
+    <p class="mt-1 text-sm text-ink-soft">
+        <i class="fa-regular fa-clock w-4 text-center text-ink-faint" aria-hidden="true"></i>
+        {% if when is not null %}{{ when|intl_date('EEEEdMMMM') }}{% endif %}
+        {%- if p.hasTime|default(false) and when is not null %} · {{ when|date(clock.time) }}{% elseif not p.hasTime|default(false) %} · {{ 'insights.meeting.no_time'|trans }}{% endif %}
+    </p>
+    {% if p.location|default(null) is not empty %}
+        <p class="mt-1 text-sm text-ink-soft">
+            <i class="fa-solid fa-location-dot w-4 text-center text-ink-faint" aria-hidden="true"></i>
+            {{ p.location }}
+        </p>
+    {% endif %}
+    <button type="button"
+            data-controller="ui--modal"
+            data-action="click->ui--modal#open"
+            data-ui--modal-src-value="{{ path('app_calendar_event_new', {
+                start: p.start|default(''),
+                title: insight.title,
+                location: p.location|default(''),
+                description: p.description|default(''),
+            }) }}"
+            data-ui--modal-title-value="{{ 'calendar.event.new'|trans }}"
+            data-insight-add-to-calendar
+            class="mt-4 w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-emerald-600
+                   text-base font-semibold text-white hover:brightness-110 active:brightness-95 transition
+                   cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2">
+        <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
+        {{ 'insights.meeting.add'|trans }}
+    </button>
+</div>

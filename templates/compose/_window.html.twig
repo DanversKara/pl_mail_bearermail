@@ -881,6 +881,28 @@ Variables: form, message, ctx (an App\Domain\DTO\Mail\ComposeContext)
                             title="{{ 'compose.insert_calendar_link'|trans }}"
                             aria-label="{{ 'compose.insert_calendar_link'|trans }}"
                             class="{{ ic }}"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+                    {# BearerMail: one of your events, written into the message and
+                       attached as an .ics so the recipient can add it in one tap. #}
+                    <button type="button"
+                            data-controller="compose--event-picker"
+                            data-compose--event-picker-list-url-value="{{ path('app_calendar_share_upcoming') }}"
+                            data-compose--event-picker-ics-url-value="{{ path('app_calendar_share_ics', {id: 0}) }}"
+                            data-compose--event-picker-locale-value="{{ app.request.locale|replace({'_': '-'}) }}"
+                            data-compose--event-picker-i18n-value="{{ {
+                                title:        'compose.event_picker.title'|trans,
+                                search:       'compose.event_picker.search'|trans,
+                                empty:        'compose.event_picker.empty'|trans,
+                                hint:         'compose.event_picker.hint'|trans,
+                                when:         'compose.event_picker.when'|trans,
+                                where:        'compose.event_picker.where'|trans,
+                                cancel:       'form.cancel'|trans,
+                                failed:       'compose.event_picker.failed'|trans,
+                                attachFailed: 'compose.event_picker.attach_failed'|trans,
+                            }|json_encode }}"
+                            data-action="click->compose--event-picker#open"
+                            title="{{ 'compose.insert_event'|trans }}"
+                            aria-label="{{ 'compose.insert_event'|trans }}"
+                            class="{{ ic }}"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i></button>
                     {# No name: never submitted with the form, only read by the
                        controller and POSTed to the attachment endpoint. #}
                     <input type="file" multiple class="hidden"
