@@ -83,12 +83,13 @@ final readonly class InsightHarvester
      * BearerMail: extractors whose card belongs to ONE mail rather than to a
      * series. When such a mail is read again (app:backfill insights) and the
      * extractor now finds something different — a code it used to misread —
-     * the old card is a wrong answer still on screen, so it goes.
+     * the old card is a wrong answer still on screen, so it goes. Plans
+     * found in a mail are the same: one mail, one card.
      *
      * Not parcels, flights or invoices: their cards collect a series of mails,
      * and re-reading one mail of the series must not remove the card.
      */
-    private const array ONE_PER_MESSAGE = ['otp'];
+    private const array ONE_PER_MESSAGE = ['otp', 'meeting'];
 
     /**
      * @param list<string> $keep dedupe keys just written for this message
