@@ -119,8 +119,14 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * the whole point here is that there is no furniture left inside the frame
      * to accumulate. Something that pushes a role list over this is chrome
      * creeping back in, and finding out what is the exercise.
+     *
+     * SIXTEEN since BearerMail's inbox measures that: its flood banner
+     * (App\Service\Mail\FloodDetector, one grouped count) is drawn in the
+     * tabs region, which is inside the frame, so a navigation has to ask it
+     * as a visit does. It is the view-grows-a-grouped-query case above, on the
+     * inbox only; a per-row load would cost fifty, not one.
      */
-    private const int FRAME_BUDGET = 15;
+    private const int FRAME_BUDGET = 16;
 
     private KernelBrowser $client;
     private Connection $connection;
