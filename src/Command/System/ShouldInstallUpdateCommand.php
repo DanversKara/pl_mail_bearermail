@@ -84,7 +84,9 @@ final class ShouldInstallUpdateCommand extends Command
             return self::NOTHING;
         }
 
+        // The last line is what bin/auto-update reads the image tag from.
         $output->writeln(sprintf('Install %s from %s.', UpdateNotifier::label($status->latest), $channel->value));
+        $output->writeln(sprintf('tag=%s', (string) $channel->imageTag()));
 
         return Command::SUCCESS;
     }

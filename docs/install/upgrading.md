@@ -60,6 +60,13 @@ Pick deliberately. `latest` is right for most installs. `main` is for running wh
 on, and the changelog will not describe it yet. A pinned version is right when you would rather
 schedule upgrades than receive them.
 
+This fork's `compose.yaml` pulls `ghcr.io/danverskara/pl_mail_bearermail:${BEARERMAIL_TAG:-latest}`.
+Its releases are cut from **Actions → Release → Run workflow**, which needs no version typed: it
+tags the tip of `main` with the next one after the newest `v*` tag (patch by default, minor or
+major when chosen), makes a GitHub release titled with the version and the commit, and starts the
+image build that moves `latest`. A tag pushed by a workflow starts no other workflow, so the
+release workflow starts the build itself.
+
 **The failure mode is `pull_policy: always` on a moving tag.** `truenas.compose.yaml` sets it, so a
 redeploy from the NAS app page picks up whatever that tag now points at — which is convenient on
 `latest` and surprising on `main`.
@@ -158,7 +165,8 @@ bin/auto-update uninstall   # remove the schedule
 Each run asks the app (`app:updates:should-install`) and does nothing unless *Install
 automatically* is chosen and the channel has a newer build than the one running. Then it saves a
 database dump to `var/update-backups/` (the last five are kept), runs `git pull --ff-only`,
-`docker compose pull` and `docker compose up -d`, rebuilds the mail-server containers where they
+`docker compose pull` and `docker compose up -d` for the channel's image (`latest` for Releases,
+`main` for Main, passed as `BEARERMAIL_TAG`), rebuilds the mail-server containers where they
 run, and tells the app how it went (`app:updates:installed`). The page shows when the script last
 asked and how the last install ended, and until it has asked once, how to schedule it.
 

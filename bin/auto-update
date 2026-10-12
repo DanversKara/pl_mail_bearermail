@@ -16,7 +16,8 @@
 #
 #   1. a database dump to var/update-backups/ (the last 5 are kept),
 #   2. git pull, for changes to compose.yaml and the mail server,
-#   3. docker compose pull and up -d, the same commands as by hand,
+#   3. docker compose pull and up -d, the same commands as by hand, for the
+#      image of the channel chosen there (`latest` or `main`),
 #   4. a rebuild of the mail-server containers, when they are in use,
 #   5. telling the app how it went, which Admin → Updates shows.
 #
@@ -105,9 +106,13 @@ run() {
     fi
 
     # The app's answer, printed as it gives it. Any exit but 0 is "not now".
-    if ! console app:updates:should-install; then
-        exit 0
-    fi
+    # Its last line names the image tag of the channel chosen in Admin →
+    # Updates, which compose.yaml reads as BEARERMAIL_TAG: `latest` for
+    # Releases, `main` for Main.
+    answer=$(console app:updates:should-install) || { printf '%s\n' "$answer"; exit 0; }
+    printf '%s\n' "$answer" | grep -v '^tag='
+    BEARERMAIL_TAG=$(printf '%s\n' "$answer" | sed -n 's/^tag=//p' | tail -n 1)
+    export BEARERMAIL_TAG="${BEARERMAIL_TAG:-latest}"
 
     backup || fail 'the database backup before the update did not complete, so nothing was installed'
 

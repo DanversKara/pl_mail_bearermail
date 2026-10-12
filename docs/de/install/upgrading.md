@@ -1,4 +1,4 @@
-<!-- translated-from: install/upgrading.md sha1:8b571d067fd4a748952ed502c1e97e5bd06ed1d6 -->
+<!-- translated-from: install/upgrading.md sha1:667a9930c8414eb5b99a187973ba744c3a10fa93 -->
 # Aktualisieren
 
 plMail migriert seine eigene Datenbank beim Start. Diese eine Entscheidung prägt alles auf dieser
@@ -62,6 +62,14 @@ Start laufen. Genau deswegen wurde das geändert.
 Wähle bewusst. `latest` ist für die meisten Installationen richtig. `main` ist dafür da, das laufen
 zu lassen, woran gerade gearbeitet wird, und das Changelog wird es noch nicht beschreiben. Eine
 festgenagelte Version ist richtig, wenn du Upgrades lieber planst als empfängst.
+
+Die `compose.yaml` dieses Forks holt `ghcr.io/danverskara/pl_mail_bearermail:${BEARERMAIL_TAG:-latest}`.
+Seine Releases entstehen über **Actions → Release → Run workflow**, ohne dass du eine Version
+eintippst: Der Workflow taggt die Spitze von `main` mit der nächsten Version nach dem neuesten
+`v*`-Tag (standardmäßig Patch, auf Wunsch Minor oder Major), erstellt ein GitHub-Release mit Version
+und Commit im Titel und startet den Image-Build, der `latest` weiterbewegt. Ein Tag, den ein
+Workflow pusht, startet keinen anderen Workflow, deshalb startet der Release-Workflow den Build
+selbst.
 
 **Der typische Fehlerfall ist `pull_policy: always` auf einem beweglichen Tag.**
 `truenas.compose.yaml` setzt das, ein Redeploy von der NAS-App-Seite holt sich also, worauf dieser
@@ -170,7 +178,8 @@ bin/auto-update uninstall   # den Zeitplan entfernen
 Jeder Lauf fragt die App (`app:updates:should-install`) und tut nichts, solange nicht *Automatisch
 installieren* gewählt ist und der Kanal einen neueren Build hat als den, der läuft. Dann sichert er
 einen Datenbank-Dump nach `var/update-backups/` (die letzten fünf bleiben), führt `git pull
---ff-only`, `docker compose pull` und `docker compose up -d` aus, baut die Container des
+--ff-only`, `docker compose pull` und `docker compose up -d` für das Image des Kanals aus (`latest`
+für Veröffentlichungen, `main` für Main, übergeben als `BEARERMAIL_TAG`), baut die Container des
 Mailservers neu, wo sie laufen, und sagt der App, wie es ausgegangen ist (`app:updates:installed`).
 Die Seite zeigt, wann das Skript zuletzt gefragt hat und wie die letzte Installation endete, und
 solange es noch nie gefragt hat, wie du es einplanst.
