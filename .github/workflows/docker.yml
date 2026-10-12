@@ -64,6 +64,12 @@ jobs:
             packages: write
 
         steps:
+            # Image names must be lowercase and github.repository is not
+            # (DanversKara/...); expressions have no lower(), so the shell does it.
+            - name: Lowercase image name
+              run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+              shell: bash
+
             - name: Checkout
               uses: actions/checkout@v7
 
@@ -138,6 +144,10 @@ jobs:
             packages: write
 
         steps:
+            - name: Lowercase image name
+              run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+              shell: bash
+
             - name: Download digests
               uses: actions/download-artifact@v8
               with:
