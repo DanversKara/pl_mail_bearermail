@@ -68,7 +68,7 @@ final readonly class OtpExtractor implements InsightExtractorInterface
      * the chaperone, which is the difference between this and the S10 numbers
      * ParcelExtractor lets vouch for themselves.
      */
-    private const string CONTEXT = '~verification code|security code|one[- ]time (?:code|password|passcode)|access code|login code|sign[- ]in code|bestätigungscode|bestaetigungscode|sicherheitscode|einmalcode|einmal-code|verifizierungscode|anmeldecode|zugangscode|\bOTP\b|\b2FA\b~iu';
+    private const string CONTEXT = '~(?:the )?following code|enter (?:the |this )?code|your code(?: is)?|verification code|security code|one[- ]time (?:code|password|passcode)|access code|login code|sign[- ]in code|bestätigungscode|bestaetigungscode|sicherheitscode|einmalcode|einmal-code|verifizierungscode|anmeldecode|zugangscode|\bOTP\b|\b2FA\b~iu';
 
     /**
      * How far in front of the context word a code may sit. Short, because

@@ -117,6 +117,28 @@ final class OtpExtractorTest extends TestCase
                 ]],
             ],
 
+            // Forwarded: the subject's context word is far from the code, but
+            // "enter the following code" sits right above it.
+            'english: a forwarded code is read from "the following code"' => [
+                [
+                    'from'     => 'me@example.com',
+                    'fromName' => 'Me',
+                    'subject'  => 'Fwd: Your Play Console verification code',
+                    'body'     => "---------- Forwarded message ----------\nFrom: Google <noreply@google.com>\nDate: Mon, Oct 12, 2026 at 3:00 am\nSubject: Your Play Console verification code\nTo: someone@example.com\n\nTo verify your email address in Play Console, enter the following code:\n\n959528\n\nIf you didn't request this email, you can safely ignore it.",
+                ],
+                true,
+                [[
+                    'title'     => 'Me · 959528',
+                    'dedupeKey' => 'example.com|959528',
+                    'payload'   => [
+                        'code'             => '959528',
+                        'issuer'           => 'Me',
+                        'expiresInMinutes' => null,
+                    ],
+                    'happensAt' => null,
+                ]],
+            ],
+
             // German puts the code in FRONT of the word as often as behind it,
             // which is why the window reaches both ways.
             'german: the code stands in front of the context word' => [

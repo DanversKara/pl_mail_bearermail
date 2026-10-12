@@ -52,6 +52,9 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
         'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
     ];
 
+    /** Subjects of mails that are never plans: codes, password resets, sign-in alerts. */
+    private const string NOT_A_PLAN_SUBJECT = '~verification code|security code|one[- ]time (?:code|pass)|sign[- ]in code|login code|confirmation code|your code|password reset|reset your password|new sign[- ]in|bestätigungscode|sicherheitscode|einmalcode~iu';
+
     /** Bodies longer than this are newsletters, not plans. */
     private const int MAX_BODY = 6000;
 
@@ -83,9 +86,15 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
     public function extract(Message $message): array
     {
         $subject = trim((string) $message->subject);
-        $body    = ReadableBody::of($message);
+        $body    = self::withoutQuoteHeaders(ReadableBody::of($message));
 
         if (mb_strlen($body) > self::MAX_BODY) {
+            return [];
+        }
+
+        // A sign-in code or a password reset is never a plan, whatever
+        // times its footer or a forwarded header mention.
+        if (1 === preg_match(self::NOT_A_PLAN_SUBJECT, $subject)) {
             return [];
         }
 
@@ -293,6 +302,47 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
         }
 
         return null;
+    }
+
+    /**
+     * Drops the header lines a forward or reply quotes — "Date: Mon, Oct 12,
+     * 2026 at 3:00 am", "On Mon … wrote:" — which name when the OLD mail was
+     * sent, not when anyone is meeting. A forwarded login code otherwise
+     * became "Add to calendar: 3:00 am".
+     *
+     * Only header-shaped lines in a block that starts with "From:"/"Von:" (or
+     * right after a forward marker) go; a "Date: Saturday at 7pm" line in an
+     * invitation, with no "From:" above it, stays.
+     */
+    public static function withoutQuoteHeaders(string $text): string
+    {
+        $lines = preg_split('~\R~u', $text) ?: [];
+        $out = [];
+        $inHeader = false;
+
+        foreach ($lines as $line) {
+            $plain = trim(str_replace(['*', '>'], '', $line));
+
+            if (1 === preg_match('~^-{2,}\s*(?:forwarded message|original message|weitergeleitete nachricht|ursprüngliche nachricht)\s*-{2,}$|^begin forwarded message:?$~iu', $plain)) {
+                $inHeader = true;
+                continue;
+            }
+            if (1 === preg_match('~^(?:on|am)\s.{6,200}\s(?:wrote|schrieb)\s?.{0,80}:$~iu', $plain)) {
+                continue;
+            }
+            if (1 === preg_match('~^(?:from|von)\s*:~iu', $plain)) {
+                $inHeader = true;
+                continue;
+            }
+            if ($inHeader && 1 === preg_match('~^(?:date|sent|datum|gesendet|subject|betreff|to|an|cc|reply-to)\s*:~iu', $plain)) {
+                continue;
+            }
+
+            $inHeader = false;
+            $out[] = $line;
+        }
+
+        return implode("\n", $out);
     }
 
     private static function mentionsPlan(string $lower): bool

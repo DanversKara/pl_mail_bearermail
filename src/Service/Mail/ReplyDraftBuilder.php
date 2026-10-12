@@ -7,6 +7,7 @@ namespace App\Service\Mail;
 use App\Domain\Helper\RecipientHeaderHelper;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
+use App\Service\User\UserTimezoneResolver;
 
 /**
  * Builds the draft that answers a message: reply, reply-all and forward.
@@ -30,6 +31,7 @@ final class ReplyDraftBuilder
     public function __construct(
         private readonly SignatureProvider $signatures,
         private readonly MailBodySanitizer $sanitizer,
+        private readonly ?UserTimezoneResolver $timezones = null,
     ) {
     }
 
@@ -292,7 +294,12 @@ final class ReplyDraftBuilder
      */
     private function quote(Message $original, string $mode): string
     {
-        $date     = $original->receivedAt?->format('D, M j, Y \a\t g:i a') ?? '';
+        // BearerMail: in the reader's own time zone. Stored times are UTC, so
+        // an 8 pm mail was quoted as "3:00 am" — and a forwarded header with
+        // a wrong clock in it is also what the plan reader then picked up.
+        $zone     = $this->timezones?->resolve($original->account->usr);
+        $received = null !== $zone ? $original->receivedAt?->setTimezone($zone) : $original->receivedAt;
+        $date     = $received?->format('D, M j, Y \a\t g:i a') ?? '';
         $fromName = htmlspecialchars($original->fromName ?? '', ENT_QUOTES, 'UTF-8');
         $fromAddr = htmlspecialchars($original->fromAddress ?? '', ENT_QUOTES, 'UTF-8');
         $from     = '' !== $fromName ? "{$fromName} &lt;{$fromAddr}&gt;" : $fromAddr;
