@@ -4,7 +4,7 @@ drive/list.html.twig — Drive, inside the app shell.
 Drawn the way Settings is: topbar, the mail sidebar, and one main pane. The
 first version was a bare page outside the shell (no sidebar, no topbar, no way
 back to the inbox but the browser's back button), and every control on it was
-an inline onclick= or <script>, which the enforced CSP refuses — so "New
+an inline click handler or script tag, which the enforced CSP refuses — so "New
 folder", "Share", "Copy link", the search box and even the upload input's
 auto-submit were all dead. Behaviour now lives in drive--explorer.
 

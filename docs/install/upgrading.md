@@ -60,6 +60,13 @@ Pick deliberately. `latest` is right for most installs. `main` is for running wh
 on, and the changelog will not describe it yet. A pinned version is right when you would rather
 schedule upgrades than receive them.
 
+This fork's `compose.yaml` pulls `ghcr.io/danverskara/pl_mail_bearermail:${BEARERMAIL_TAG:-latest}`.
+Its releases are cut from **Actions → Release → Run workflow**, which needs no version typed: it
+tags the tip of `main` with the next one after the newest `v*` tag (patch by default, minor or
+major when chosen), makes a GitHub release titled with the version and the commit, and starts the
+image build that moves `latest`. A tag pushed by a workflow starts no other workflow, so the
+release workflow starts the build itself.
+
 **The failure mode is `pull_policy: always` on a moving tag.** `truenas.compose.yaml` sets it, so a
 redeploy from the NAS app page picks up whatever that tag now points at — which is convenient on
 `latest` and surprising on `main`.
@@ -138,7 +145,35 @@ The image the checks read is stamped in at build time as `APP_IMAGE` (for exampl
 `ghcr.io/karatektus/pl_mail`), beside `APP_VERSION` and `APP_COMMIT`, so a fork that publishes its
 own image checks its own. Setting `APP_IMAGE` in the environment overrides it.
 
-The page does not install anything yet; the commands under [Upgrading](#upgrading) above do.
+The page does not install anything by itself: the app runs inside the containers an install
+replaces. Either run the commands under [Upgrading](#upgrading) above, or let the server do it, as
+the next section describes.
+
+### Installing updates automatically
+
+Admin → Updates has a second choice under the channel, **When there is an update**: *Tell me*
+(the default) or *Install automatically*. The second is an instruction to `bin/auto-update`, a
+script that runs on the server itself, not in a container. Schedule it once per server, from the
+folder BearerMail is installed in:
+
+```bash
+bin/auto-update install     # every night at 04:17, logging to var/auto-update.log
+bin/auto-update             # or run it once, now
+bin/auto-update uninstall   # remove the schedule
+```
+
+Each run asks the app (`app:updates:should-install`) and does nothing unless *Install
+automatically* is chosen and the channel has a newer build than the one running. Then it saves a
+database dump to `var/update-backups/` (the last five are kept), runs `git pull --ff-only`,
+`docker compose pull` and `docker compose up -d` for the channel's image (`latest` for Releases,
+`main` for Main, passed as `BEARERMAIL_TAG`), rebuilds the mail-server containers where they
+run, and tells the app how it went (`app:updates:installed`). The page shows when the script last
+asked and how the last install ended, and until it has asked once, how to schedule it.
+
+**What it cannot see is whether a build is a good one.** The new build migrates the database when
+it starts, as every upgrade does; the dump is how to go back (see [Rolling back](#rolling-back)).
+A `git pull` that cannot fast-forward, because a tracked file was edited on the server, stops the
+install before anything is pulled.
 
 **The failure mode is a check that cannot reach the registry.** An installation behind a firewall
 gets no answer. The page says so and keeps what the last answered check found, and the hourly

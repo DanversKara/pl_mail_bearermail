@@ -243,3 +243,19 @@ TLS on submission. Until then, don't publish 587.
 
 All of those are reasonable next steps; the shape above is deliberately the
 smallest thing that sends and receives real mail.
+
+## Things that bite
+
+- **Port 25 is the whole thing.** A provider that blocks it inbound means no internet mail
+  reaches you, whatever DNS says; blocked outbound, direct delivery silently queues. Test both from
+  outside before blaming the configuration, and relay outbound if 25 is closed.
+- **No PTR record, spam folder.** Reverse DNS is set by whoever owns the IP, not in your zone, and
+  the big providers weigh it heavily.
+- **Never proxy the mail host through Cloudflare.** The `mail` A record must be DNS-only; a proxied
+  record points MX at a web proxy that does not speak SMTP.
+- **An alias added in plMail but not on the server bounces.** Mail to it is refused with "User
+  unknown" until `app:mail:sync-aliases` has written it (the worker does every five minutes),
+  or it is in `MAIL_ALIASES`.
+- **Port 587 is internal until you give it certificates.** SMTP keys work from inside the compose
+  network only; publishing 587 without TLS sends passwords in the clear.
+

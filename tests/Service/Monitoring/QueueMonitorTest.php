@@ -187,8 +187,10 @@ final class QueueMonitorTest extends KernelTestCase
      */
     public function testTheFilterReachesTheClassAndThePayload(): void
     {
-        $this->enqueue('ingest', createdAt: '-2 minutes', message: new SyncAccountMessage(42));
-        $this->enqueue('export', createdAt: '-1 minute', message: new SyncAccountMessage(99));
+        // requestedAt pinned: it is serialised into the body too, and a clock
+        // that happened to read …99… matched the '99' filter on both.
+        $this->enqueue('ingest', createdAt: '-2 minutes', message: new SyncAccountMessage(42, requestedAt: 1_000_000));
+        $this->enqueue('export', createdAt: '-1 minute', message: new SyncAccountMessage(99, requestedAt: 1_000_000));
 
         self::assertSame(2, $this->monitor->countWaiting('SyncAccountMessage'));
         self::assertSame(1, $this->monitor->countWaiting('export'));

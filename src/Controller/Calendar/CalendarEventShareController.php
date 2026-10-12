@@ -92,7 +92,7 @@ final class CalendarEventShareController extends AbstractController
             unset($row['sort']);
 
             return $row;
-        }, array_slice(array_values($rows), 0, self::MAX_EVENTS));
+        }, array_slice($rows, 0, self::MAX_EVENTS));
 
         return new JsonResponse(['events' => $rows, 'timeZone' => $zone->getName()]);
     }

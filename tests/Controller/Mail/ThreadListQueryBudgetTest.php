@@ -78,8 +78,16 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * starred ones differ by `listed_at IS NULL`, which is new-mail markers
      * against plain unread, and they are two answers rather than one asked
      * twice.
+     *
+     * ── Twenty-eight: the flood banner ──────────────────────────────────────
+     * BearerMail's inbox warns when a burst of mail may be burying a security
+     * alert (App\Service\Mail\FloodDetector). That is one grouped count over
+     * the user's accounts, joined in the query rather than read first, per
+     * visit and per navigation, whatever the number of rows or accounts. It
+     * first shipped as an account read plus a count per account, which is what
+     * took both lists past their ceilings.
      */
-    private const int BUDGET = 27;
+    private const int BUDGET = 28;
 
     /**
      * The ceiling for the same list NAVIGATED rather than visited.
@@ -111,8 +119,14 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * the whole point here is that there is no furniture left inside the frame
      * to accumulate. Something that pushes a role list over this is chrome
      * creeping back in, and finding out what is the exercise.
+     *
+     * SIXTEEN since BearerMail's inbox measures that: its flood banner
+     * (App\Service\Mail\FloodDetector, one grouped count) is drawn in the
+     * tabs region, which is inside the frame, so a navigation has to ask it
+     * as a visit does. It is the view-grows-a-grouped-query case above, on the
+     * inbox only; a per-row load would cost fifty, not one.
      */
-    private const int FRAME_BUDGET = 15;
+    private const int FRAME_BUDGET = 16;
 
     private KernelBrowser $client;
     private Connection $connection;

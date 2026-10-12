@@ -287,16 +287,7 @@ final class MailController extends AbstractController
         $this->threadRows->preload($threads);
 
         // Flood check: a burst of mail may be trying to bury a security alert.
-        $flood = null;
-        if ($user instanceof User) {
-            foreach ($this->accountRepository->findBy(['usr' => $user]) as $account) {
-                $result = $this->floodDetector->check($account);
-                if (null !== $result) {
-                    $flood = $result + ['account' => $account->email];
-                    break;
-                }
-            }
-        }
+        $flood = $user instanceof User ? $this->floodDetector->busiestFlooded($user) : null;
 
         return $this->renderList($request, 'mail/inbox.html.twig', $threads, [
             'tab'         => $tab,

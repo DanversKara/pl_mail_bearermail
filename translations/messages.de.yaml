@@ -799,6 +799,8 @@ admin:
         system: System
         updates: Aktualisierungen
         users: Benutzer
+        mail_server: "Mailserver"
+        security: "Sicherheit"
     performance:
         hold:
             col:
@@ -1117,6 +1119,23 @@ admin:
         header: '%version% ist verfügbar'
         intro: 'plMail prüft jede Stunde, ob der Kanal, dem du folgst, einen neueren Build veröffentlicht hat, und sagt es den Administratoren einmal pro Build: mit einer Benachrichtigung auf jedem Gerät, das sie für Push angemeldet haben, und mit einem Hinweis oben in diesem Bereich.'
         saved: 'Kanal gespeichert.'
+        saved_install: 'Gespeichert.'
+        install:
+            label: 'Wenn es eine Aktualisierung gibt'
+            save: 'Speichern'
+            notify:
+                name: 'Nur melden'
+                hint: 'Hier und per Push ankündigen; ein Administrator installiert sie auf dem Server.'
+            auto:
+                name: 'Automatisch installieren'
+                hint: 'Der Server installiert sie nachts, nachdem er eine Kopie der Datenbank gesichert hat. Dafür muss bin/auto-update einmal auf dem Server eingeplant werden.'
+            setup:
+                heading: 'Auf diesem Server noch nicht eingerichtet'
+                body: 'Die App kann ihre eigenen Container nicht ersetzen, deshalb installiert der Server. Führe per SSH im Ordner, in dem BearerMail installiert ist, einmal aus:'
+            seen: 'Server zuletzt gefragt'
+            last: 'Letzte Installation'
+            never: 'noch keine'
+            failed: 'fehlgeschlagen: %error%'
         channel:
             label: 'Folgen'
             save: 'Speichern'
@@ -1157,6 +1176,7 @@ admin:
         how:
             heading: 'Aktualisieren'
             body: 'Hol das neue Image und erstelle die Container neu; auf einem NAS stellst du die App neu bereit. plMail migriert seine Datenbank beim Start, lies also vorher im Änderungsprotokoll, was unter „Before you upgrade“ steht.'
+            auto: 'Das installiert sich heute Nacht gegen 04:17 von selbst. Um es stattdessen jetzt zu installieren, führe auf dem Server aus:'
         privacy: 'Eine Prüfung fragt die Registry nach dem neuesten Image von %image% und api.github.com, was sich seit diesem Build geändert hat. Über diese Installation wird dabei nichts gesendet außer den Anfragen selbst.'
         push:
             title: 'plMail %version% ist verfügbar'
@@ -1202,6 +1222,63 @@ admin:
         two_factor_short: 2FA
     version:
         hint: Der Build, den diese Installation ausführt — die Version und der Commit, aus dem sie gebaut wurde.
+    mail_server:
+        relay:
+            heading: "Ausgehendes Relay"
+            intro: "Wohin dein Mailserver ausgehende Mail schickt. Lass das Feld leer, um direkt zuzustellen, oder trag einen Anbieter wie Mailjet ein, damit deine Mail besser ankommt. Änderungen greifen innerhalb von Sekunden — ohne Neustart."
+            host_label: "Relay-Host"
+            host_help: "Der SMTP-Server des Anbieters, in eckigen Klammern mit Port — z. B. [in-v3.mailjet.com]:587."
+            username_label: "Benutzername"
+            username_help: "Der API-Schlüssel (Mailjet) oder Benutzername des Anbieters."
+            password_label: "Passwort"
+            password_help: "Der geheime Schlüssel des Anbieters. Leer lassen, um den gespeicherten zu behalten."
+            password_set: "Ein Passwort ist gespeichert."
+            save: "Relay speichern"
+            saved: "Relay gespeichert. Der Mailserver übernimmt es innerhalb von Sekunden."
+            status:
+                active: "Relay aktiv"
+                direct: "Direkte Zustellung"
+        dmarc:
+            heading: "DMARC-Berichte"
+            intro: "Empfänger (Google, Microsoft, …) schicken täglich Berichte, wer Mail im Namen deiner Domain verschickt hat. Lade einen Bericht hoch (.zip, .gz, .xml), um zu sehen, welche IPs bestanden haben und welche nicht."
+            upload: "Bericht auswerten"
+            upload_invalid: "Wähle zuerst eine Berichtsdatei."
+            uploaded: "Bericht ausgewertet."
+            none: "Noch keine Berichte. Sie kommen täglich an die Adresse in deinem DMARC-rua-Tag."
+            messages: "Nachrichten"
+            failed: "Fehlgeschlagen"
+            ip: "IP"
+            count: "Anzahl"
+        dns:
+            no_domain: "Setz MAIL_DOMAIN in .env.mail.local, um deine DNS-Einträge zu prüfen."
+            heading: "DNS-Einträge"
+            intro: "Die Einträge, die deine Domain braucht, damit Mail funktioniert. Mit „DNS prüfen“ siehst du, ob sie auflösen."
+            check: "DNS prüfen"
+            hint: "Drück „DNS prüfen“, um die Einträge für %domain% nachzuschlagen."
+            expected: "Erwartet"
+            actual: "Gefunden"
+            ok: "OK"
+            missing: "Fehlt"
+        dynamic_dns:
+            heading: "Dynamisches DNS"
+            intro: "Wenn dein Server an einem Heimanschluss mit wechselnder IP hängt, hält das deine Cloudflare-DNS-A-Einträge auf ihn gerichtet."
+            setup: "Trag das in .env.mail.local ein (neben compose.yaml) und erstelle die Container dann neu:"
+            cron: "plMail prüft alle 5 Minuten von selbst — kein Cron-Job nötig. Nur Cloudflare wird kontaktiert, und erst, wenn diese Werte gesetzt sind."
+    security:
+        suspicious:
+            title: "Verdächtige Adressen"
+            attempts: "fehlgeschlagene Anmeldungen in der letzten Stunde"
+        events:
+            mail_login_blocked: "Adresse vom Mailserver gesperrt (zu viele falsche Passwörter)"
+            title: "Letzte Sicherheitsereignisse"
+            none: "Noch keine Sicherheitsereignisse."
+            login_success: "Erfolgreiche Anmeldung"
+            login_failure: "Fehlgeschlagener Anmeldeversuch"
+            password_change: "Passwort geändert"
+            2fa_enabled: "Zwei-Faktor-Authentifizierung eingeschaltet"
+            2fa_disabled: "Zwei-Faktor-Authentifizierung ausgeschaltet"
+            api_token_created: "API-Token erstellt"
+            api_token_revoked: "API-Token widerrufen"
 alias:
     added: 'Adresse hinzugefügt.'
     deleted: 'Adresse entfernt.'
@@ -1982,6 +2059,24 @@ compose:
         saved: 'Als Vorlage „%name%“ gespeichert. Umbenennen oder verschieben kannst du sie in den Einstellungen.'
         search: 'Vorlage suchen'
         untitled: 'Unbenannte Vorlage'
+    drive_picker:
+        title: "Aus Drive einfügen"
+        search: "Deine Dateien durchsuchen …"
+        empty: "Noch nichts in deinem Drive. Lade zuerst Dateien hoch."
+        open: "Drive öffnen"
+        failed: "Dein Drive war nicht erreichbar. Versuch es noch einmal."
+        copied: "Link kopiert — füg ihn in deine Nachricht ein."
+    calendar_picker:
+        title: "Kalender-Links"
+        calendars: "Geteilte Kalender"
+        booking: "Buchungsseiten"
+        hint: "Zu deiner Sicherheit wird ein Link nur einmal angezeigt, wenn er erstellt wird. Erstell in Einstellungen → Teilen einen neuen und füg ihn hier ein."
+        empty: "Noch keine geteilten Kalender oder Buchungsseiten. Erstell eine in Einstellungen → Teilen."
+        open: "Teilen-Einstellungen öffnen"
+        close: "Schließen"
+        failed: "Deine Teilen-Links konnten nicht geladen werden."
+    insert_drive_file: "Datei aus Drive einfügen"
+    insert_calendar_link: "Kalender-Freigabelink einfügen"
 
 demo:
     bar:
@@ -2149,6 +2244,9 @@ header:
 inbox:
     empty: Keine Nachrichten in diesem Tab.
     empty_account: In diesem Konto ist noch nichts angekommen.
+    flood:
+        title: "Ungewöhnlich viele Mails auf einmal."
+        body: "In den letzten 15 Minuten sind %count% Nachrichten bei %account% eingegangen. Solche Fluten werden manchmal genutzt, um Sicherheitshinweise zu verstecken — schau nach Passwort-Zurücksetzungen oder Benachrichtigungen, die du nicht erwartet hast."
 
 insights:
     otp:
@@ -2441,6 +2539,12 @@ message:
         spam:
             body: "Diese Nachricht wurde als Spam eingestuft. Ihre Links und Bilder sind riskant — behandle jede Aufforderung darin wie die eines Fremden."
             title: Diese Nachricht ist im Spam
+    forged_sender:
+        title: "Diese Nachricht stammt vielleicht nicht von dem, der sie angeblich geschickt hat."
+        body: "Der Mailserver hat die Identität des Absenders geprüft (SPF, DKIM, DMARC), und sie hat nicht bestanden. Sei vorsichtig mit Links und Anhängen."
+    deceptive_link:
+        title: "Diese Nachricht enthält einen irreführenden Link."
+        body: "Der Text eines Links zeigt eine Adresse, aber er führt in Wahrheit woandershin. Fahr mit der Maus darüber, bevor du klickst."
 
 mercure:
     status:
@@ -3785,6 +3889,7 @@ settings:
         shortcuts: Tastenkürzel
         signature: Signaturen
         templates: 'Vorlagen'
+        smtp_keys: "SMTP-Schlüssel"
     notifications:
         devices:
             empty: >-
@@ -4149,6 +4254,7 @@ sidebar:
         starred: Markiert
         trash: Papierkorb
         unread: Ungelesen
+        drive: "Drive"
     toggle: Seitenleiste ein-/ausblenden
 
 snooze:
@@ -4342,3 +4448,117 @@ templates:
         sender_email: 'Deine Adresse'
         sender_name: 'Dein Name'
         signature: 'Signatur'
+drive:
+    report:
+        title: "Diesen Link melden"
+        link: "Diesen Link melden"
+        thanks: "Danke — wir haben deine Meldung erhalten und sehen sie uns schnell an. Wenn du deine E-Mail-Adresse angegeben hast, ist eine Bestätigung unterwegs."
+        reason: "Was stimmt damit nicht?"
+        details: "Sonst noch etwas, das wir wissen sollten? (optional)"
+        email: "Deine E-Mail-Adresse, falls du eine Antwort möchtest (optional)"
+        submit: "Meldung senden"
+        back: "Zurück zur Datei"
+        too_many: "Zu viele Meldungen aus deinem Netzwerk. Bitte versuch es später noch einmal."
+        reasons:
+            spam: "Spam oder unerwünscht"
+            malware: "Virus oder Schadsoftware"
+            phishing: "Phishing oder Betrug"
+            illegal: "Illegaler Inhalt"
+            copyright: "Urheberrechtsverletzung"
+            other: "Etwas anderes"
+    disabled_title: "Drive ist ausgeschaltet"
+    disabled_notice: "Drive wurde für dein Konto ausgeschaltet. Wende dich an deinen Administrator."
+    title: "Drive"
+    breadcrumbs: "Ordnerpfad"
+    usage: "%used% von %quota% belegt"
+    usage_unlimited: "%used% belegt"
+    storage: "Belegter Speicher"
+    max_upload: "Bis zu %size% pro Datei"
+    quota_exceeded: "In deinem Drive ist nicht genug Platz für diese Datei."
+    upload: "Hochladen"
+    upload_files: "Dateien hochladen"
+    upload_invalid: "Wähle zuerst eine Datei."
+    upload_too_large: "Diese Datei ist größer, als der Server annimmt."
+    upload_failed: "Hochladen fehlgeschlagen."
+    upload_done: "Hochgeladen"
+    uploading: "Wird hochgeladen …"
+    uploaded: "Datei hochgeladen."
+    uploaded_many: "Dateien hochgeladen."
+    drop_here: "Loslassen, um nach %folder% hochzuladen"
+    empty: "Dein Drive ist leer"
+    empty_folder: "Dieser Ordner ist leer"
+    empty_hint: "Lade Dateien mit dem Knopf hoch oder zieh sie irgendwo auf diese Seite."
+    no_match: "Keine Dateien oder Ordner passen."
+    view: "Ansicht"
+    list_view: "Listenansicht"
+    grid_view: "Rasteransicht"
+    search: "Diesen Ordner durchsuchen"
+    name: "Name"
+    size: "Größe"
+    modified: "Geändert"
+    actions: "Aktionen"
+    more: "Weitere Aktionen"
+    folders: "Ordner"
+    files: "Dateien"
+    new_folder: "Neuer Ordner"
+    folder_name: "Ordnername"
+    create: "Erstellen"
+    rename: "Umbenennen"
+    rename_file: "Datei umbenennen"
+    rename_folder: "Ordner umbenennen"
+    folder_created: "Ordner erstellt."
+    folder_deleted: "Ordner gelöscht."
+    folder_delete_confirm: "Den Ordner „%name%“ mit allem darin löschen? Das lässt sich nicht rückgängig machen."
+    download: "Herunterladen"
+    delete: "Löschen"
+    delete_confirm: "„%name%“ löschen? Freigabelinks darauf funktionieren dann nicht mehr. Das lässt sich nicht rückgängig machen."
+    deleted: "Datei gelöscht."
+    share: "Teilen"
+    share_title: "„%name%“ teilen"
+    shared_count: "{1}Mit 1 Link geteilt|]1,Inf[Mit %count% Links geteilt"
+    active_links: "Aktive Links"
+    no_links: "Noch keine Links. Wer einen Link hat, kann die Datei herunterladen, teile ihn also nur mit Leuten, denen du vertraust."
+    new_link: "Neuer Link"
+    share_password: "Passwort (optional)"
+    share_expires: "Läuft ab am (optional)"
+    share_hint: "Wer den Link hat, kann die Datei herunterladen."
+    share_bad_date: "Wähle ein Ablaufdatum in der Zukunft."
+    create_link: "Link erstellen"
+    share_created: "Link erstellt"
+    share_created_hint: "Kopier ihn jetzt und schick ihn an alle, die die Datei brauchen."
+    share_created_protected: "Kopier ihn jetzt. Schick das Passwort getrennt — nicht in derselben Nachricht."
+    copy_link: "Link kopieren"
+    copy: "Kopieren"
+    link_meta: "{0}Erstellt %date% · noch nicht heruntergeladen|{1}Erstellt %date% · 1 Download|]1,Inf[Erstellt %date% · %count% Downloads"
+    link_expires: "Läuft ab %date%"
+    link_protected: "Passwort"
+    revoke: "Widerrufen"
+    revoke_confirm: "Diesen Link widerrufen? Wer ihn hat, kann die Datei dann nicht mehr herunterladen."
+    protected_hint: "Diese Datei ist geschützt. Gib das Passwort ein, um sie herunterzuladen."
+    wrong_password: "Das Passwort stimmt nicht."
+    public:
+        too_many: "Zu viele Versuche. Warte ein paar Minuten und versuch es dann noch einmal."
+smtp_key:
+    title: "SMTP-Schlüssel"
+    intro: "Zugangsdaten für Skripte und Geräte (einen Drucker, einen Backup-Job), um über deinen eigenen Mailserver Mail zu senden, ohne dein Postfach-Passwort. Jeder Schlüssel darf nur als die Adresse senden, für die er erstellt wurde, und lässt sich einzeln widerrufen. Setzt den selbst gehosteten Mailserver voraus."
+    name: "Name"
+    name_placeholder: "z. B. Nächtliches Backup-Skript"
+    account: "Sendet als"
+    create: "Schlüssel erstellen"
+    none: "Noch keine SMTP-Schlüssel."
+    no_accounts: "Füg zuerst ein Mailkonto hinzu."
+    created: "Erstellt"
+    last_used: "Zuletzt verwendet"
+    revoke: "Widerrufen"
+    revoke_confirm: "Diesen Schlüssel widerrufen? Alles, was ihn nutzt, kann dann nicht mehr senden."
+    revoked: "SMTP-Schlüssel widerrufen."
+    name_required: "Gib dem Schlüssel einen Namen."
+    account_invalid: "Wähle eines deiner Mailkonten."
+    created_title: "SMTP-Schlüssel erstellt"
+    shown_once: "Kopier das Passwort jetzt — es kann nicht noch einmal angezeigt werden."
+    server: "Server"
+    username: "Benutzername"
+    secret: "Passwort"
+    use: "Sendet als %email%. Der Submission-Port ist nur innerhalb des Docker-Netzwerks offen (Host mta, Port 587, ohne TLS); um den Schlüssel von einem anderen Rechner aus zu nutzen, veröffentliche Port 587 zuerst mit echten Zertifikaten — siehe die Anleitung zum selbst gehosteten Mailserver."
+    not_synced: "Der Schlüssel wurde gespeichert, aber der Mailserver konnte nicht davon erfahren: Das gemeinsame Volume mail_config ist nicht eingehängt. Starte den Stack mit --profile mail."
+    done: "Fertig"

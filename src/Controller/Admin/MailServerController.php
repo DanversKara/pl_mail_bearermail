@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Admin → Mail server: the outbound SMTP relay (e.g. Mailjet).
@@ -44,6 +45,7 @@ final class MailServerController extends AbstractController
         private readonly DmarcReportParser $dmarcParser,
         private readonly EntityManagerInterface $em,
         private readonly DnsChecker $dns,
+        private readonly TranslatorInterface $translator,
         // From .env.mail.local via compose's env_file. Read through %env()%,
         // not $_ENV: in the container these are real environment variables,
         // and PHP leaves $_ENV empty unless variables_order includes E.
@@ -137,7 +139,7 @@ final class MailServerController extends AbstractController
         $file = $request->files->get('dmarc_report');
 
         if (null === $file || false === $file->isValid()) {
-            $this->addFlash('error', 'admin.mail_server.dmarc.upload_invalid');
+            $this->addFlash('error', $this->translator->trans('admin.mail_server.dmarc.upload_invalid'));
 
             return $this->redirectToRoute('app_admin_dashboard', ['section' => 'mail-server']);
         }
@@ -153,7 +155,7 @@ final class MailServerController extends AbstractController
         $this->em->persist($report);
         $this->em->flush();
 
-        $this->addFlash('success', 'admin.mail_server.dmarc.uploaded');
+        $this->addFlash('success', $this->translator->trans('admin.mail_server.dmarc.uploaded'));
 
         return $this->redirectToRoute('app_admin_dashboard', ['section' => 'mail-server']);
     }

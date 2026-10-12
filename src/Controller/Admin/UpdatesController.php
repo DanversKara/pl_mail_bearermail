@@ -20,7 +20,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Admin → Updates: which channel this installation follows, what the last check
- * of it found, and a button to check now.
+ * of it found, a button to check now, and whether bin/auto-update on the server
+ * installs a newer build by itself or leaves that to an administrator.
  *
  * Rendered into its own Turbo Frame, like the other admin sections, and every
  * action answers with the frame again: the answer to "check now" IS the
@@ -54,7 +55,8 @@ final class UpdatesController extends AbstractController
      * the frame would GET, and a POST-only route answers that with a 405. Here
      * every submission lands on the panel's own URL.
      *
-     * `do=check` checks now; anything else posted is the channel form.
+     * `do=check` checks now; `do=install` is the auto-install form; anything
+     * else posted is the channel form.
      */
     #[Route('', name: 'panel', methods: ['GET', 'POST'])]
     public function panel(Request $request): Response
@@ -69,6 +71,15 @@ final class UpdatesController extends AbstractController
 
         if ('check' === $request->request->get('do')) {
             return $this->frame($this->checkNow($check));
+        }
+
+        if ('install' === $request->request->get('do')) {
+            $check->autoInstall = 'auto' === $request->request->get('install');
+
+            $this->entityManager->persist($check);
+            $this->entityManager->flush();
+
+            return $this->frame($check, saved: 'install');
         }
 
         $channel = UpdateChannel::tryFrom((string) $request->request->get('channel'));
@@ -87,7 +98,7 @@ final class UpdatesController extends AbstractController
         $this->entityManager->persist($check);
         $this->entityManager->flush();
 
-        return $this->frame(true === $changed ? $this->checker->check() : $check, saved: true);
+        return $this->frame(true === $changed ? $this->checker->check() : $check, saved: 'channel');
     }
 
     private function checkNow(UpdateCheck $check): UpdateCheck
@@ -101,7 +112,8 @@ final class UpdatesController extends AbstractController
         return $this->checker->check();
     }
 
-    private function frame(UpdateCheck $check, bool $saved = false): Response
+    /** @param 'channel'|'install'|null $saved which form was just saved */
+    private function frame(UpdateCheck $check, ?string $saved = null): Response
     {
         return $this->render('admin/updates/_frame.html.twig', [
             'check'   => $check,

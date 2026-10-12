@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha1:fd1e366eaebecb469394c243e7d01102522944fe -->
+<!-- translated-from: README.md sha1:594d684ec72e4ffec51215d56bf5d4bd57b13022 -->
 
 # plMail-Dokumentation
 
@@ -51,6 +51,7 @@ wo der Mechanismus dahinter steht.
 | [Hinweise zu den Plattformen](install/platforms.md) | Linux, Windows über WSL2, macOS und NAS-Geräte |
 | [Hinter einem Reverse Proxy](install/reverse-proxy.md) | TLS, `APP_PUBLIC_URL`, `TRUSTED_PROXIES` — und was ohne sie kaputtgeht |
 | [Konfigurationsreferenz](install/configuration.md) | Jede Umgebungsvariable, was sie tut und was passiert, wenn sie falsch steht |
+| [Selbst gehosteter Mailserver](install/self-hosted-mail-server.md) | Postfix, Dovecot und DKIM für deine eigene Domain, im selben Compose-Stack: DNS, Relay, SMTP-Schlüssel, dynamisches DNS (nur auf Englisch) |
 | [Sichern und Wiederherstellen](install/backup-restore.md) | Was zu sichern ist, der Verschlüsselungsschlüssel und die Wiederherstellung auf einem neuen Host |
 | [Konfigurationssicherung](install/config-backup.md) | Einstellungen und Zugangsdaten einer Installation als eine verschlüsselte Datei zu einer anderen tragen |
 | [Aktualisieren](install/upgrading.md) | Migrationen laufen beim Start, was das bedeutet, und wie du erkennst, welcher Build läuft |

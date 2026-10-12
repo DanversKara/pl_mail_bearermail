@@ -1,4 +1,4 @@
-<!-- translated-from: install/docker.md sha1:77ef18f80d56bea9e0c01c3223e7a745282137ee -->
+<!-- translated-from: install/docker.md sha1:9d9005fec7191b7eeff84f6f76dbf631126f24d6 -->
 # Installation mit Docker Compose
 
 Der unterstützte Weg, von Anfang bis Ende: was du brauchst, was `docker compose up` tatsächlich tut,
@@ -146,6 +146,8 @@ rufe die Einrichtungsseite über die Adresse auf, die du tatsächlich verwenden 
 | `worker` | `app:work`: jeder Hintergrundprozess, jeweils als eigener Prozess | Alles, was nicht der Webserver ist. Im Netz antwortet er auf den Namen `mercure`, weil er den Hub betreibt |
 | `database` | `postgres:18-alpine` mit vorgeladenem `pg_stat_statements` | — |
 | `ntfy` | ntfy, unter dem Profil `push` | Optional. Android-Push ohne Google — starte ihn mit `docker compose --profile push up -d` |
+| `mta` | Postfix + OpenDKIM, unter dem Profil `mail` | Optional. Der MX deiner Domain: nimmt Mail aus dem Internet auf Port 25 an und versendet sie, mit DKIM signiert — starte ihn mit `docker compose --profile mail up -d`. Siehe [selbst gehosteter Mailserver](self-hosted-mail-server.md) |
+| `mailstore` | Dovecot, unter dem Profil `mail` | Optional. Der lokale Postfachserver, an den `mta` zustellt und von dem plMail per IMAP synchronisiert |
 
 Die Prozesse des Workers. Jeder wird wieder gestartet, wenn er endet: sofort, wenn er sauber
 endete (ein Consumer, der an seinem Zeit- oder Speicherlimit neu anfängt), nach einer Wartezeit von
@@ -195,7 +197,7 @@ Aufräumen — und nirgends erscheint ein Fehler, weil nichts fehlgeschlagen ist
 
 ## Speicher, und was die Standarddatei nicht dauerhaft ablegt
 
-Die Compose-Datei deklariert zehn benannte Volumes:
+Die Compose-Datei deklariert vierzehn benannte Volumes:
 
 | Volume | Enthält |
 |---|---|
@@ -205,6 +207,10 @@ Die Compose-Datei deklariert zehn benannte Volumes:
 | `caddy_data`, `caddy_config` | Caddys TLS-Material und Zustand |
 | `mercure_data`, `mercure_config` | Zustand des Hubs, vom Worker eingehängt |
 | `ntfy_data` | Zustand der Benachrichtigungs-Topics |
+| `mail_data` | Die lokalen Postfächer (Maildir), eingehängt von `mailstore` |
+| `mail_dkim` | Die DKIM-Signaturschlüssel, eingehängt von `mta` |
+| `mail_config` | Relay-Einstellungen und SMTP-Schlüssel, die plMails Oberfläche schreibt und `mta` und `mailstore` lesen |
+| `app_drive` | Drive-Dateien, eingehängt von `php` und `worker` (ein eigenes Volume: `app:prune:blobs` räumt `app_uploads` auf) |
 
 Die drei Blob-Volumes fehlten bis vor Kurzem, und der Fehler war auf lehrreiche Weise lautlos. Das
 Dockerfile hat bewusst kein `VOLUME /app/var/` — ein anonymes Volume dort gab jedem Container seine
