@@ -138,7 +138,34 @@ The image the checks read is stamped in at build time as `APP_IMAGE` (for exampl
 `ghcr.io/karatektus/pl_mail`), beside `APP_VERSION` and `APP_COMMIT`, so a fork that publishes its
 own image checks its own. Setting `APP_IMAGE` in the environment overrides it.
 
-The page does not install anything yet; the commands under [Upgrading](#upgrading) above do.
+The page does not install anything by itself: the app runs inside the containers an install
+replaces. Either run the commands under [Upgrading](#upgrading) above, or let the server do it, as
+the next section describes.
+
+### Installing updates automatically
+
+Admin → Updates has a second choice under the channel, **When there is an update**: *Tell me*
+(the default) or *Install automatically*. The second is an instruction to `bin/auto-update`, a
+script that runs on the server itself, not in a container. Schedule it once per server, from the
+folder BearerMail is installed in:
+
+```bash
+bin/auto-update install     # every night at 04:17, logging to var/auto-update.log
+bin/auto-update             # or run it once, now
+bin/auto-update uninstall   # remove the schedule
+```
+
+Each run asks the app (`app:updates:should-install`) and does nothing unless *Install
+automatically* is chosen and the channel has a newer build than the one running. Then it saves a
+database dump to `var/update-backups/` (the last five are kept), runs `git pull --ff-only`,
+`docker compose pull` and `docker compose up -d`, rebuilds the mail-server containers where they
+run, and tells the app how it went (`app:updates:installed`). The page shows when the script last
+asked and how the last install ended, and until it has asked once, how to schedule it.
+
+**What it cannot see is whether a build is a good one.** The new build migrates the database when
+it starts, as every upgrade does; the dump is how to go back (see [Rolling back](#rolling-back)).
+A `git pull` that cannot fast-forward, because a tracked file was edited on the server, stops the
+install before anything is pulled.
 
 **The failure mode is a check that cannot reach the registry.** An installation behind a firewall
 gets no answer. The page says so and keeps what the last answered check found, and the hourly

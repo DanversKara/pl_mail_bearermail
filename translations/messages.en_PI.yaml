@@ -953,6 +953,23 @@ admin:
         header: "%version% be in port"
         intro: "Every hour plMail scans the horizon fer a newer build on the channel ye follow, an' tells the captains once per build: a bell on every device they signed on fer push, an' a note atop these quarters."
         saved: "Course set."
+        saved_install: "Orders logged."
+        install:
+            label: "When new sails be sighted"
+            save: "Set orders"
+            notify:
+                name: "Sound the bell"
+                hint: "Announce 'em here an' by push; a captain hoists 'em on the server."
+            auto:
+                name: "Hoist 'em meself"
+                hint: "The server hoists 'em by night, after stowin' a copy o' the database. Needs bin/auto-update put on the server's watch, once."
+            setup:
+                heading: "Not rigged on this server yet"
+                body: "The app can't swap its own containers, so the server does the hoistin'. Over SSH, in the hold BearerMail be stowed in, run this once:"
+            seen: "Server last hailed"
+            last: "Last hoistin'"
+            never: "none yet"
+            failed: "run aground: %error%"
         channel:
             label: "Follow"
             save: "Set course"
@@ -993,6 +1010,7 @@ admin:
         how:
             heading: "Takin' on the new sails"
             body: "Pull the new image an' build the containers anew; on a NAS, redeploy the app. plMail shifts its own cargo when it starts, so read the ship's log first fer anythin' under \"Before you upgrade\"."
+            auto: "These sails hoist themselves tonight at about 04:17. To hoist 'em now instead, run on the server:"
         privacy: "A lookout asks the registry fer the newest %image% image an' api.github.com what changed since this build. Nothin' about this ship be sent beyond the askin' itself."
         push:
             title: "plMail %version% be in port"

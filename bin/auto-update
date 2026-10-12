@@ -1,0 +1,162 @@
+#!/bin/sh
+# BearerMail: install a newer build when Admin → Updates says to.
+#
+# Runs on the server itself, not in a container: installing means replacing
+# the containers, which nothing inside them can do. Run it from the folder
+# BearerMail is installed in (the one with compose.yaml).
+#
+#   bin/auto-update install     schedule it every night at 04:17 (once per server)
+#   bin/auto-update uninstall   remove that schedule
+#   bin/auto-update             run once now
+#
+# Each run asks the app first (app:updates:should-install). It installs only
+# when an administrator switched "Install automatically" on in Admin → Updates
+# and the channel has a newer build than the one running; otherwise it does
+# nothing. An install is:
+#
+#   1. a database dump to var/update-backups/ (the last 5 are kept),
+#   2. git pull, for changes to compose.yaml and the mail server,
+#   3. docker compose pull and up -d, the same commands as by hand,
+#   4. a rebuild of the mail-server containers, when they are in use,
+#   5. telling the app how it went, which Admin → Updates shows.
+#
+# Output goes to var/auto-update.log when run from the schedule.
+
+set -u
+
+# cron starts with a bare PATH; docker and git live in these on every distro.
+PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PATH
+
+MARKER='# bearermail-auto-update'
+
+log() {
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"
+}
+
+console() {
+    docker compose exec -T php php bin/console "$@"
+}
+
+# The mail server is a profile; recreate it only where it already runs, so an
+# install never starts services an administrator did not.
+profiles() {
+    if [ -n "$(docker compose --profile mail ps -q mta 2>/dev/null)" ]; then
+        echo '--profile mail'
+    fi
+}
+
+# Record the outcome inside the new containers. They may still be migrating
+# the database when `up -d` returns, so this is tried for about a minute.
+report() {
+    tries=0
+    while [ "$tries" -lt 12 ]; do
+        if [ -z "$1" ]; then
+            console app:updates:installed >/dev/null 2>&1 && return 0
+        else
+            console app:updates:installed --failed="$1" >/dev/null 2>&1 && return 0
+        fi
+        tries=$((tries + 1))
+        sleep 5
+    done
+    log 'could not record the outcome in Admin → Updates'
+}
+
+fail() {
+    log "FAILED: $1"
+    report "$1"
+    exit 1
+}
+
+backup() {
+    stamp=$(date '+%Y-%m-%d_%H%M%S')
+    target="var/update-backups/$stamp"
+    inside="/tmp/update-backup-$stamp"
+
+    mkdir -p "$target" && chmod 700 var/update-backups || return 1
+
+    # Database only. Stored files and secrets live in volumes an update does
+    # not touch; the database is what the new build migrates on boot.
+    console app:backup "$inside" --skip-storage --skip-secrets || return 1
+    docker compose cp "php:$inside/database.sql" "$target/database.sql" || return 1
+    chmod 600 "$target/database.sql"
+    docker compose exec -T php rm -rf "$inside"
+
+    # Keep the newest five. The names are timestamps, so ls is safe here.
+    # shellcheck disable=SC2012
+    ls -1d var/update-backups/*/ 2>/dev/null | sort | head -n -5 | while read -r old; do
+        rm -rf "$old"
+    done
+
+    log "database saved to $target/database.sql"
+}
+
+run() {
+    # One run at a time: a slow install must not meet the next night's.
+    if command -v flock >/dev/null 2>&1; then
+        mkdir -p var
+        exec 9>var/auto-update.lock
+        flock -n 9 || { log 'another run is still going'; exit 0; }
+    fi
+
+    if [ -z "$(docker compose ps -q php 2>/dev/null)" ]; then
+        log 'BearerMail is not running here; nothing to do'
+        exit 0
+    fi
+
+    # The app's answer, printed as it gives it. Any exit but 0 is "not now".
+    if ! console app:updates:should-install; then
+        exit 0
+    fi
+
+    backup || fail 'the database backup before the update did not complete, so nothing was installed'
+
+    git pull --ff-only || fail 'git pull did not complete (local changes to tracked files?); nothing was installed'
+
+    # shellcheck disable=SC2046 # split on purpose: '' or '--profile mail'
+    set -- $(profiles)
+    docker compose "$@" pull || fail 'docker compose pull did not complete; nothing was installed'
+    docker compose "$@" up -d || fail 'docker compose up -d did not complete'
+
+    if [ "$#" -gt 0 ]; then
+        docker compose "$@" up -d --build mta mailstore || fail 'the mail-server containers did not rebuild'
+    fi
+
+    docker image prune -f >/dev/null
+
+    report ''
+    log 'installed'
+}
+
+schedule() {
+    mkdir -p var
+    line="17 4 * * * cd '$PWD' && bin/auto-update >> var/auto-update.log 2>&1 $MARKER"
+
+    { crontab -l 2>/dev/null | grep -vF "$MARKER"; echo "$line"; } | crontab - || exit 1
+
+    echo 'Scheduled: every night at 04:17, logging to var/auto-update.log.'
+    echo 'It installs only while "Install automatically" is chosen in Admin → Updates.'
+}
+
+unschedule() {
+    crontab -l 2>/dev/null | grep -vF "$MARKER" | crontab - || exit 1
+    echo 'Schedule removed.'
+}
+
+main() {
+    cd "$(dirname -- "$0")/.." || exit 1
+
+    case "${1:-run}" in
+        run)       run ;;
+        install)   schedule ;;
+        uninstall) unschedule ;;
+        *)
+            echo "usage: $0 [install|uninstall]" >&2
+            exit 2
+            ;;
+    esac
+}
+
+# On one line, and everything above a function, so the whole script is read
+# before any of it runs: `git pull` may replace this file mid-run.
+main "$@"; exit $?

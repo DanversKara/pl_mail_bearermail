@@ -8,7 +8,7 @@ Accepts:
   chosen  — whether an administrator chose it, or it follows the build
   status  — App\Domain\DTO\System\UpdateStatus of the last answer about THIS build, or null
   image   — the image reference the checks read
-  saved   — true right after the channel was saved
+  saved   — 'channel' or 'install' right after that form was saved, else null
 
 The chip in the band is the verdict, and the only colour on the card. An error
 is amber rather than red: an unreachable registry costs nothing but the notice,
@@ -52,7 +52,7 @@ this renders.
             {% if saved %}
                 <div role="status" class="flex items-start gap-2.5 rounded-lg bg-emerald-500/10 px-3.5 py-3 text-sm text-emerald-500">
                     <i class="fa-solid fa-circle-check mt-0.5 shrink-0" aria-hidden="true"></i>
-                    <p class="leading-snug">{{ 'admin.updates.saved'|trans }}</p>
+                    <p class="leading-snug">{{ (saved == 'install' ? 'admin.updates.saved_install' : 'admin.updates.saved')|trans }}</p>
                 </div>
             {% endif %}
 
@@ -87,6 +87,43 @@ this renders.
             </form>
 
             {% if channel.value != 'off' %}
+                {# Install or only announce. The app cannot do the installing
+                   itself, so "automatically" is a standing instruction to
+                   bin/auto-update on the server, and the lines under the form
+                   say whether that script has ever asked for it. #}
+                {% set installMode = check.autoInstall ? 'auto' : 'notify' %}
+                <form method="post" action="{{ path('app_admin_updates_panel') }}" data-turbo-frame="admin-updates" class="space-y-2">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_updates') }}">
+                    <input type="hidden" name="do" value="install">
+                    <span class="block text-xs font-medium text-ink-muted" id="update-install-label">{{ 'admin.updates.install.label'|trans }}</span>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="{{ seg }} flex-1 min-w-[16rem]" role="radiogroup" aria-labelledby="update-install-label">
+                            {% for option in ['notify', 'auto'] %}
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="install" value="{{ option }}" class="peer sr-only"
+                                           {{ option == installMode ? 'checked' : '' }}>
+                                    <span class="{{ segText }}">{{ ('admin.updates.install.' ~ option ~ '.name')|trans }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 h-8 px-3.5 rounded-lg text-xs font-medium btn-quiet hover:bg-hover transition-colors cursor-pointer">
+                            {{ 'admin.updates.install.save'|trans }}
+                        </button>
+                    </div>
+                    <p class="text-xs text-ink-faint leading-relaxed">{{ ('admin.updates.install.' ~ installMode ~ '.hint')|trans }}</p>
+                </form>
+
+                {% if check.autoInstall and not check.installerSeenAt %}
+                    <div role="status" class="space-y-1.5 rounded-lg bg-amber-500/10 px-3.5 py-3 text-xs text-amber-600 dark:text-amber-400">
+                        <p class="flex items-start gap-2.5 leading-snug">
+                            <i class="fa-solid fa-triangle-exclamation mt-0.5 shrink-0" aria-hidden="true"></i>
+                            <span><strong class="font-semibold">{{ 'admin.updates.install.setup.heading'|trans }}.</strong> {{ 'admin.updates.install.setup.body'|trans }}</span>
+                        </p>
+                        <code class="block rounded bg-zinc-500/10 px-2.5 py-1.5 font-mono text-ink select-all whitespace-pre">bin/auto-update install</code>
+                    </div>
+                {% endif %}
+
                 <dl class="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1.5 text-xs">
                     <dt class="text-ink-faint">{{ 'admin.updates.running'|trans }}</dt>
                     <dd class="font-mono text-ink-soft break-all">
@@ -116,6 +153,23 @@ this renders.
                             </button>
                         </form>
                     </dd>
+
+                    {% if check.installerSeenAt %}
+                        <dt class="text-ink-faint">{{ 'admin.updates.install.seen'|trans }}</dt>
+                        <dd class="font-mono text-ink-soft">{{ check.installerSeenAt|date('Y-m-d H:i') }}</dd>
+
+                        <dt class="text-ink-faint">{{ 'admin.updates.install.last'|trans }}</dt>
+                        <dd class="text-ink-soft break-words">
+                            {% if check.installedAt %}
+                                <span class="font-mono">{{ check.installedAt|date('Y-m-d H:i') }}</span>
+                                {% if check.installError %}
+                                    <span class="text-amber-600 dark:text-amber-400">· {{ 'admin.updates.install.failed'|trans({ '%error%': check.installError }) }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-ink-faint">{{ 'admin.updates.install.never'|trans }}</span>
+                            {% endif %}
+                        </dd>
+                    {% endif %}
                 </dl>
 
                 {% if verdict == 'unknown' %}
@@ -167,14 +221,19 @@ this renders.
                         </p>
                     </div>
 
-                    {# How, since this page does not do it yet. The two commands
-                       from the handbook, and the one warning that matters on an
-                       install that migrates itself on boot. #}
+                    {# How: the script's own command when it is scheduled here,
+                       else the two from the handbook, and the one warning that
+                       matters on an install that migrates itself on boot. #}
                     <div class="space-y-1.5">
                         <h3 class="text-xs font-semibold text-ink">{{ 'admin.updates.how.heading'|trans }}</h3>
-                        <p class="text-xs text-ink-muted leading-relaxed">{{ 'admin.updates.how.body'|trans }}</p>
-                        <code class="block rounded bg-zinc-500/10 px-2.5 py-1.5 text-xs font-mono text-ink select-all whitespace-pre">docker compose pull
+                        {% if check.autoInstall and check.installerSeenAt %}
+                            <p class="text-xs text-ink-muted leading-relaxed">{{ 'admin.updates.how.auto'|trans }}</p>
+                            <code class="block rounded bg-zinc-500/10 px-2.5 py-1.5 text-xs font-mono text-ink select-all whitespace-pre">bin/auto-update</code>
+                        {% else %}
+                            <p class="text-xs text-ink-muted leading-relaxed">{{ 'admin.updates.how.body'|trans }}</p>
+                            <code class="block rounded bg-zinc-500/10 px-2.5 py-1.5 text-xs font-mono text-ink select-all whitespace-pre">docker compose pull
 docker compose up -d --wait</code>
+                        {% endif %}
                     </div>
                 {% endif %}
 

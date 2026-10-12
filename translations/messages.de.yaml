@@ -1117,6 +1117,23 @@ admin:
         header: '%version% ist verfügbar'
         intro: 'plMail prüft jede Stunde, ob der Kanal, dem du folgst, einen neueren Build veröffentlicht hat, und sagt es den Administratoren einmal pro Build: mit einer Benachrichtigung auf jedem Gerät, das sie für Push angemeldet haben, und mit einem Hinweis oben in diesem Bereich.'
         saved: 'Kanal gespeichert.'
+        saved_install: 'Gespeichert.'
+        install:
+            label: 'Wenn es eine Aktualisierung gibt'
+            save: 'Speichern'
+            notify:
+                name: 'Nur melden'
+                hint: 'Hier und per Push ankündigen; ein Administrator installiert sie auf dem Server.'
+            auto:
+                name: 'Automatisch installieren'
+                hint: 'Der Server installiert sie nachts, nachdem er eine Kopie der Datenbank gesichert hat. Dafür muss bin/auto-update einmal auf dem Server eingeplant werden.'
+            setup:
+                heading: 'Auf diesem Server noch nicht eingerichtet'
+                body: 'Die App kann ihre eigenen Container nicht ersetzen, deshalb installiert der Server. Führe per SSH im Ordner, in dem BearerMail installiert ist, einmal aus:'
+            seen: 'Server zuletzt gefragt'
+            last: 'Letzte Installation'
+            never: 'noch keine'
+            failed: 'fehlgeschlagen: %error%'
         channel:
             label: 'Folgen'
             save: 'Speichern'
@@ -1157,6 +1174,7 @@ admin:
         how:
             heading: 'Aktualisieren'
             body: 'Hol das neue Image und erstelle die Container neu; auf einem NAS stellst du die App neu bereit. plMail migriert seine Datenbank beim Start, lies also vorher im Änderungsprotokoll, was unter „Before you upgrade“ steht.'
+            auto: 'Das installiert sich heute Nacht gegen 04:17 von selbst. Um es stattdessen jetzt zu installieren, führe auf dem Server aus:'
         privacy: 'Eine Prüfung fragt die Registry nach dem neuesten Image von %image% und api.github.com, was sich seit diesem Build geändert hat. Über diese Installation wird dabei nichts gesendet außer den Anfragen selbst.'
         push:
             title: 'plMail %version% ist verfügbar'

@@ -121,6 +121,10 @@ to `main` (`.github/workflows/docker.yml`), so the additions above are included 
 (channel **Main**) reports new builds of this fork rather than of upstream. To upgrade, run the same
 `pull` and `up -d` again. Database changes are applied automatically on start.
 
+To have the server install new builds by itself, choose **Install automatically** in Admin → Updates
+and schedule the installer once: `bin/auto-update install`. See
+[Installing updates automatically](docs/install/upgrading.md#installing-updates-automatically).
+
 `docker compose up -d --build` still builds from source, for a server that cannot reach ghcr.io,
 but a local build has no commit stamped in, so Admin → Updates cannot compare it with anything.
 

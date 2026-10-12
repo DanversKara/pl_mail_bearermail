@@ -15,10 +15,10 @@ use Doctrine\ORM\Mapping as ORM;
  * Admin → Updates: which builds count as an update, and what the last check of
  * that channel found.
  *
- * One row, the way the other admin singletons are. The channel is the only
- * thing an administrator sets and the only thing a config backup carries. The
- * rest is the checker's own record, and it would be wrong on any other
- * installation.
+ * One row, the way the other admin singletons are. The channel and whether to
+ * install automatically are what an administrator sets, and all a config
+ * backup carries. The rest is the checker's and the installer's own record,
+ * and it would be wrong on any other installation.
  */
 #[ORM\Entity(repositoryClass: UpdateCheckRepository::class)]
 #[ORM\Table(name: 'update_check')]
@@ -74,4 +74,32 @@ class UpdateCheck
      */
     #[ORM\Column(length: 64, nullable: true)]
     public ?string $notifiedRevision = null;
+
+    /**
+     * Whether a newer build is installed without asking, or only announced.
+     *
+     * The app cannot install anything itself: it runs inside the containers an
+     * install replaces. bin/auto-update, scheduled on the server, asks
+     * app:updates:should-install every night, and this is what it is told.
+     * Off by default: an install migrates the database on boot, so it happens
+     * only where an administrator said so.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    public bool $autoInstall = false;
+
+    /**
+     * When bin/auto-update last asked, whatever it was told. Null means it has
+     * never run on this server, which is what the page tells an administrator
+     * who switched auto-install on and has not scheduled the script yet.
+     */
+    #[ORM\Column(nullable: true)]
+    public ?DateTimeImmutable $installerSeenAt = null;
+
+    /** When bin/auto-update last finished an install, successfully or not. */
+    #[ORM\Column(nullable: true)]
+    public ?DateTimeImmutable $installedAt = null;
+
+    /** Why the last install failed; null when it succeeded or none has run. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    public ?string $installError = null;
 }
