@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
-use App\Entity\Mail\Account;
+use App\Entity\User\User;
 use App\Repository\Mail\MessageRepository;
 
 /**
@@ -29,32 +29,19 @@ final readonly class FloodDetector
     ) {}
 
     /**
-     * The first of these accounts that is being flooded, in the order given,
-     * with how many messages arrived in the window; null when none is.
+     * The user's account being flooded, with how many messages arrived in
+     * the window; null when none is. The busiest, if several are.
      *
-     * One query for all of them: this runs on every inbox visit, and a count
-     * per account would cost one query each.
-     *
-     * @param list<Account> $accounts
+     * One query whatever the number of accounts: this runs on every inbox
+     * visit and every navigation of the list.
      *
      * @return array{isFlood: bool, count: int, account: string}|null
      */
-    public function firstFlooded(array $accounts): ?array
+    public function busiestFlooded(User $user): ?array
     {
-        $since  = new \DateTimeImmutable(sprintf('-%d minutes', self::WINDOW_MINUTES));
-        $counts = $this->messages->countPerAccountSince(
-            array_values(array_filter(array_map(static fn (Account $a): ?int => $a->id, $accounts))),
-            $since,
-        );
+        $since = new \DateTimeImmutable(sprintf('-%d minutes', self::WINDOW_MINUTES));
+        $found = $this->messages->busiestAccountSince($user, $since, self::THRESHOLD);
 
-        foreach ($accounts as $account) {
-            $count = null === $account->id ? 0 : ($counts[$account->id] ?? 0);
-
-            if ($count >= self::THRESHOLD) {
-                return ['isFlood' => true, 'count' => $count, 'account' => (string) $account->email];
-            }
-        }
-
-        return null;
+        return null === $found ? null : ['isFlood' => true, 'count' => $found['count'], 'account' => $found['email']];
     }
 }

@@ -162,38 +162,33 @@ class MessageRepository extends ServiceEntityRepository
      * Messages received for one account since a time — for flood detection.
      */
     /**
-     * Messages received since $since, per account, for the accounts given:
-     * account id => count, accounts with none left out. One grouped query
-     * however many accounts, for the flood banner on every inbox visit.
+     * The user's account that received the most messages since $since, when
+     * that is at least $threshold: its address and the count, or null.
      *
-     * @param list<int> $accountIds
+     * One grouped query that needs no account list, for the flood banner on
+     * every inbox visit and every navigation of the list.
      *
-     * @return array<int, int>
+     * @return array{email: string, count: int}|null
      */
-    public function countPerAccountSince(array $accountIds, \DateTimeImmutable $since): array
+    public function busiestAccountSince(User $user, \DateTimeImmutable $since, int $threshold): ?array
     {
-        if ([] === $accountIds) {
-            return [];
-        }
-
-        $rows = $this->createQueryBuilder('m')
-            ->select('IDENTITY(t.account) AS account', 'COUNT(m.id) AS received')
+        $row = $this->createQueryBuilder('m')
+            ->select('a.email AS email', 'COUNT(m.id) AS received')
             ->join('m.thread', 't')
-            ->where('t.account IN (:accounts)')
+            ->join('t.account', 'a')
+            ->where('a.usr = :user')
             ->andWhere('m.receivedAt >= :since')
-            ->setParameter('accounts', $accountIds)
+            ->setParameter('user', $user)
             ->setParameter('since', $since, Types::DATETIME_IMMUTABLE)
-            ->groupBy('t.account')
+            ->groupBy('a.id', 'a.email')
+            ->having('COUNT(m.id) >= :threshold')
+            ->setParameter('threshold', $threshold)
+            ->orderBy('received', 'DESC')
+            ->setMaxResults(1)
             ->getQuery()
-            ->getArrayResult();
+            ->getOneOrNullResult();
 
-        $counts = [];
-
-        foreach ($rows as $row) {
-            $counts[(int) $row['account']] = (int) $row['received'];
-        }
-
-        return $counts;
+        return null === $row ? null : ['email' => (string) $row['email'], 'count' => (int) $row['received']];
     }
 
     /**

@@ -82,10 +82,10 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * ── Twenty-eight: the flood banner ──────────────────────────────────────
      * BearerMail's inbox warns when a burst of mail may be burying a security
      * alert (App\Service\Mail\FloodDetector). That is one grouped count over
-     * the user's accounts per visit, whatever the number of rows or accounts,
-     * and it reads the accounts from UserAccounts like the sidebar does. It
+     * the user's accounts, joined in the query rather than read first, per
+     * visit and per navigation, whatever the number of rows or accounts. It
      * first shipped as an account read plus a count per account, which is what
-     * took this past the old ceiling.
+     * took both lists past their ceilings.
      */
     private const int BUDGET = 28;
 

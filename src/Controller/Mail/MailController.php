@@ -24,7 +24,6 @@ use App\Service\Ai\ThreadSummaryStore;
 use App\Service\Ai\ThreadTranscript;
 use App\Service\Mail\DeceptiveLinkChecker;
 use App\Service\Mail\FloodDetector;
-use App\Service\Mail\UserAccounts;
 use App\Service\Mail\NewMailMarkers;
 use App\Service\Mail\SenderAuthentication;
 use App\Service\Mail\SidebarCounts;
@@ -60,7 +59,6 @@ final class MailController extends AbstractController
         private readonly SenderAuthentication $senderAuthentication,
         private readonly DeceptiveLinkChecker $linkChecker,
         private readonly FloodDetector $floodDetector,
-        private readonly UserAccounts $userAccounts,
     )
     {
     }
@@ -289,8 +287,7 @@ final class MailController extends AbstractController
         $this->threadRows->preload($threads);
 
         // Flood check: a burst of mail may be trying to bury a security alert.
-        // The accounts the sidebar has already read, and one grouped count.
-        $flood = $user instanceof User ? $this->floodDetector->firstFlooded($this->userAccounts->all($user)) : null;
+        $flood = $user instanceof User ? $this->floodDetector->busiestFlooded($user) : null;
 
         return $this->renderList($request, 'mail/inbox.html.twig', $threads, [
             'tab'         => $tab,

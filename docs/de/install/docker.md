@@ -146,7 +146,7 @@ rufe die Einrichtungsseite über die Adresse auf, die du tatsächlich verwenden 
 | `worker` | `app:work`: jeder Hintergrundprozess, jeweils als eigener Prozess | Alles, was nicht der Webserver ist. Im Netz antwortet er auf den Namen `mercure`, weil er den Hub betreibt |
 | `database` | `postgres:18-alpine` mit vorgeladenem `pg_stat_statements` | — |
 | `ntfy` | ntfy, unter dem Profil `push` | Optional. Android-Push ohne Google — starte ihn mit `docker compose --profile push up -d` |
-| `mta` | Postfix + OpenDKIM, unter dem Profil `mail` | Optional. Der MX deiner Domain: nimmt Mail aus dem Internet auf Port 25 an und versendet sie, mit DKIM signiert — starte ihn mit `docker compose --profile mail up -d`. Siehe [selbst gehosteter Mailserver](../../install/self-hosted-mail-server.md) |
+| `mta` | Postfix + OpenDKIM, unter dem Profil `mail` | Optional. Der MX deiner Domain: nimmt Mail aus dem Internet auf Port 25 an und versendet sie, mit DKIM signiert — starte ihn mit `docker compose --profile mail up -d`. Siehe [selbst gehosteter Mailserver](self-hosted-mail-server.md) |
 | `mailstore` | Dovecot, unter dem Profil `mail` | Optional. Der lokale Postfachserver, an den `mta` zustellt und von dem plMail per IMAP synchronisiert |
 
 Die Prozesse des Workers. Jeder wird wieder gestartet, wenn er endet: sofort, wenn er sauber
