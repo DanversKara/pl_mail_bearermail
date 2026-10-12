@@ -95,6 +95,28 @@ final class OtpExtractorTest extends TestCase
                 ]],
             ],
 
+            // The code lands right on the edge of the look-ahead window. The
+            // window used to cut it, and the card offered "9595".
+            'english: a code on the edge of the window is read whole' => [
+                [
+                    'from'     => 'noreply@google.com',
+                    'fromName' => 'Google',
+                    'subject'  => 'Your Play Console verification code',
+                    'body'     => "To verify your email address in Play Console, enter the following code:\n\n959528\n\nIf you didn't request this email, you can safely ignore it.",
+                ],
+                true,
+                [[
+                    'title'     => 'Google · 959528',
+                    'dedupeKey' => 'google.com|959528',
+                    'payload'   => [
+                        'code'             => '959528',
+                        'issuer'           => 'Google',
+                        'expiresInMinutes' => null,
+                    ],
+                    'happensAt' => null,
+                ]],
+            ],
+
             // German puts the code in FRONT of the word as often as behind it,
             // which is why the window reaches both ways.
             'german: the code stands in front of the context word' => [

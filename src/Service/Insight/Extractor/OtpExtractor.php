@@ -207,7 +207,7 @@ final readonly class OtpExtractor implements InsightExtractorInterface
             $start = max(0, $offset - self::LOOK_BEHIND);
             $length = $offset - $start + strlen($word) + self::LOOK_AHEAD;
 
-            $code = $this->candidateIn(substr($text, $start, $length), $text, $start);
+            $code = $this->candidateIn($text, $start, $length);
 
             if (null !== $code) {
                 return $code;
@@ -218,7 +218,8 @@ final readonly class OtpExtractor implements InsightExtractorInterface
     }
 
     /**
-     * The first acceptable code shape in this window, in reading order.
+     * The first acceptable code shape that STARTS in this window, in reading
+     * order.
      *
      * Two shapes, split so neither has to cover for the other: a run of 4–8
      * digits, and a 6–8 character upper-case token that mixes letters AND
@@ -226,22 +227,31 @@ final readonly class OtpExtractor implements InsightExtractorInterface
      * shape as a code otherwise, and pure digit runs are already the first
      * shape's business.
      *
-     * $offsetInText is where the window starts in the whole text, so the
-     * refusals below can look at what precedes a candidate even when it sits
-     * on the window's own edge.
+     * The shapes are matched on the window plus a margin each side, and only
+     * the ones starting inside the window are kept. Matching on the bare
+     * window cut numbers at its edges: Google's "…enter the following code:
+     * 959528" put the window's end two digits into the code, and the card
+     * offered "9595" — a run the digit boundaries could not refuse, because
+     * the digits after it were outside the text they could see.
      */
-    private function candidateIn(string $window, string $text, int $offsetInText): ?string
+    private function candidateIn(string $text, int $start, int $length): ?string
     {
+        $margin = 16;
+        $from = max(0, $start - $margin);
+        $padded = substr($text, $from, $length + ($start - $from) + $margin);
+        $lo = $start - $from;
+        $hi = $lo + $length;
+
         $candidates = [];
 
         // Neither neighbour may be a digit or a separator between digits:
         // that is what keeps 1.234,56 and 09:30 out, and it does so by shape
         // rather than by a list of things money looks like.
-        foreach ($this->matchesWithOffsets('~(?<![\dA-Za-z.,])\d{4,8}(?![.,]?\d)(?![A-Za-z])~', $window) as $candidate) {
+        foreach ($this->matchesWithOffsets('~(?<![\dA-Za-z.,])\d{4,8}(?![.,]?\d)(?![A-Za-z])~', $padded) as $candidate) {
             $candidates[] = $candidate;
         }
 
-        foreach ($this->matchesWithOffsets('~(?<![\dA-Za-z])[A-Z0-9]{6,8}(?![\dA-Za-z])~', $window) as $candidate) {
+        foreach ($this->matchesWithOffsets('~(?<![\dA-Za-z])[A-Z0-9]{6,8}(?![\dA-Za-z])~', $padded) as $candidate) {
             if (1 === preg_match('~\d~', $candidate[0]) && 1 === preg_match('~[A-Z]~', $candidate[0])) {
                 $candidates[] = $candidate;
             }
@@ -250,7 +260,11 @@ final readonly class OtpExtractor implements InsightExtractorInterface
         usort($candidates, static fn (array $a, array $b): int => $a[1] <=> $b[1]);
 
         foreach ($candidates as [$candidate, $offset]) {
-            if (true === $this->isRefused($candidate, $text, $offsetInText + $offset)) {
+            if ($offset < $lo || $offset >= $hi) {
+                continue;
+            }
+
+            if (true === $this->isRefused($candidate, $text, $from + $offset)) {
                 continue;
             }
 
