@@ -190,10 +190,10 @@ final class DriveController extends AbstractController
         }
 
         if ($stored > 0) {
-            $this->addFlash('success', 1 === $stored ? 'drive.uploaded' : 'drive.uploaded_many');
+            $this->addFlash('success', $this->trans(1 === $stored ? 'drive.uploaded' : 'drive.uploaded_many'));
         }
         if (null !== $error) {
-            $this->addFlash('error', $error);
+            $this->addFlash('error', $this->trans($error));
         }
 
         return $this->backTo($folder);
@@ -226,7 +226,7 @@ final class DriveController extends AbstractController
         if ('' !== $name) {
             $this->em->persist(DriveFolder::create($user, $name, $parent));
             $this->em->flush();
-            $this->addFlash('success', 'drive.folder_created');
+            $this->addFlash('success', $this->trans('drive.folder_created'));
         }
 
         return $this->backTo($parent);
@@ -283,7 +283,7 @@ final class DriveController extends AbstractController
         $this->em->remove($folder);
         $this->em->flush();
 
-        $this->addFlash('success', 'drive.folder_deleted');
+        $this->addFlash('success', $this->trans('drive.folder_deleted'));
 
         return $this->backTo($parent);
     }
@@ -354,7 +354,7 @@ final class DriveController extends AbstractController
         $this->em->remove($file);
         $this->em->flush();
 
-        $this->addFlash('success', 'drive.deleted');
+        $this->addFlash('success', $this->trans('drive.deleted'));
 
         return $this->backTo($folder);
     }

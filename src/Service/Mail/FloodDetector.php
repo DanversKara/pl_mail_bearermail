@@ -29,21 +29,32 @@ final readonly class FloodDetector
     ) {}
 
     /**
-     * @return array{isFlood: bool, count: int}|null Null when not a flood.
+     * The first of these accounts that is being flooded, in the order given,
+     * with how many messages arrived in the window; null when none is.
+     *
+     * One query for all of them: this runs on every inbox visit, and a count
+     * per account would cost one query each.
+     *
+     * @param list<Account> $accounts
+     *
+     * @return array{isFlood: bool, count: int, account: string}|null
      */
-    public function check(Account $account): ?array
+    public function firstFlooded(array $accounts): ?array
     {
-        $since = new \DateTimeImmutable(sprintf('-%d minutes', self::WINDOW_MINUTES));
+        $since  = new \DateTimeImmutable(sprintf('-%d minutes', self::WINDOW_MINUTES));
+        $counts = $this->messages->countPerAccountSince(
+            array_values(array_filter(array_map(static fn (Account $a): ?int => $a->id, $accounts))),
+            $since,
+        );
 
-        $count = $this->messages->countForAccountSince($account->id, $since);
+        foreach ($accounts as $account) {
+            $count = null === $account->id ? 0 : ($counts[$account->id] ?? 0);
 
-        if ($count < self::THRESHOLD) {
-            return null;
+            if ($count >= self::THRESHOLD) {
+                return ['isFlood' => true, 'count' => $count, 'account' => (string) $account->email];
+            }
         }
 
-        return [
-            'isFlood' => true,
-            'count'   => $count,
-        ];
+        return null;
     }
 }

@@ -78,8 +78,16 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * starred ones differ by `listed_at IS NULL`, which is new-mail markers
      * against plain unread, and they are two answers rather than one asked
      * twice.
+     *
+     * ── Twenty-eight: the flood banner ──────────────────────────────────────
+     * BearerMail's inbox warns when a burst of mail may be burying a security
+     * alert (App\Service\Mail\FloodDetector). That is one grouped count over
+     * the user's accounts per visit, whatever the number of rows or accounts,
+     * and it reads the accounts from UserAccounts like the sidebar does. It
+     * first shipped as an account read plus a count per account, which is what
+     * took this past the old ceiling.
      */
-    private const int BUDGET = 27;
+    private const int BUDGET = 28;
 
     /**
      * The ceiling for the same list NAVIGATED rather than visited.

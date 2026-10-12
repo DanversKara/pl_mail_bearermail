@@ -276,7 +276,7 @@ final class ConfigBackupControllerTest extends WebTestCase
         );
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('not a plMail configuration backup', (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('not a BearerMail configuration backup', (string) $client->getResponse()->getContent());
         self::assertSame(0, (int) $this->connection->fetchOne('SELECT count(*) FROM fcm_config'));
     }
 

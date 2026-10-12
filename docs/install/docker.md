@@ -193,7 +193,7 @@ The compose file declares fourteen named volumes:
 | `mail_data` | The local mailboxes (Maildir), mounted by `mailstore` |
 | `mail_dkim` | The DKIM signing keys, mounted by `mta` |
 | `mail_config` | Relay settings and SMTP keys written by plMail's UI, read by `mta` and `mailstore` |
-| `app_drive` | Drive files, mounted by `php` and `worker` (its own volume: `app:prune-blobs` sweeps `app_uploads`) |
+| `app_drive` | Drive files, mounted by `php` and `worker` (its own volume: `app:prune:blobs` sweeps `app_uploads`) |
 
 The three blob volumes were missing until recently, and the failure was silent in an instructive
 way. The Dockerfile deliberately has no `VOLUME /app/var/` — an anonymous volume there gave every

@@ -161,17 +161,39 @@ class MessageRepository extends ServiceEntityRepository
     /**
      * Messages received for one account since a time — for flood detection.
      */
-    public function countForAccountSince(int $accountId, \DateTimeImmutable $since): int
+    /**
+     * Messages received since $since, per account, for the accounts given:
+     * account id => count, accounts with none left out. One grouped query
+     * however many accounts, for the flood banner on every inbox visit.
+     *
+     * @param list<int> $accountIds
+     *
+     * @return array<int, int>
+     */
+    public function countPerAccountSince(array $accountIds, \DateTimeImmutable $since): array
     {
-        return (int) $this->createQueryBuilder('m')
-            ->select('COUNT(m.id)')
+        if ([] === $accountIds) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('m')
+            ->select('IDENTITY(t.account) AS account', 'COUNT(m.id) AS received')
             ->join('m.thread', 't')
-            ->where('t.account = :account')
+            ->where('t.account IN (:accounts)')
             ->andWhere('m.receivedAt >= :since')
-            ->setParameter('account', $accountId)
+            ->setParameter('accounts', $accountIds)
             ->setParameter('since', $since, Types::DATETIME_IMMUTABLE)
+            ->groupBy('t.account')
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getArrayResult();
+
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $counts[(int) $row['account']] = (int) $row['received'];
+        }
+
+        return $counts;
     }
 
     /**
