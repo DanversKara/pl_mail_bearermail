@@ -1,8 +1,19 @@
+# The image this fork's GitHub Actions publish on every push to main
+# (.github/workflows/docker.yml). Pulled rather than built here, because only
+# the published image has APP_VERSION, APP_COMMIT and APP_IMAGE stamped in, and
+# Admin → Updates needs all three to tell whether a newer build exists. Follow
+# the "Main" channel there; switch the tag to `latest` once releases are tagged.
+#
+# `docker compose pull && docker compose up -d` upgrades. `build` stays as a
+# fallback for a server that cannot reach ghcr.io: `docker compose up -d
+# --build` still works, it just has no commit to compare against.
 x-app-image: &app-image
   build:
     context: .
     dockerfile: Dockerfile
-  image: plmail-fork:latest
+    args:
+      APP_IMAGE: ghcr.io/danverskara/pl_mail_bearermail
+  image: ghcr.io/danverskara/pl_mail_bearermail:main
 
 # Every secret below is blank by default and generated on first start by the
 # secrets-init service, into the shared app_secrets volume. Set any of them in

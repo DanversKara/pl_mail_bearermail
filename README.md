@@ -111,13 +111,18 @@ cd pl_mail_bearermail
 cp .env.mail.dist .env.mail.local
 nano .env.mail.local      # MAIL_DOMAIN, MAIL_ACCOUNTS, relay, Cloudflare…
 
-# Build and start plMail plus the mail server
-docker compose --profile mail up -d --build
+# Pull and start plMail plus the mail server
+docker compose --profile mail pull
+docker compose --profile mail up -d
 ```
 
-This fork builds its image from source (`compose.yaml` builds `plmail-fork:latest`) rather than
-pulling upstream's published image, so the additions above are included. Database changes are
-applied automatically on start.
+This fork publishes its own image, `ghcr.io/danverskara/pl_mail_bearermail:main`, from every push
+to `main` (`.github/workflows/docker.yml`), so the additions above are included and Admin → Updates
+(channel **Main**) reports new builds of this fork rather than of upstream. To upgrade, run the same
+`pull` and `up -d` again. Database changes are applied automatically on start.
+
+`docker compose up -d --build` still builds from source, for a server that cannot reach ghcr.io,
+but a local build has no commit stamped in, so Admin → Updates cannot compare it with anything.
 
 **Back up** the database (`docker compose exec php php bin/console app:backup`), the secrets in
 `var/secrets/generated.env`, and your `.env.mail.local`. The last one holds your mailbox passwords
