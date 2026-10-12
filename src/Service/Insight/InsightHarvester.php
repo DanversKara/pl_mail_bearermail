@@ -56,9 +56,15 @@ final readonly class InsightHarvester
                     continue;
                 }
 
+                $keys = [];
                 foreach ($extractor->extract($message) as $draft) {
-                    $this->land($message, $extractor::key(), $draft);
+                    $keys[] = $this->land($message, $extractor::key(), $draft);
                     $written++;
+                }
+
+                if (\in_array($extractor::key(), self::ONE_PER_MESSAGE, true)) {
+                    // Counted as a change so the caller flushes the removal.
+                    $written += $this->dropStale($message, $extractor::key(), $keys);
                 }
             } catch (\Throwable $e) {
                 $this->logger->warning('Insight extractor failed on a message', [
@@ -73,7 +79,37 @@ final readonly class InsightHarvester
         return $written;
     }
 
-    private function land(Message $message, string $extractorKey, InsightDraft $draft): void
+    /**
+     * BearerMail: extractors whose card belongs to ONE mail rather than to a
+     * series. When such a mail is read again (app:backfill insights) and the
+     * extractor now finds something different — a code it used to misread —
+     * the old card is a wrong answer still on screen, so it goes.
+     *
+     * Not parcels, flights or invoices: their cards collect a series of mails,
+     * and re-reading one mail of the series must not remove the card.
+     */
+    private const array ONE_PER_MESSAGE = ['otp'];
+
+    /**
+     * @param list<string> $keep dedupe keys just written for this message
+     *
+     * @return int how many stale cards were removed
+     */
+    private function dropStale(Message $message, string $extractorKey, array $keep): int
+    {
+        $removed = 0;
+        foreach ($this->insights->findBy(['message' => $message, 'extractor' => $extractorKey]) as $insight) {
+            if (false === \in_array($insight->dedupeKey, $keep, true)) {
+                $this->em->remove($insight);
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    /** @return string the scoped dedupe key the draft landed under */
+    private function land(Message $message, string $extractorKey, InsightDraft $draft): string
     {
         $dedupeKey = mb_substr($extractorKey . ':' . $draft->dedupeKey, 0, 160);
 
@@ -96,5 +132,7 @@ final readonly class InsightHarvester
         // land on "delivered", not on "shipped".
         $insight->message = $message;
         $insight->thread = $message->thread;
+
+        return $dedupeKey;
     }
 }
