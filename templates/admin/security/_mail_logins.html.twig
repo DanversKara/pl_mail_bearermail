@@ -1,0 +1,169 @@
+{% import '_partials/_card_chrome.html.twig' as chrome %}
+{#
+admin/security/_mail_logins.html.twig — BearerMail: Admin → Security →
+Mail login blocking. See MailLoginGuardController.
+
+Accepts:
+  settings   {enabled, maxFailures, windowMinutes, blockHours}
+  connected  whether the mailstore has started asking (its key exists)
+  blocked    MailLoginAddress rows blocked right now
+  trusted    MailLoginAddress rows that are never blocked
+  failing    MailLoginAddress rows with recent failures, not blocked
+  now        DateTimeImmutable
+  saved      '' | settings | unblocked | trusted | untrusted
+  error      '' | bad_ip
+#}
+{% set input = 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink' %}
+{% set btn = 'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer' %}
+{% set quiet = btn ~ ' bg-field border border-field text-ink-soft hover:bg-hover' %}
+
+<turbo-frame id="admin-mail-logins">
+<div class="space-y-3">
+
+    {% if saved %}
+        <div class="px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-600 text-[13px]">{{ ('admin.mail_logins.saved.' ~ saved)|trans }}</div>
+    {% endif %}
+    {% if error %}
+        <div class="px-3 py-2 rounded-lg bg-danger/10 text-danger text-[13px]">{{ ('admin.mail_logins.error.' ~ error)|trans }}</div>
+    {% endif %}
+
+    {# ── Settings ───────────────────────────────────────────────────── #}
+    <div class="{{ chrome.shell() }}">
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-user-lock text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_logins.heading'|trans }}</h2>
+            <span class="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-full {{ settings.enabled and connected ? 'bg-emerald-500/15 text-emerald-600' : 'bg-raised text-ink-muted' }}">
+                {{ (settings.enabled ? (connected ? 'admin.mail_logins.state.on' : 'admin.mail_logins.state.waiting') : 'admin.mail_logins.state.off')|trans }}
+            </span>
+        </div>
+        <p class="px-4 pt-3 text-xs text-ink-faint">{{ 'admin.mail_logins.help'|trans }}</p>
+        {% if settings.enabled and not connected %}
+            <p class="mx-4 mt-3 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">{{ 'admin.mail_logins.not_connected'|trans }}</p>
+        {% endif %}
+        <form method="post" action="{{ path('app_admin_mail_logins_settings') }}" class="px-4 py-4 grid gap-4 sm:grid-cols-3">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_settings') }}">
+            <label class="sm:col-span-3 inline-flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" name="enabled" value="1" {{ settings.enabled ? 'checked' }}>
+                {{ 'admin.mail_logins.enabled'|trans }}
+            </label>
+            <div>
+                <label for="ml-max" class="text-[13px] font-medium text-ink-soft">{{ 'admin.mail_logins.max_failures'|trans }}</label>
+                <input id="ml-max" type="number" min="3" max="1000" step="1" name="maxFailures" value="{{ settings.maxFailures }}" class="{{ input }}">
+            </div>
+            <div>
+                <label for="ml-window" class="text-[13px] font-medium text-ink-soft">{{ 'admin.mail_logins.window'|trans }}</label>
+                <input id="ml-window" type="number" min="1" max="10080" step="1" name="windowMinutes" value="{{ settings.windowMinutes }}" class="{{ input }}">
+            </div>
+            <div>
+                <label for="ml-hours" class="text-[13px] font-medium text-ink-soft">{{ 'admin.mail_logins.block_hours'|trans }}</label>
+                <input id="ml-hours" type="number" min="0" max="8760" step="1" name="blockHours" value="{{ settings.blockHours }}" class="{{ input }}">
+                <p class="mt-1 text-xs text-ink-faint">{{ 'admin.mail_logins.block_hours_help'|trans }}</p>
+            </div>
+            <div class="sm:col-span-3">
+                <button type="submit" class="{{ btn }} bg-accent text-accent-ink hover:bg-accent-strong">
+                    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>{{ 'admin.mail_logins.save'|trans }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# ── Blocked now ────────────────────────────────────────────────── #}
+    <div class="{{ chrome.shell() }}">
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-ban text-xs text-danger" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_logins.blocked.heading'|trans }}</h2>
+            <span class="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-full {{ blocked is empty ? 'bg-raised text-ink-muted' : 'bg-danger/15 text-danger' }}">{{ blocked|length }}</span>
+        </div>
+        {% if blocked is empty %}
+            <p class="px-4 py-5 text-[13px] text-ink-muted">{{ 'admin.mail_logins.blocked.none'|trans }}</p>
+        {% else %}
+            <ul class="divide-y divide-line">
+                {% for a in blocked %}
+                    <li class="px-4 py-3 flex flex-wrap items-center gap-3">
+                        <div class="min-w-0 flex-1 basis-56">
+                            <p class="font-mono text-sm text-ink break-all">{{ a.ip }}</p>
+                            <p class="text-xs text-ink-faint">
+                                {{ 'admin.mail_logins.blocked.since'|trans({'%date%': a.blockedAt|date('Y-m-d H:i')}) }}
+                                · {{ a.blockedUntil ? 'admin.mail_logins.blocked.until'|trans({'%date%': a.blockedUntil|date('Y-m-d H:i')}) : 'admin.mail_logins.blocked.forever'|trans }}
+                                {% if a.lastLogin %} · {{ 'admin.mail_logins.tried'|trans }} <span class="font-mono">{{ a.lastLogin }}</span>{% endif %}
+                                {% if a.timesBlocked > 1 %} · {{ 'admin.mail_logins.blocked.times'|trans({'%count%': a.timesBlocked}) }}{% endif %}
+                            </p>
+                        </div>
+                        <form method="post" action="{{ path('app_admin_mail_logins_unblock') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_unblock') }}">
+                            <input type="hidden" name="ip" value="{{ a.ip }}">
+                            <button type="submit" class="{{ quiet }}"><i class="fa-solid fa-unlock" aria-hidden="true"></i>{{ 'admin.mail_logins.unblock'|trans }}</button>
+                        </form>
+                        <form method="post" action="{{ path('app_admin_mail_logins_unblock') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_unblock') }}">
+                            <input type="hidden" name="ip" value="{{ a.ip }}">
+                            <input type="hidden" name="trust" value="1">
+                            <button type="submit" class="{{ quiet }}"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>{{ 'admin.mail_logins.unblock_trust'|trans }}</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    {# ── Failing, not blocked yet ───────────────────────────────────── #}
+    {% if failing is not empty %}
+        <div class="{{ chrome.shell() }}">
+            <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+                <i class="fa-solid fa-triangle-exclamation text-xs text-amber-500" aria-hidden="true"></i>
+                <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_logins.failing.heading'|trans }}</h2>
+            </div>
+            <ul class="divide-y divide-line">
+                {% for a in failing %}
+                    <li class="px-4 py-2.5 flex flex-wrap items-center gap-3 text-sm">
+                        <span class="font-mono text-ink break-all flex-1 basis-40">{{ a.ip }}</span>
+                        <span class="text-xs text-ink-faint">
+                            {{ 'admin.mail_logins.failing.count'|trans({'%count%': a.failures, '%max%': settings.maxFailures}) }}
+                            {% if a.lastLogin %} · {{ 'admin.mail_logins.tried'|trans }} <span class="font-mono">{{ a.lastLogin }}</span>{% endif %}
+                            · {{ a.lastFailureAt|date('Y-m-d H:i') }}
+                        </span>
+                        <form method="post" action="{{ path('app_admin_mail_logins_trust') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_trust') }}">
+                            <input type="hidden" name="ip" value="{{ a.ip }}">
+                            <button type="submit" class="{{ quiet }}"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>{{ 'admin.mail_logins.trust'|trans }}</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {# ── Always allowed ─────────────────────────────────────────────── #}
+    <div class="{{ chrome.shell() }}">
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-circle-check text-xs text-emerald-500" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'admin.mail_logins.trusted.heading'|trans }}</h2>
+        </div>
+        <p class="px-4 pt-3 text-xs text-ink-faint">{{ 'admin.mail_logins.trusted.help'|trans }}</p>
+        {% if trusted is not empty %}
+            <ul class="divide-y divide-line mt-2">
+                {% for a in trusted %}
+                    <li class="px-4 py-2.5 flex items-center gap-3">
+                        <span class="font-mono text-sm text-ink break-all flex-1">{{ a.ip }}</span>
+                        <form method="post" action="{{ path('app_admin_mail_logins_trust') }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_trust') }}">
+                            <input type="hidden" name="ip" value="{{ a.ip }}">
+                            <input type="hidden" name="trusted" value="0">
+                            <button type="submit" class="{{ quiet }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i>{{ 'admin.mail_logins.untrust'|trans }}</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <form method="post" action="{{ path('app_admin_mail_logins_trust') }}" class="px-4 py-4 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_mail_logins_trust') }}">
+            <div class="flex-1 basis-56">
+                <label for="ml-trust-ip" class="text-[13px] font-medium text-ink-soft">{{ 'admin.mail_logins.trusted.add_label'|trans }}</label>
+                <input id="ml-trust-ip" type="text" name="ip" required inputmode="decimal" autocomplete="off"
+                       placeholder="203.0.113.7" class="{{ input }} font-mono">
+            </div>
+            <button type="submit" class="{{ quiet }}"><i class="fa-solid fa-plus" aria-hidden="true"></i>{{ 'admin.mail_logins.trusted.add'|trans }}</button>
+        </form>
+    </div>
+</div>
+</turbo-frame>

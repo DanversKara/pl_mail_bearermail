@@ -56,4 +56,38 @@ mkdir -p /etc/plmail-mail-config
 touch /etc/plmail-mail-config/smtp_keys
 echo "-- ${COUNT} mailbox(es) provisioned"
 
+# --- BearerMail: block addresses that keep failing to sign in --------------
+# Dovecot asks the app before every login (auth policy). The app counts
+# wrong passwords on the public port (993) and refuses an address that has
+# too many; Admin -> Security shows the blocked ones with Unblock. The app's
+# own logins (143, Postfix) are never counted.
+# The shared key lives on the mail-config volume, which the app reads too.
+# If the app is down or the key is wrong, logins go through as before
+# (auth_policy_reject_on_fail = no): it can switch blocking off, never lock out.
+POLICY_CONF=/etc/dovecot/auth-policy.conf
+: > "$POLICY_CONF"
+if [ "${MAIL_LOGIN_GUARD:-on}" != "off" ]; then
+  KEY_FILE=/etc/plmail-mail-config/auth_policy_key
+  if [ ! -s "$KEY_FILE" ]; then
+    openssl rand -hex 32 > "$KEY_FILE"
+  fi
+  chmod 644 "$KEY_FILE"
+  POLICY_KEY="$(tr -d '[:space:]' < "$KEY_FILE")"
+  cat > "$POLICY_CONF" <<CONF
+auth_policy_server_url = ${MAIL_LOGIN_GUARD_URL:-http://php/internal/mail-auth-policy}
+auth_policy_server_api_header = X-Mail-Policy-Key: ${POLICY_KEY}
+auth_policy_server_timeout_msecs = 2000
+auth_policy_hash_nonce = ${POLICY_KEY}
+auth_policy_request_attributes = login=%{requested_username} remote=%{rip} lport=%{lport} protocol=%s
+auth_policy_reject_on_fail = no
+auth_policy_check_before_auth = yes
+auth_policy_check_after_auth = no
+auth_policy_report_after_auth = yes
+CONF
+  echo "-- failed-login blocking: on (Admin -> Security)"
+else
+  echo "-- failed-login blocking: off (MAIL_LOGIN_GUARD=off)"
+fi
+chmod 600 "$POLICY_CONF"
+
 exec dovecot -F

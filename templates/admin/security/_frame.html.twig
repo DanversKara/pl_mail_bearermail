@@ -32,7 +32,7 @@ admin/security/_frame.html.twig — Admin → Security.
             <div class="divide-y divide-line">
                 {% for event in events %}
                     <div class="px-4 py-2.5 flex items-center gap-3 text-sm">
-                        <i class="fa-solid {{ event.type == 'login_failure' ? 'fa-xmark text-red-500' : 'fa-check text-emerald-500' }} w-4" aria-hidden="true"></i>
+                        <i class="fa-solid {{ event.type == 'login_failure' ? 'fa-xmark text-red-500' : (event.type == 'mail_login_blocked' ? 'fa-ban text-red-500' : 'fa-check text-emerald-500') }} w-4" aria-hidden="true"></i>
                         <div class="flex-1 min-w-0">
                             <p class="text-ink">{{ ('admin.security.events.' ~ event.type)|trans }}</p>
                             {% if event.details %}

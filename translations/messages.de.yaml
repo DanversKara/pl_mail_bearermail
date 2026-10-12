@@ -55,6 +55,47 @@ account:
     updated: Konto aktualisiert
 
 admin:
+    mail_logins:
+        heading: Sperre bei falschen Mail-Logins
+        help: 'Wenn eine Adresse am Mailserver (Mail-Apps über Port 993) zu oft das falsche Passwort eingibt, wird sie gesperrt – selbst das richtige Passwort wird dann abgelehnt. Web- und Handy-App sowie Geräte in deinem Heimnetz sind nie betroffen.'
+        not_connected: 'Warte auf den Mailserver: einmal neu starten (./update.sh erledigt das), damit er hier nachfragt.'
+        state:
+            'on': 'An'
+            'off': 'Aus'
+            waiting: Warte auf Mailserver
+        enabled: Adressen nach zu vielen falschen Passwörtern sperren
+        max_failures: Erlaubte falsche Passwörter
+        window: Innerhalb von (Minuten)
+        block_hours: Sperren für (Stunden)
+        block_hours_help: '0 = bis du sie hier entsperrst.'
+        save: Speichern
+        tried: versucht
+        unblock: Entsperren
+        unblock_trust: Entsperren und immer erlauben
+        trust: Immer erlauben
+        untrust: Entfernen
+        blocked:
+            heading: Gerade gesperrt
+            none: Keine Adresse ist gesperrt.
+            since: 'Gesperrt %date%'
+            until: 'bis %date%'
+            forever: bis zur Entsperrung
+            times: '%count%-mal gesperrt'
+        failing:
+            heading: Fehlversuche, noch nicht gesperrt (letzte 24 Stunden)
+            count: '%count% von %max% falschen Passwörtern'
+        trusted:
+            heading: Immer erlaubt
+            help: 'Diese Adressen werden nie gesperrt – zum Beispiel dein Anschluss zu Hause oder im Büro. Deine findest du mit der Suche „Wie ist meine IP“.'
+            add_label: IP-Adresse
+            add: Hinzufügen
+        saved:
+            settings: Gespeichert.
+            unblocked: Entsperrt.
+            trusted: Entsperrt und immer erlaubt.
+            untrusted: Aus „Immer erlaubt“ entfernt.
+        error:
+            bad_ip: Das ist keine IP-Adresse.
     drive:
         save: Speichern
         saved:

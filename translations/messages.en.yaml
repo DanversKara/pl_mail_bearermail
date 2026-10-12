@@ -55,6 +55,47 @@ account:
     updated: Account updated
 
 admin:
+    mail_logins:
+        heading: Mail login blocking
+        help: 'When an address gets the password wrong too often on the mail server (mail apps on port 993), it is blocked — even the right password is refused from it. The web and phone apps, and devices on your home network, are never affected.'
+        not_connected: 'Waiting for the mail server: restart it once (./update.sh does) so it starts checking with this page.'
+        state:
+            'on': 'On'
+            'off': 'Off'
+            waiting: Waiting for mail server
+        enabled: Block addresses after too many wrong passwords
+        max_failures: Wrong passwords allowed
+        window: Within (minutes)
+        block_hours: Block for (hours)
+        block_hours_help: '0 = until you unblock it here.'
+        save: Save
+        tried: tried
+        unblock: Unblock
+        unblock_trust: Unblock and always allow
+        trust: Always allow
+        untrust: Remove
+        blocked:
+            heading: Blocked now
+            none: No address is blocked.
+            since: 'Blocked %date%'
+            until: 'until %date%'
+            forever: until unblocked
+            times: 'blocked %count% times'
+        failing:
+            heading: Failing, not blocked yet (last 24 hours)
+            count: '%count% of %max% wrong passwords'
+        trusted:
+            heading: Always allowed
+            help: 'Addresses here are never blocked — your home or office connection, for example. Find yours by searching "what is my IP".'
+            add_label: IP address
+            add: Add
+        saved:
+            settings: Saved.
+            unblocked: Unblocked.
+            trusted: Unblocked and always allowed.
+            untrusted: Removed from always allowed.
+        error:
+            bad_ip: That is not an IP address.
     drive:
         save: Save
         saved:
@@ -806,6 +847,7 @@ admin:
             title: Suspicious addresses
             attempts: failed logins in the last hour
         events:
+            mail_login_blocked: 'Address blocked from the mail server (too many wrong passwords)'
             title: Recent security events
             none: 'No security events yet.'
             login_success: 'Successful login'

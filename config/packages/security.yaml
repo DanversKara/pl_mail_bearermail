@@ -65,6 +65,12 @@ security:
             pattern: ^/branding/
             security: false
 
+        # BearerMail: Dovecot's auth-policy hook. No user, only the shared key
+        # (MailAuthPolicyController checks it).
+        mail_policy:
+            pattern: ^/internal/mail-auth-policy$
+            security: false
+
         main:
             lazy: true
             provider: app_user_provider
@@ -128,6 +134,7 @@ security:
         # only what such a caller could infer by trying the app anyway — see
         # App\Controller\HealthController on why it stays deliberately vague.
         - { path: ^/healthz$, roles: PUBLIC_ACCESS }
+        - { path: ^/internal/mail-auth-policy$, roles: PUBLIC_ACCESS }
         # CSP violation reports. The browser sends these itself, about a
         # resource its own policy refused to load, so there is nothing of ours
         # in the request: no token, no header we chose, and on the login page no

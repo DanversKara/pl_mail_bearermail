@@ -395,6 +395,17 @@
 
                                     {% elseif section == 'security' %}
 
+                                        {# BearerMail: addresses blocked from the mail server
+                                           after too many wrong passwords, with Unblock. #}
+                                        <turbo-frame id="admin-mail-logins"
+                                                     class="block mb-3"
+                                                     src="{{ path('app_admin_mail_logins_index') }}"
+                                                     loading="lazy">
+                                            <div class="py-10 text-center text-sm text-ink-faint">
+                                                <i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>{{ 'admin.loading'|trans }}
+                                            </div>
+                                        </turbo-frame>
+
                                         <turbo-frame id="admin-security"
                                                      class="block space-y-3"
                                                      src="{{ path('app_admin_security_overview') }}"

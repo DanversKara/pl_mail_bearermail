@@ -34,6 +34,8 @@ class SecurityEvent
     public const string TYPE_2FA_DISABLED = '2fa_disabled';
     public const string TYPE_API_TOKEN_CREATED = 'api_token_created';
     public const string TYPE_API_TOKEN_REVOKED = 'api_token_revoked';
+    /** BearerMail: an address was blocked from the mail server after too many wrong passwords. */
+    public const string TYPE_MAIL_LOGIN_BLOCKED = 'mail_login_blocked';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
