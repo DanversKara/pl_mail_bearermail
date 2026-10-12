@@ -655,6 +655,9 @@ admin:
         system: Ship
         updates: "New sails"
         users: Th' crew roster
+        drive: "Hold"
+        mail_server: "Mail server"
+        security: "Lookout"
     performance:
         hold:
             col:
@@ -1033,6 +1036,11 @@ admin:
             name_last: Family name
             password: First secret word
             password_help: 'Set once, when th'' hand signs on. No changin'' it from here after: a forgotten word be reset at th'' console with `app:user:password`.'
+            drive_quota: "Hold space (MB)"
+            drive_quota_help: "Empty = the default from Admin → Hold. 0 = no limit."
+            drive_quota_default: "default"
+            drive_disabled: "Close the hold"
+            drive_disabled_help: "Blocks uploads an' stops every link this hand has shared."
         flash:
             deactivated: 'Clapped in irons. No boardin'' until ye strike them.'
             demote_last_refused: 'That be th'' last quartermaster, so th'' mark stayed as it were — raise another first.'
@@ -1051,6 +1059,133 @@ admin:
         two_factor_short: 2FA
     version:
         hint: The build this ship be sailin' — the release, an' the commit she were built from.
+    mail_logins:
+        heading: "Barrin' the gangway"
+        help: "When an address gets the secret word wrong too often on the mail server (mail apps on port 993), it be barred — even the right word be refused from it. The web an' phone apps, an' devices on yer home network, be never touched."
+        not_connected: "Waitin' fer the mail server: restart it once (./update.sh does) so it starts askin' this page."
+        state:
+            'on': "On"
+            'off': "Off"
+            waiting: "Waitin' fer the mail server"
+        enabled: "Bar addresses after too many wrong secret words"
+        max_failures: "Wrong secret words allowed"
+        window: "Within (minutes)"
+        block_hours: "Bar fer (hours)"
+        block_hours_help: "0 = until ye lift it here."
+        save: "Set course"
+        tried: "tried"
+        unblock: "Lift the bar"
+        unblock_trust: "Lift the bar an' always welcome"
+        trust: "Always welcome"
+        untrust: "Strike off"
+        blocked:
+            heading: "Barred now"
+            none: "No address be barred."
+            since: "Barred %date%"
+            until: "until %date%"
+            forever: "until the bar be lifted"
+            times: "barred %count% times"
+        failing:
+            heading: "Failin', not barred yet (last 24 hours)"
+            count: "%count% o' %max% wrong secret words"
+        trusted:
+            heading: "Always welcome"
+            help: "Addresses here be never barred — yer home or office connection, fer example. Find yers by searchin' \"what is my IP\"."
+            add_label: "IP address"
+            add: "Add"
+        saved:
+            settings: "Orders logged."
+            unblocked: "Bar lifted."
+            trusted: "Bar lifted an' always welcome."
+            untrusted: "Struck off the welcome list."
+        error:
+            bad_ip: "That be no IP address."
+    drive:
+        save: "Set course"
+        saved:
+            settings: "Hold limits logged."
+            user: "Orders logged."
+            report: "Report dealt with."
+        limits:
+            heading: "Hold limits"
+            default_quota: "Cargo per hand (MB)"
+            default_quota_help: "Fer every hand without their own limit. 0 = no limit."
+            max_file: "Largest single crate (MB)"
+            max_file_help: "Uploads above this be refused. The server itself takes up to %php%."
+        reports:
+            heading: "Reported links"
+            none: "Nobody has reported a link."
+            owner: "Owner"
+            reporter: "Reported by"
+            open: "Open link"
+            revoke: "Scuttle link"
+            disable: "Close the owner's hold"
+            dismiss: "Dismiss"
+        people:
+            heading: "Cargo by hand"
+            help: "Leave the limit empty to use the default. Closin' a hold also stops every link that hand has shared."
+            of: "o'"
+            files: "{1}1 crate|]1,Inf[%count% crates"
+            quota: "Own limit (MB)"
+            default: "default"
+            disabled: "Hold closed"
+    mail_server:
+        relay:
+            heading: "Outbound relay"
+            intro: "Where yer mail server sends outgoin' letters. Leave this empty to deliver direct, or point it at a provider like Mailjet fer safer passage. Changes take hold within seconds — no restart."
+            host_label: "Relay host"
+            host_help: "The provider's SMTP server, in brackets with the port — e.g. [in-v3.mailjet.com]:587."
+            username_label: "Username"
+            username_help: "The provider's API key (Mailjet) or username."
+            password_label: "Secret word"
+            password_help: "The provider's secret key. Leave blank to keep the one on file."
+            password_set: "A secret word be on file."
+            save: "Set the relay"
+            saved: "Relay logged. The mail server takes it aboard within seconds."
+            status:
+                active: "Relay active"
+                direct: "Direct delivery"
+        dmarc:
+            heading: "DMARC reports"
+            intro: "Receivers (Google, Microsoft, …) send daily reports on who sent letters under yer flag. Upload a report (.zip, .gz, .xml) to see which IPs passed an' which failed."
+            upload: "Read the report"
+            upload_invalid: "Choose a report file first."
+            uploaded: "Report read."
+            none: "No reports yet. They arrive daily at the address in yer DMARC rua tag."
+            messages: "Letters"
+            failed: "Failed"
+            ip: "IP"
+            count: "Count"
+        dns:
+            no_domain: "Set MAIL_DOMAIN in .env.mail.local to check yer DNS records."
+            heading: "DNS records"
+            intro: "The records yer domain needs fer mail to sail. Hit Check DNS to see they resolve."
+            check: "Check DNS"
+            hint: "Press Check DNS to look up the records fer %domain%."
+            expected: "Expected"
+            actual: "Found"
+            ok: "Aye"
+            missing: "Missin'"
+        dynamic_dns:
+            heading: "Dynamic DNS"
+            intro: "If yer server sits on home internet with a shiftin' IP, this keeps yer Cloudflare DNS A records pointed at it."
+            setup: "Put these in .env.mail.local (next to compose.yaml), then build the containers anew:"
+            cron: "plMail checks every 5 minutes on its own — no cron job needed. Only Cloudflare be hailed, an' only once these be set."
+    security:
+        suspicious:
+            title: "Suspicious sails"
+            attempts: "failed boardings in the last hour"
+        events:
+            mail_login_blocked: "Address barred from the mail server (too many wrong secret words)"
+            title: "Recent lookout reports"
+            none: "No lookout reports yet."
+            login_success: "Came aboard"
+            login_failure: "Failed boardin' attempt"
+            password_change: "Secret word changed"
+            2fa_enabled: "Second lock fitted"
+            2fa_disabled: "Second lock removed"
+            api_token_created: "API token forged"
+            api_token_revoked: "API token scuttled"
 alias:
     added: 'Address added, arr!'
     deleted: 'Address struck from the roster.'
@@ -1285,6 +1420,7 @@ calendar:
             series: Every reckonin'
         starts: Starts
         title: What it be called
+        add_from_drive: "Add from the hold"
     form:
         add: A new almanac
         color: Colours
@@ -1796,6 +1932,37 @@ compose:
         saved: 'Stowed as form letter “%name%”. Rename or move it in the Settings.'
         search: 'Find a form letter'
         untitled: 'Nameless form letter'
+    too_large_drive:
+        note: "Too heavy to attach, so it be in me hold. Fetch it here:"
+        status: "Too heavy to attach — stowin' it in yer hold…"
+    event_picker:
+        title: "Add an engagement"
+        search: "Search yer engagements"
+        empty: "Nothin' on the horizon fer the next four months."
+        hint: "Attached as an .ics, so they can add it in one tap."
+        when: "When"
+        where: "Where"
+        failed: "Couldn't fetch yer engagements."
+        attach_failed: "The details be added, but the calendar file couldn't be lashed on."
+    insert_event: "Add an engagement from yer calendar"
+    drive_picker:
+        title: "Fetch from the hold"
+        search: "Search yer crates…"
+        empty: "Nothin' in yer hold yet. Stow some crates there first."
+        open: "Open the hold"
+        failed: "Couldn't reach yer hold. Try again."
+        copied: "Link copied — paste it into yer letter."
+    calendar_picker:
+        title: "Calendar links"
+        calendars: "Shared calendars"
+        booking: "Bookin' pages"
+        hint: "Fer yer safety, a link be shown but once, when it be made. Forge a fresh one in Settings → Sharin' an' paste it here."
+        empty: "No shared calendars or bookin' pages yet. Make one in Settings → Sharin'."
+        open: "Open Sharin' settings"
+        close: "Close"
+        failed: "Couldn't fetch yer sharin' links."
+    insert_drive_file: "Add a crate from the hold"
+    insert_calendar_link: "Add a calendar share link"
 
 demo:
     bar:
@@ -1958,6 +2125,9 @@ header:
 inbox:
     empty: No bottles in this here tab.
     empty_account: Nothin' has washed ashore for this account yet.
+    flood:
+        title: "A strange flood o' letters sighted."
+        body: "%count% letters came aboard in the last 15 minutes on %account%. Floods be sometimes used to hide lookout warnings — check fer secret-word resets or notices ye didn't expect."
 
 insights:
     card:
@@ -1971,6 +2141,7 @@ insights:
         parcel: Cargo
         subscription: "Standin' order"
         ticket: Passage papers
+        meeting: "Rendezvous"
     pane:
         dismiss: Wave it off
         dismiss_all: Strike the whole banner
@@ -2001,6 +2172,15 @@ insights:
         ordered: Sent fer
         out_for_delivery: "Rowin' the last stretch"
         ready_for_pickup: "Waitin' at the dock"
+    otp:
+        heading: "Secret code"
+        copy: "Copy the code"
+        code_aria: "Code %code%"
+        expires: "{1}Sinks in 1 minute|]1,Inf[Sinks in %count% minutes"
+    meeting:
+        heading: "Looks like a rendezvous"
+        add: "Add to the calendar"
+        no_time: "Hour not stated"
 
 integration:
     save_failed: 'Could not stow: %reason%'
@@ -2238,6 +2418,12 @@ message:
         spam:
             body: "This bottle was fished from the bilge. Its links and pictures be treacherous — treat aught it asks of ye as a stranger's demand."
             title: This bottle sits in the bilge
+    forged_sender:
+        title: "This letter may not be from who it claims."
+        body: "The mail server checked the sender's colours (SPF, DKIM, DMARC) an' they didn't pass. Mind the links an' attachments."
+    deceptive_link:
+        title: "This letter carries a false chart."
+        body: "A link's text shows one port but it truly sails somewhere else. Hover before ye click."
 
 mercure:
     status:
@@ -3292,6 +3478,8 @@ settings:
             subscription_hint: "Renewals that sail on by themselves, an' trials about to run aground."
             ticket: Passage papers
             ticket_hint: "Tickets an' bookin's with a date writ on them."
+            meeting: "Rendezvous"
+            meeting_hint: "\"Meet me at … at 10am\" in an ordinary letter, with a button to add it to yer calendar."
         heading: The spyglass
         pane: "Banner o'er the mail list"
         pane_hint: >-
@@ -3504,6 +3692,7 @@ settings:
         shortcuts: Keyboard shortcuts
         signature: Yer marks
         templates: 'Form letters'
+        smtp_keys: "SMTP keys"
     notifications:
         devices:
             empty: "No device be signed on yet. Turnin' notifications on above signs on this browser; a phone app signs itself on."
@@ -3851,6 +4040,7 @@ sidebar:
         starred: Marked with an X
         trash: Davy Jones' locker
         unread: Bottles yet uncorked
+        drive: "Hold"
     toggle: Raise or lower th' side riggin'
 
 snooze:
@@ -4043,3 +4233,117 @@ templates:
         sender_email: 'Yer address'
         sender_name: 'Yer name'
         signature: 'Mark'
+drive:
+    report:
+        title: "Report this link"
+        link: "Report this link"
+        thanks: "Thank ye — yer report be received an' we'll look into it quick. If ye left yer address, a confirmation be on its way."
+        reason: "What be wrong with it?"
+        details: "Anythin' else they should know? (optional)"
+        email: "Yer address, if ye'd like a reply (optional)"
+        submit: "Send the report"
+        back: "Back to the crate"
+        too_many: "Too many reports from yer network. Try again later."
+        reasons:
+            spam: "Spam or unwanted"
+            malware: "Virus or malware"
+            phishing: "Phishin' or a swindle"
+            illegal: "Contraband"
+            copyright: "Copyright plunder"
+            other: "Somethin' else"
+    disabled_title: "The hold be closed"
+    disabled_notice: "Yer hold has been closed. Speak to yer captain."
+    title: "Hold"
+    breadcrumbs: "Path through the hold"
+    usage: "%used% o' %quota% stowed"
+    usage_unlimited: "%used% stowed"
+    storage: "Space stowed"
+    max_upload: "Up to %size% per crate"
+    quota_exceeded: "Not enough room left in yer hold fer that crate."
+    upload: "Stow"
+    upload_files: "Stow crates"
+    upload_invalid: "Choose a crate first."
+    upload_too_large: "That crate be heavier than the server will take."
+    upload_failed: "Stowin' failed."
+    upload_done: "Stowed"
+    uploading: "Stowin'…"
+    uploaded: "Crate stowed."
+    uploaded_many: "Crates stowed."
+    drop_here: "Drop to stow in %folder%"
+    empty: "Yer hold be empty"
+    empty_folder: "This locker be empty"
+    empty_hint: "Stow crates with the button, or drag 'em anywhere onto this page."
+    no_match: "No crates or lockers match."
+    view: "View"
+    list_view: "List view"
+    grid_view: "Grid view"
+    search: "Search this locker"
+    name: "Name"
+    size: "Weight"
+    modified: "Changed"
+    actions: "Orders"
+    more: "More orders"
+    folders: "Lockers"
+    files: "Crates"
+    new_folder: "New locker"
+    folder_name: "Locker name"
+    create: "Build"
+    rename: "Rechristen"
+    rename_file: "Rechristen crate"
+    rename_folder: "Rechristen locker"
+    folder_created: "Locker built."
+    folder_deleted: "Locker scuttled."
+    folder_delete_confirm: "Scuttle the locker “%name%” an' all inside it? There be no undoin' this."
+    download: "Fetch"
+    delete: "Scuttle"
+    delete_confirm: "Scuttle “%name%”? Any share links to it stop workin'. There be no undoin' this."
+    deleted: "Crate scuttled."
+    share: "Share"
+    share_title: "Share “%name%”"
+    shared_count: "{1}Shared with 1 link|]1,Inf[Shared with %count% links"
+    active_links: "Live links"
+    no_links: "No links yet. Anyone with a link can fetch the crate, so share it only with hands ye trust."
+    new_link: "New link"
+    share_password: "Secret word (optional)"
+    share_expires: "Sinks on (optional)"
+    share_hint: "Anyone with the link can fetch the crate."
+    share_bad_date: "Pick a sinkin' date in the future."
+    create_link: "Forge link"
+    share_created: "Link forged"
+    share_created_hint: "Copy it now an' send it to whoever needs the crate."
+    share_created_protected: "Copy it now. Send the secret word separate — not in the same letter."
+    copy_link: "Copy link"
+    copy: "Copy"
+    link_meta: "{0}Forged %date% · not fetched yet|{1}Forged %date% · 1 fetch|]1,Inf[Forged %date% · %count% fetches"
+    link_expires: "Sinks %date%"
+    link_protected: "Secret word"
+    revoke: "Scuttle"
+    revoke_confirm: "Scuttle this link? Anyone holdin' it can no longer fetch the crate."
+    protected_hint: "This crate be locked. Give the secret word to fetch it."
+    wrong_password: "That secret word be wrong."
+    public:
+        too_many: "Too many tries. Wait a few minutes an' try again."
+smtp_key:
+    title: "SMTP keys"
+    intro: "Keys fer scripts an' devices (a printer, a backup job) to send letters through yer own mail server without yer mailbox secret word. Each key may only send as the address it was forged fer, an' can be scuttled on its own. Needs the self-hosted mail server."
+    name: "Name"
+    name_placeholder: "e.g. Nightly backup script"
+    account: "Sends as"
+    create: "Forge key"
+    none: "No SMTP keys yet."
+    no_accounts: "Add a mail account first."
+    created: "Forged"
+    last_used: "Last used"
+    revoke: "Scuttle"
+    revoke_confirm: "Scuttle this key? Anythin' usin' it can send no more."
+    revoked: "SMTP key scuttled."
+    name_required: "Give the key a name."
+    account_invalid: "Choose one o' yer mail accounts."
+    created_title: "SMTP key forged"
+    shown_once: "Copy the secret word now — it can't be shown again."
+    server: "Server"
+    username: "Username"
+    secret: "Secret word"
+    use: "Sends as %email%. The submission port be open only inside the Docker network (host mta, port 587, no TLS); to use the key from another ship, publish port 587 with real certificates first — see the self-hosted mail server guide."
+    not_synced: "The key be saved, but the mail server couldn't be told: the shared mail_config volume isn't mounted. Start the stack with --profile mail."
+    done: "Done"
