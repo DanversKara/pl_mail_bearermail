@@ -64,7 +64,7 @@ final readonly class MailServerAliasSync
 
         foreach ($aliases as $alias) {
             $address = strtolower(trim($alias->address));
-            $mailbox = strtolower(trim((string) ($alias->account?->username ?? '')));
+            $mailbox = strtolower(trim((string) ($alias->account->username ?? '')));
 
             if (false === str_ends_with($address, $suffix) || false === str_ends_with($mailbox, $suffix)) {
                 continue;

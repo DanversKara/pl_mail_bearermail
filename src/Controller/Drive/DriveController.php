@@ -515,26 +515,4 @@ final class DriveController extends AbstractController
 
         return str_replace(['/', '\\', '%'], '_', $ascii);
     }
-
-    private function maxUploadBytes(): int
-    {
-        $toBytes = static function (string $v): int {
-            $v = trim($v);
-            $n = (int) $v;
-
-            return match (strtolower(substr($v, -1))) {
-                'g' => $n * 1024 ** 3,
-                'm' => $n * 1024 ** 2,
-                'k' => $n * 1024,
-                default => $n,
-            };
-        };
-
-        $limits = array_filter([
-            $toBytes((string) \ini_get('upload_max_filesize')),
-            $toBytes((string) \ini_get('post_max_size')),
-        ]);
-
-        return [] === $limits ? 0 : min($limits);
-    }
 }

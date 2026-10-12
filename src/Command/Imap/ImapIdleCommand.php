@@ -20,6 +20,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Webklex\PHPIMAP\Connection\Protocols\ImapProtocol;
 use Webklex\PHPIMAP\Connection\Protocols\Response;
 
 #[AsCommand(
@@ -198,9 +199,12 @@ class ImapIdleCommand extends Command
         // thirty seconds, around the clock. With it enabled the line carries
         // the UID and is applied directly. A server without QRESYNC answers
         // NO/BAD and nothing changes.
-        try {
-            $connection->requestAndResponse('ENABLE', ['QRESYNC']);
-        } catch (\Throwable) {
+        // requestAndResponse() is on ImapProtocol, not on ProtocolInterface.
+        if (true === $connection instanceof ImapProtocol) {
+            try {
+                $connection->requestAndResponse('ENABLE', ['QRESYNC']);
+            } catch (\Throwable) {
+            }
         }
 
         $connection->selectFolder($folder->path);
