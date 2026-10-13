@@ -8,6 +8,11 @@ All credit for plMail itself goes to its author. This fork keeps the original li
 (**AGPL-3.0**, see [`LICENSE`](LICENSE)) and the original README, which follows further down,
 unchanged. Anything not listed under "What this fork adds" is the original project's work.
 
+### 📖 [Read the BearerMail Handbook / Guide →](https://docs.bearermail.com/)
+
+Installing, pairing, the app's features, updates, and troubleshooting — at
+[docs.bearermail.com](https://docs.bearermail.com/).
+
 > **Not the official project.** For plMail itself, its handbook, releases, the Android and iOS
 > apps, and support, go to [karatektus/pl_mail](https://github.com/karatektus/pl_mail). Please
 > report problems with the additions below here, not upstream.
