@@ -469,6 +469,7 @@ final readonly class ConfigBackupDatabase
             'scopes'               => $config->scopes,
             'autoCreate'           => $config->autoCreate,
             'requireVerifiedEmail' => $config->requireVerifiedEmail,
+            'straightToProvider'   => $config->straightToProvider,
         ];
     }
 
@@ -488,6 +489,7 @@ final readonly class ConfigBackupDatabase
         // Off only when the backup says so in as many words: a document that
         // lost the key must not come back with the check switched off.
         $config->requireVerifiedEmail = false !== ($values['requireVerifiedEmail'] ?? true);
+        $config->straightToProvider   = true === ($values['straightToProvider'] ?? false);
 
         if (null === $config->id) {
             $this->entityManager->persist($config);

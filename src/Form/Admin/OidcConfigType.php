@@ -117,6 +117,12 @@ final class OidcConfigType extends AbstractType
                 'label'    => 'admin.sso.field.require_verified_email',
                 'help'     => 'admin.sso.field.require_verified_email_help',
                 'required' => false,
+            ])
+            // BearerMail: skip the login page and go to the provider.
+            ->add('straightToProvider', CheckboxType::class, [
+                'label'    => 'admin.sso.field.straight_to_provider',
+                'help'     => 'admin.sso.field.straight_to_provider_help',
+                'required' => false,
             ]);
     }
 

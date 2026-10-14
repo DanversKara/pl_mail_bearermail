@@ -1079,6 +1079,8 @@ admin:
             issuer_help: 'The provider''s issuer URL, exactly as its discovery document states it. In Authentik it is the "OpenID Configuration Issuer" on the provider''s page.'
             require_verified_email: 'Only link an address the provider has verified'
             require_verified_email_help: 'A first sign-in finds its account by email address. Switch this off only where people cannot edit their own address at the provider: with it off, anybody who can is able to claim any account that has not signed in through the provider yet.'
+            straight_to_provider: 'Go straight to the sign-in provider'
+            straight_to_provider_help: 'Opening BearerMail takes people directly to the provider''s sign-in instead of this server''s login page. The password form is still there after signing out, after a failed sign-in, and at /login?password=1, so a provider that is down never locks anyone out.'
             scopes: 'Scopes'
             scopes_help: 'Separated by spaces. "openid" is always added, and without "email" a first sign-in cannot find its account. Empty asks for openid, email and profile.'
         heading: 'Single sign-on'

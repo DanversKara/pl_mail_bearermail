@@ -875,6 +875,8 @@ admin:
             issuer_help: 'Th'' fleet''s issuer URL, exactly as its discovery document states it. In Authentik it be th'' "OpenID Configuration Issuer" on th'' provider''s page.'
             require_verified_email: 'Only tie a bottle address th'' fleet has vouched fer'
             require_verified_email_help: 'A first boardin'' finds its berth by bottle address. Shut this off only where sailors cannot change their own address at th'' fleet: with it off, any who can may claim any berth that has not boarded through th'' fleet yet.'
+            straight_to_provider: 'Sail straight to th'' fleet''s gangway'
+            straight_to_provider_help: 'Comin'' aboard sends sailors right to th'' fleet''s boardin'' instead o'' this ship''s gangway. Th'' password form still waits after leavin'', after a failed boardin'', an'' at /login?password=1, so a sunk fleet never strands a soul.'
             scopes: 'Scopes'
             scopes_help: 'Parted by spaces. "openid" be always added, an'' without "email" a first boardin'' cannot find its berth. Empty asks fer openid, email an'' profile.'
         heading: 'Fleet''s seal'

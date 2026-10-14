@@ -87,6 +87,15 @@ class OidcConfig
     public bool $requireVerifiedEmail = true;
 
     /**
+     * BearerMail: the login page sends visitors straight to the provider
+     * instead of showing the button and the password form. /login?password=1
+     * still shows the form, and so does the page after a sign-out or a failed
+     * sign-in, so nobody is ever shut out by a provider that is down.
+     */
+    #[ORM\Column(name: 'straight_to_provider', options: ['default' => false])]
+    public bool $straightToProvider = false;
+
+    /**
      * Whether this row alone is enough to sign people in. A method rather than
      * a property for the reason MailProviderConfig gives: it weighs three
      * columns together.

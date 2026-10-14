@@ -1022,6 +1022,8 @@ admin:
             issuer_help: 'Die Issuer-URL des Anbieters, genau so, wie sein Discovery-Dokument sie angibt. In Authentik ist das der „OpenID Configuration Issuer“ auf der Seite des Providers.'
             require_verified_email: 'Nur eine Adresse verknüpfen, die der Anbieter bestätigt hat'
             require_verified_email_help: 'Eine erste Anmeldung findet ihr Konto über die E-Mail-Adresse. Schalt das nur aus, wenn man die eigene Adresse beim Anbieter nicht selbst ändern kann: Ist es aus, kann jede Person, die das darf, jedes Konto übernehmen, das sich noch nicht über den Anbieter angemeldet hat.'
+            straight_to_provider: 'Direkt zum Anmeldeanbieter'
+            straight_to_provider_help: 'BearerMail leitet direkt zur Anmeldung beim Anbieter statt zur Login-Seite dieses Servers. Das Passwortformular bleibt nach dem Abmelden, nach einer fehlgeschlagenen Anmeldung und unter /login?password=1 erreichbar – ein ausgefallener Anbieter sperrt also niemanden aus.'
             scopes: 'Scopes'
             scopes_help: 'Durch Leerzeichen getrennt. „openid“ wird immer ergänzt, und ohne „email“ findet eine erste Anmeldung ihr Konto nicht. Leer fragt openid, email und profile an.'
         heading: 'Single Sign-on'
