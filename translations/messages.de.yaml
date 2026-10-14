@@ -1024,6 +1024,8 @@ admin:
             require_verified_email_help: 'Eine erste Anmeldung findet ihr Konto über die E-Mail-Adresse. Schalt das nur aus, wenn man die eigene Adresse beim Anbieter nicht selbst ändern kann: Ist es aus, kann jede Person, die das darf, jedes Konto übernehmen, das sich noch nicht über den Anbieter angemeldet hat.'
             straight_to_provider: 'Direkt zum Anmeldeanbieter'
             straight_to_provider_help: 'BearerMail leitet direkt zur Anmeldung beim Anbieter statt zur Login-Seite dieses Servers. Das Passwortformular bleibt nach dem Abmelden, nach einer fehlgeschlagenen Anmeldung und unter /login?password=1 erreichbar – ein ausgefallener Anbieter sperrt also niemanden aus.'
+            hide_password_form: 'E-Mail- und Passwortformular ausblenden'
+            hide_password_form_help: 'Die Login-Seite zeigt nur den Anmeldebutton. Das Formular erscheint wieder nach einer fehlgeschlagenen Anmeldung und unter /login?password=1 – als Lesezeichen speichern, das ist der Weg hinein, wenn der Anbieter ausfällt. Mail-Apps und die Handy-App sind nicht betroffen.'
             scopes: 'Scopes'
             scopes_help: 'Durch Leerzeichen getrennt. „openid“ wird immer ergänzt, und ohne „email“ findet eine erste Anmeldung ihr Konto nicht. Leer fragt openid, email und profile an.'
         heading: 'Single Sign-on'

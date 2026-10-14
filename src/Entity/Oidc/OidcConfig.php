@@ -96,6 +96,14 @@ class OidcConfig
     public bool $straightToProvider = false;
 
     /**
+     * BearerMail: the login page shows only the provider's button. The
+     * password form is still there at /login?password=1 and whenever a
+     * sign-in failed, so a provider that is down never locks anyone out.
+     */
+    #[ORM\Column(name: 'hide_password_form', options: ['default' => false])]
+    public bool $hidePasswordForm = false;
+
+    /**
      * Whether this row alone is enough to sign people in. A method rather than
      * a property for the reason MailProviderConfig gives: it weighs three
      * columns together.

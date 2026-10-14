@@ -123,6 +123,12 @@ final class OidcConfigType extends AbstractType
                 'label'    => 'admin.sso.field.straight_to_provider',
                 'help'     => 'admin.sso.field.straight_to_provider_help',
                 'required' => false,
+            ])
+            // BearerMail: only the provider's button on the login page.
+            ->add('hidePasswordForm', CheckboxType::class, [
+                'label'    => 'admin.sso.field.hide_password_form',
+                'help'     => 'admin.sso.field.hide_password_form_help',
+                'required' => false,
             ]);
     }
 

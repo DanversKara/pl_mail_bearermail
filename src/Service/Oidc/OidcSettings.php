@@ -92,6 +92,7 @@ final readonly class OidcSettings
             $stored->requireVerifiedEmail,
             '' === trim((string) $stored->scopes) ? self::DEFAULT_SCOPES : (string) $stored->scopes,
             $stored->straightToProvider,
+            $stored->hidePasswordForm,
         );
     }
 

@@ -45,6 +45,11 @@
             {# Card #}
             <div class="bg-surface rounded-pane shadow-sm border border-line p-8">
 
+                {# BearerMail: "hide the password form". Still shown after a
+                   failed sign-in and at ?password=1, the way back in when the
+                   provider is down. #}
+                {% set showPasswordForm = not oidc.hidePasswordForm or error or app.request.query.has('password') %}
+
                 {# Single sign-on, above the password form because on an
                    install that has it, it is how most people are meant to come
                    in. A plain link: the provider's page is a full navigation
@@ -66,12 +71,16 @@
                     {# No role="separator": that role makes its content
                        presentational, and a screen reader would then skip the
                        word that says the form below is the other way in. #}
+                    {% if showPasswordForm %}
                     <div class="flex items-center gap-3 my-6 text-xs text-ink-faint">
                         <span class="flex-1 border-t border-line"></span>
                         {{ 'login.oidc.or'|trans }}
                         <span class="flex-1 border-t border-line"></span>
                     </div>
+                    {% endif %}
                 {% endif %}
+
+                {% if showPasswordForm %}
 
                 {# Full page load on submit: Turbo swaps the <body> only, so the
                    appearance the server renders onto <html> would be ignored
@@ -153,6 +162,7 @@
                     </button>
 
                 </form>
+                {% endif %}
             </div>
 
             {# The legal notice. Demo-mode only, because only a publicly hosted

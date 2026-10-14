@@ -470,6 +470,7 @@ final readonly class ConfigBackupDatabase
             'autoCreate'           => $config->autoCreate,
             'requireVerifiedEmail' => $config->requireVerifiedEmail,
             'straightToProvider'   => $config->straightToProvider,
+            'hidePasswordForm'     => $config->hidePasswordForm,
         ];
     }
 
@@ -490,6 +491,7 @@ final readonly class ConfigBackupDatabase
         // lost the key must not come back with the check switched off.
         $config->requireVerifiedEmail = false !== ($values['requireVerifiedEmail'] ?? true);
         $config->straightToProvider   = true === ($values['straightToProvider'] ?? false);
+        $config->hidePasswordForm     = true === ($values['hidePasswordForm'] ?? false);
 
         if (null === $config->id) {
             $this->entityManager->persist($config);

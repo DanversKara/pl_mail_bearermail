@@ -877,6 +877,8 @@ admin:
             require_verified_email_help: 'A first boardin'' finds its berth by bottle address. Shut this off only where sailors cannot change their own address at th'' fleet: with it off, any who can may claim any berth that has not boarded through th'' fleet yet.'
             straight_to_provider: 'Sail straight to th'' fleet''s gangway'
             straight_to_provider_help: 'Comin'' aboard sends sailors right to th'' fleet''s boardin'' instead o'' this ship''s gangway. Th'' password form still waits after leavin'', after a failed boardin'', an'' at /login?password=1, so a sunk fleet never strands a soul.'
+            hide_password_form: 'Stow th'' bottle-an''-password form'
+            hide_password_form_help: 'Th'' gangway shows only th'' boardin'' button. Th'' form returns after a failed boardin'' an'' at /login?password=1 — mark that on yer chart, ''tis th'' way aboard if th'' fleet be sunk. Mail apps an'' th'' phone app be untouched.'
             scopes: 'Scopes'
             scopes_help: 'Parted by spaces. "openid" be always added, an'' without "email" a first boardin'' cannot find its berth. Empty asks fer openid, email an'' profile.'
         heading: 'Fleet''s seal'

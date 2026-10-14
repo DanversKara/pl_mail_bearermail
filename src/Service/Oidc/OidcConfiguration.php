@@ -30,6 +30,7 @@ final readonly class OidcConfiguration
         public bool   $requireVerifiedEmail,
         string        $scopes,
         public bool   $straightToProvider = false,
+        public bool   $hidePasswordForm = false,
     ) {
         $requested = preg_split('/[\s,]+/', $scopes, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
