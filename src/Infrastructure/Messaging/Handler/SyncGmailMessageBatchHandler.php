@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Messaging\Handler;
 
+use App\Repository\Mail\GmailSkippedMessageRepository;
+use App\Entity\Mail\GmailSkippedMessage;
+use App\Domain\Enum\Mail\GmailSkipReason;
 use App\Domain\DTO\Mail\IngestedMessage;
 use App\Domain\DTO\Mail\RemoteFlagState;
 use App\Domain\Helper\MessageIdHelper;
@@ -17,6 +20,7 @@ use App\Repository\Mail\MessageRepository;
 use App\Service\Gmail\GmailAddressFilter;
 use App\Service\Gmail\GmailApiSyncer;
 use App\Service\Gmail\GmailMessageBuilder;
+use App\Service\Gmail\GmailQuotaPacer;
 use App\Service\HarvestContactsService;
 use App\Service\Label\ThreadLabelSynchronizer;
 use App\Service\Imap\MessageThreader;
@@ -36,7 +40,11 @@ use Symfony\Component\Messenger\Stamp\TransportNamesStamp;
 #[AsMessageHandler]
 final readonly class SyncGmailMessageBatchHandler
 {
-    /** Delay before re-fetching sub-requests that hit the rate limit. */
+    /**
+     * Delay before re-fetching sub-requests that failed for a reason other
+     * than quota — a 5xx, a part missing from the response. One refused on
+     * quota waits as long as the pacer says the account is being left alone.
+     */
     private const int RETRY_DELAY_MS = 30000;
 
     public function __construct(
@@ -57,6 +65,8 @@ final readonly class SyncGmailMessageBatchHandler
         private MessageCategorizer      $categorizer,
         private MessageThreader         $messageThreader,
         private SyncOrigin              $origin,
+        private GmailQuotaPacer         $pacer,
+        private GmailSkippedMessageRepository $skipped,
     ) {}
 
     public function __invoke(SyncGmailMessageBatchMessage $message): void
@@ -98,9 +108,41 @@ final readonly class SyncGmailMessageBatchHandler
         // below looks each id up before building, and enriches when it finds a
         // row. A redelivered batch therefore costs one re-fetch and updates
         // instead of inserting, which is what it should always have done.
-        $toFetch = array_values($message->gmailIds);
+        $toFetch     = array_values($message->gmailIds);
+        $onlyMissing = true === ($message->onlyMissing ?? false);
+
+        // EXCEPT A LISTING'S BATCH, which names what was missing when the
+        // listing ran and has nothing to say about labels. An import that
+        // takes longer than the hour between listings has every outstanding
+        // id on the queue once per listing: seventy thousand messages named a
+        // second time, a third, each fetched in full again at sixty quota
+        // units apiece on the quota the import was already short of (#90).
+        if (true === $onlyMissing) {
+            // And not what has been looked at and declined, for the same
+            // reason: a listing that ran before the first of these batches
+            // was handled named those too. See GmailSkippedMessage.
+            $stored  = array_flip([
+                ...$this->messageRepository->findStoredGmailIdsForUser($account->usr, $toFetch),
+                ...$this->skipped->findGmailIdsAmong($account, array_map(strval(...), $toFetch)),
+            ]);
+            $toFetch = array_values(array_filter(
+                $toFetch,
+                static fn (string|int $id): bool => false === isset($stored[(string) $id]),
+            ));
+        }
 
         if (count($toFetch) === 0) {
+            return;
+        }
+
+        // Google has just refused this account, here or in another process.
+        // Asking now is a request that will be refused too and counted
+        // against the minute all the same, so the batch is put back whole to
+        // come round when the refusal has cleared. Not an error and not a
+        // retry: nothing went wrong, and there is no ladder to climb.
+        if ($this->pacer->waitSeconds($account) > 0) {
+            $this->putBack($account, $toFetch, $onlyMissing);
+
             return;
         }
 
@@ -111,11 +153,31 @@ final readonly class SyncGmailMessageBatchHandler
         // Every id we asked for is either processed below, re-queued (transient
         // sub-request failure — typically 429 mid-batch on initial syncs), or
         // logged as permanently gone. Nothing gets dropped silently.
+        // What this account has already declined among the ids in hand: one
+        // read, so a message is neither recorded twice nor left on the record
+        // once it is stored after all.
+        $alreadySkipped = array_flip($this->skipped->findGmailIdsAmong($account, array_map(strval(...), $toFetch)));
+        $nowStored      = [];
+        $newlySkipped   = 0;
+
         if (count($fetch['gone']) > 0) {
             $this->logger->warning('SyncGmailMessageBatch: messages permanently unfetchable, skipping', [
                 'accountId' => $account->id,
                 'gmailIds'  => $fetch['gone'],
             ]);
+
+            // Written down, so the next listing does not name them again. A
+            // message Gmail lists and answers 404 for is not going to arrive
+            // by being asked for every hour.
+            foreach ($fetch['gone'] as $goneId) {
+                $goneId = (string) $goneId;
+
+                if ('' !== $goneId && false === isset($alreadySkipped[$goneId])) {
+                    $this->em->persist(new GmailSkippedMessage($account, $goneId, GmailSkipReason::Unfetchable));
+                    $alreadySkipped[$goneId] = true;
+                    ++$newlySkipped;
+                }
+            }
         }
 
         if (count($fetch['retryable']) > 0) {
@@ -124,21 +186,7 @@ final readonly class SyncGmailMessageBatchHandler
                 'count'     => count($fetch['retryable']),
             ]);
 
-            // Back onto the queue this kind of work belongs on. Left to the
-            // routing table a retry lands on the live queue, and while an
-            // account is importing that is its history jumping in front of
-            // the mail arriving now — a few ids at a time, on every batch
-            // Google throttled, which during an import is most of them.
-            $stamps = [new DelayStamp(self::RETRY_DELAY_MS)];
-
-            if (true === $account->needsBackfill()) {
-                $stamps[] = new TransportNamesStamp([GmailApiSyncer::IMPORT_QUEUE]);
-            }
-
-            $this->bus->dispatch(
-                new SyncGmailMessageBatchMessage($account->id, $fetch['retryable'], $this->origin->current()),
-                $stamps,
-            );
+            $this->putBack($account, $fetch['retryable'], $onlyMissing);
         }
 
         /** @var list<array{message: Message, account: Account}> $built */
@@ -166,7 +214,33 @@ final readonly class SyncGmailMessageBatchHandler
                     'gmailId'   => '' !== $gmailId ? $gmailId : '(unknown)',
                     'accountId' => $account->id,
                 ]);
+
+                // The debug line above used to be the only trace, and nothing
+                // reads a debug line. The import knew a message only as
+                // stored or missing, so this one stayed missing: listed again
+                // every hour, fetched again in full, declined again (#90).
+                // With what the decision was made on, so `app:gmail:skipped`
+                // can say what kind of message it was.
+                if ('' !== $gmailId && false === isset($alreadySkipped[$gmailId])) {
+                    $this->em->persist(new GmailSkippedMessage(
+                        $account,
+                        $gmailId,
+                        GmailSkipReason::Unattributable,
+                        $labelIds,
+                        $headers,
+                    ));
+                    $alreadySkipped[$gmailId] = true;
+                    ++$newlySkipped;
+                }
+
                 continue;
+            }
+
+            // Declined once and attributable now — another account has been
+            // connected since, or the rule has changed. It is about to be
+            // stored or merged, so it comes off the record.
+            if (true === isset($alreadySkipped[$gmailId])) {
+                $nowStored[] = $gmailId;
             }
 
             // ── Gmailify dedup: merge, don't skip ─────────────────────────────
@@ -242,7 +316,16 @@ final readonly class SyncGmailMessageBatchHandler
             }
         }
 
+        $this->skipped->forget($account, $nowStored);
+
         if (count($built) === 0 && 0 === $enriched) {
+            // Nothing to store, but possibly something to remember: a batch
+            // made up entirely of messages that were declined still has to
+            // write that down, or it is fetched again in an hour.
+            if ($newlySkipped > 0) {
+                $this->em->flush();
+            }
+
             return;
         }
 
@@ -275,6 +358,45 @@ final readonly class SyncGmailMessageBatchHandler
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
+
+    /**
+     * Queue these ids to be fetched later: after the account's quota refusal
+     * has cleared, if it is under one, and after a short pause otherwise.
+     *
+     * A few seconds are added to a quota wait, and not the same few for every
+     * batch. An import has dozens of batches queued behind the one that was
+     * refused, each of which is put back in turn; all given the same delay
+     * they would all come due in the same second.
+     *
+     * Back onto the queue this kind of work belongs on. Left to the routing
+     * table it lands on the live queue, and while an account is importing
+     * that is its history jumping in front of the mail arriving now.
+     *
+     * @param list<string> $gmailIds
+     */
+    private function putBack(Account $account, array $gmailIds, bool $onlyMissing): void
+    {
+        $wait  = $this->pacer->waitSeconds($account);
+        $delay = $wait > 0 ? 1000 * ($wait + random_int(1, 15)) : self::RETRY_DELAY_MS;
+
+        $stamps = [new DelayStamp($delay)];
+
+        if (true === $account->needsBackfill()) {
+            $stamps[] = new TransportNamesStamp([GmailApiSyncer::IMPORT_QUEUE]);
+        }
+
+        $this->bus->dispatch(
+            new SyncGmailMessageBatchMessage((int) $account->id, $gmailIds, $this->origin->current(), $onlyMissing),
+            $stamps,
+        );
+
+        $this->logger->info('SyncGmailMessageBatch: put back to be fetched later', [
+            'accountId'    => $account->id,
+            'count'        => count($gmailIds),
+            'delaySeconds' => intdiv($delay, 1000),
+            'quota'        => $wait > 0,
+        ]);
+    }
 
     /**
      * Merge the Gmail copy's knowledge onto an existing row: gmailId (covers it

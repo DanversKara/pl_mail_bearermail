@@ -56,13 +56,20 @@ class Account extends AccountModel
     /**
      * Which entry of the account palette this account paints its dot with.
      *
-     * Assigned once, at creation, and then left alone — that is the whole point
-     * of it. The dot was keyed off sortOrder, so a reorder swapped the colours
-     * of two accounts: the mark whose only job is "this is the same account you
-     * saw on that message" changed meaning under the user, on the sidebar and
-     * on every list row at once. Dense and lowest-free at creation, so the first
-     * eight accounts are still guaranteed distinct, which is why sortOrder was
-     * used in the first place.
+     * Handed out at creation and then changed ONLY by the user, from the colour
+     * swatch on the account's row (AccountController::colour()) — never as a
+     * side effect of anything else, and that is the whole point of it. The dot
+     * was keyed off sortOrder, so a reorder swapped the colours of two accounts:
+     * the mark whose only job is "this is the same account you saw on that
+     * message" changed meaning under the user, on the sidebar and on every list
+     * row at once. Reordering, choosing a primary and resequencing must leave
+     * it alone.
+     *
+     * Dense and lowest-free at creation, so the first eight accounts start out
+     * guaranteed distinct, which is why sortOrder was used in the first place.
+     * That is a property of the handing-out and not an invariant: the user may
+     * give two accounts the same colour on purpose, so nothing may assume the
+     * values are unique.
      */
     #[ORM\Column(options: ['default' => 0])]
     public int $colorIndex = 0;
@@ -557,6 +564,22 @@ class Account extends AccountModel
     }
 
     /**
+     * The domains whose every address reaches this mailbox: a catch-all.
+     *
+     * A list of lowercased domain names. Any address at one of them counts as
+     * this account's own for answering: a reply to mail that came in for
+     * `anything@example.com` goes out from `anything@example.com`, without
+     * that address ever having been added as an alias.
+     *
+     * A setting and not an EmailAlias row holding `*@example.com`, because an
+     * alias row is an address everywhere it is read — it gets a signature
+     * panel, a read-receipt mode, a JMAP identity, a line in the backup — and
+     * a pattern is none of those things. Twenty callers would each have had to
+     * learn to skip it.
+     */
+    public const string SETTING_CATCH_ALL_DOMAINS = 'mail.catch_all_domains';
+
+    /**
      * A sync that worked, recorded the same way a calendar records one.
      *
      * Mirrors Calendar::recordSyncSuccess() down to the name, and for the
@@ -1023,5 +1046,123 @@ class Account extends AccountModel
 
             return array_values(array_unique($fallback));
         }
+    }
+
+    /**
+     * The catch-all domains of this account, lowercased. See
+     * SETTING_CATCH_ALL_DOMAINS.
+     *
+     * Filtered on the way out as well as on the way in: the bag is jsonb, and
+     * a hand-edited or restored value that is not a list of strings must read
+     * as "none" rather than reach a comparison.
+     *
+     * @var list<string>
+     */
+    public array $catchAllDomains {
+        get {
+            $stored = $this->getSetting(self::SETTING_CATCH_ALL_DOMAINS, []);
+
+            if (false === is_array($stored)) {
+                return [];
+            }
+
+            $domains = [];
+
+            foreach ($stored as $domain) {
+                if (true === is_string($domain) && '' !== trim($domain)) {
+                    $domains[] = strtolower(trim($domain));
+                }
+            }
+
+            return array_values(array_unique($domains));
+        }
+        set {
+            $domains = [];
+
+            foreach ($value as $domain) {
+                $domains[] = strtolower(trim($domain));
+            }
+
+            $domains = array_values(array_unique(array_filter($domains, static fn (string $domain): bool => '' !== $domain)));
+
+            if ([] === $domains) {
+                $this->unsetSetting(self::SETTING_CATCH_ALL_DOMAINS);
+
+                return;
+            }
+
+            $this->setSetting(self::SETTING_CATCH_ALL_DOMAINS, $domains);
+        }
+    }
+
+    /**
+     * Whether an address is at one of this account's catch-all domains.
+     *
+     * The domain is compared whole: `example.com` does not cover
+     * `mail.example.com`, because a catch-all is configured per domain at the
+     * provider and a subdomain is a different one.
+     */
+    public function catchesAddress(?string $address): bool
+    {
+        $address = strtolower(trim((string) $address));
+        $at      = strrpos($address, '@');
+
+        if (false === $at || 0 === $at) {
+            return false;
+        }
+
+        return in_array(substr($address, $at + 1), $this->catchAllDomains, true);
+    }
+
+    /**
+     * Whether this account may put an address in From: a sendable alias, the
+     * display address of an account with no alias rows yet, or anything at a
+     * catch-all domain.
+     *
+     * The one answer the From selector, a reply's choice of sender and the
+     * token that comes back from the browser all have to share.
+     */
+    public function maySendAs(?string $address): bool
+    {
+        $address = strtolower(trim((string) $address));
+
+        if ('' === $address) {
+            return false;
+        }
+
+        $sendable = $this->sendableAliases;
+
+        foreach ($sendable as $alias) {
+            if ($alias->address === $address) {
+                return true;
+            }
+        }
+
+        if ([] === $sendable && strtolower((string) $this->displayAddress) === $address) {
+            return true;
+        }
+
+        return $this->catchesAddress($address);
+    }
+
+    /**
+     * The display name mail from one address goes out under.
+     *
+     * The alias's own name when it has one, the account's otherwise — the same
+     * rule the From selector labels its options by, so what the selector shows
+     * is what the recipient sees. An address with no alias row (a catch-all
+     * address, an account not yet seeded) has only the account's name to use.
+     */
+    public function senderNameFor(?string $address): ?string
+    {
+        $address = strtolower(trim((string) $address));
+
+        foreach ($this->aliases as $alias) {
+            if ($alias->address === $address && null !== $alias->displayName) {
+                return $alias->displayName;
+            }
+        }
+
+        return $this->name;
     }
 }

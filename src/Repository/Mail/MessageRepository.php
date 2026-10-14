@@ -1827,6 +1827,50 @@ class MessageRepository extends ServiceEntityRepository
     }
 
     /**
+     * A few of an account's Gmail ids, newest first: something to fetch again
+     * for the quota probe without asking Gmail what there is.
+     *
+     * @return list<string>
+     */
+    public function findSomeGmailIdsForAccount(Account $account, int $limit): array
+    {
+        return array_map(strval(...), $this->createQueryBuilder('m')
+            ->select('m.gmailId')
+            ->where('m.account = :account')
+            ->andWhere('m.gmailId IS NOT NULL')
+            ->setParameter('account', $account)
+            ->orderBy('m.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getSingleColumnResult());
+    }
+
+    /**
+     * Which of these Gmail ids the owner already has, as ids and nothing
+     * else: what a listing's batch asks before it fetches.
+     *
+     * @param list<string> $gmailIds
+     *
+     * @return list<string>
+     */
+    public function findStoredGmailIdsForUser(User $user, array $gmailIds): array
+    {
+        if (0 === count($gmailIds)) {
+            return [];
+        }
+
+        return array_map(strval(...), $this->createQueryBuilder('m')
+            ->select('m.gmailId')
+            ->innerJoin('m.account', 'a')
+            ->where('a.usr = :usr')
+            ->andWhere('m.gmailId IN (:gmailIds)')
+            ->setParameter('usr', $user)
+            ->setParameter('gmailIds', $gmailIds)
+            ->getQuery()
+            ->getSingleColumnResult());
+    }
+
+    /**
      * QueryBuilder on two counts: the owner is reached through the account
      * association, which findBy() cannot traverse, and only one column comes
      * back.
@@ -2474,8 +2518,17 @@ class MessageRepository extends ServiceEntityRepository
                 'm.sentAt',
                 'm.createdAt',
                 'm.submissionSendAt',
+                // Whether the message is filed under Sent or Drafts, for
+                // ThreadRowMessage::$filedAsSent. A count in the same statement
+                // rather than a join: a join would repeat the row per label,
+                // and a second statement would be one more query on every list
+                // page for a column most rows never have read.
+                '(SELECT COUNT(sentLabel.id) FROM ' . Message::class . ' filed
+                    JOIN filed.labels sentLabel
+                    WHERE filed.id = m.id AND sentLabel.role IN (:sentRoles)) AS filedAsSent',
             )
             ->where('m.thread IN (:threads)')
+            ->setParameter('sentRoles', [LabelRole::Sent, LabelRole::Drafts])
             ->setParameter('threads', $threadIds)
             ->addOrderBy('m.receivedAt', 'ASC')
             ->addOrderBy('m.id', 'ASC')

@@ -82,6 +82,27 @@ The two are separate now. A sync arranges for new mail to be seen and stops; the
   rule.
 - **Gmail asks for the Inbox by name first,** then pages the whole-mailbox listing one request
   at a time, with the page token kept on the account between jobs.
+- **Gmail's quota is learnt, not configured.** Google allows one user a number of quota units
+  a minute and does not say how many until it refuses a request. `GmailQuotaPacer` starts from
+  15,000, reads the limit out of the first refusal (a project created since May 2026 has
+  6,000) and paces every account to 85% of it from then on, five messages to a request — Google
+  refuses a minute's worth spent in one second — and more slowly for a while after any refusal
+  at a limit it already knows. A message is counted at 60 units: Google's table says 20, which
+  is what a fetch without the body costs; `app:gmail:quota-probe` measured 60 for the `full`
+  and `raw` formats. A learnt limit is forgotten after a day so a raised one is found again. What an account has spent and when it was last
+  refused are in a database-backed cache pool, so every worker draws on one allowance. A
+  refusal is not an error anywhere on this path: a batch, an import page or a sync that meets
+  one is put back to run when the account's minute is over.
+- **A Gmail message that is looked at and not stored is written down.** The batch handler
+  declines a message whose headers tie it to no account here — a draft, a chat, mail sent from a
+  "send mail as" address — and cannot store one Gmail lists and answers 404 for. Each gets a row
+  in `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) with the reason, its labels
+  and its address headers. The listing treats a recorded id like a stored one, so the message
+  is not fetched again every hour and an import whose every outstanding message has an answer
+  finishes on that pass instead of at its attempt ceiling; the progress line counts it as done,
+  since Google's total includes it. `app:gmail:skipped` prints the record grouped by kind, and
+  `--forget` clears it for an account so the next listing asks again. A row is removed when its
+  message is stored after all.
 - **Microsoft reads each folder's first delta round a page at a time.** A folder without a
   delta link is planned on the account (`Account::$graphImport`) instead of being enumerated
   by the sync, and `GraphApiSyncer::importPage()` walks that round fifty messages at a call,

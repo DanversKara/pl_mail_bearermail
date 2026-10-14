@@ -54,6 +54,7 @@ final class PageRendersTest extends WebTestCase
         // renderer only shows up once something asks it for an image.
         yield 'settings security enrolling' => ['/settings?section=security&enrol=1'];
         yield 'settings general' => ['/settings?section=general'];
+        yield 'settings disposal' => ['/settings?section=disposal'];
         // The AI section renders whether or not an administrator has switched
         // anything on: a feature that is off is a row with a sentence instead
         // of a switch, and that branch is the one nothing else walks.
@@ -78,6 +79,7 @@ final class PageRendersTest extends WebTestCase
         yield 'admin queue backlog, filtered' => ['/admin/queues/waiting?q=sync&offset=25'];
         yield 'admin integrations' => ['/admin/integrations'];
         yield 'admin push' => ['/admin/push'];
+        yield 'admin sso' => ['/admin/sso'];
         yield 'admin insight reports' => ['/admin/insight-reports'];
         // The section wrapper as well as the frame, because the nav entry
         // renders a pending-count badge that the frame itself never draws —

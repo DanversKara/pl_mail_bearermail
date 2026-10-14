@@ -160,6 +160,16 @@ final readonly class ConfigBackupUsers
         User::SETTING_INSIGHT_PANE_DISABLED,
         User::SETTING_COMPOSE_FORWARD_QUOTE_COLLAPSED,
         User::SETTING_COMPOSE_SEND_FEEDBACK,
+        // Whether the buttons that delete mail for good are offered. In the
+        // backup because a restore that quietly took the flame away, or worse
+        // put it back for somebody who had switched it off, is a change to a
+        // choice about irreversible deletion. A boolean, no id, means the same
+        // on any install.
+        User::SETTING_DISPOSAL_DELETE_NOW,
+        // How the topbar's calendar button moves between views. One enum
+        // value, no id, the same on any install, and a preference about one's
+        // own screen like the pane's mode and width above.
+        User::SETTING_CALENDAR_SWITCH_SKIP,
     ];
 
     /**
@@ -188,6 +198,10 @@ final readonly class ConfigBackupUsers
         // allowlist silently stops carrying anything that ships after it.
         Account::SETTING_SIGNATURE,
         Account::SETTING_READ_RECEIPT_DEFAULT,
+        // A list of domain names, with nothing in it that belongs to one
+        // host: the mailbox is a catch-all for the same domains wherever
+        // plMail reads it from.
+        Account::SETTING_CATCH_ALL_DOMAINS,
     ];
 
     /**
@@ -436,10 +450,11 @@ final readonly class ConfigBackupUsers
                 'email'             => $account->email,
                 'sortOrder'         => $account->sortOrder,
                 'isPrimary'         => $account->isPrimary,
-                // The account's dot colour, which is assigned at creation and
-                // is not recoverable from anything else in this file — restore
-                // it and every account keeps the mark the user recognises it
-                // by; leave it out and they all come back sharing colour 0.
+                // The account's dot colour — handed out at creation, then
+                // whatever the user picked — which is not recoverable from
+                // anything else in this file: restore it and every account
+                // keeps the mark the user recognises it by; leave it out and
+                // they all come back sharing colour 0.
                 'colorIndex'        => $account->colorIndex,
                 'imapHost'          => $account->imapHost,
                 'imapPort'          => $account->imapPort,

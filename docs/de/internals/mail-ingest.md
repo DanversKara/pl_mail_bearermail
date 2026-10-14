@@ -1,4 +1,4 @@
-<!-- translated-from: internals/mail-ingest.md sha1:dcb2b781f03c1702974cc382857086d18024e21c -->
+<!-- translated-from: internals/mail-ingest.md sha1:116b8d5828c7cc61a9936ec251013995f87652dd -->
 # Mail-Ingest
 
 Vom Anbieter in die Datenbank: wie aus Bytes eine Zeile `Message` wird, was mit ihr geschieht,
@@ -93,6 +93,31 @@ die Vorgeschichte gehört `App\Service\Mail\MailImporter`, auf der Warteschlange
 - **Gmail fragt zuerst namentlich nach dem Posteingang,** dann blättert es die Auflistung des
   ganzen Postfachs Anfrage für Anfrage durch; das Seiten-Token liegt zwischen den Jobs auf dem
   Konto.
+- **Gmails Kontingent wird gelernt, nicht eingestellt.** Google erlaubt einem Nutzer eine Zahl
+  von Kontingent-Einheiten pro Minute und sagt erst, wie viele, wenn es eine Anfrage ablehnt.
+  `GmailQuotaPacer` beginnt bei 15.000, liest das Limit aus der ersten Ablehnung (ein seit Mai
+  2026 angelegtes Projekt hat 6.000) und taktet von da an jedes Konto auf 85 % davon, fünf
+  Nachrichten pro Anfrage — Google lehnt ab, was den Vorrat einer Minute in einer Sekunde
+  verbraucht — und nach jeder Ablehnung bei einem schon bekannten Limit eine Weile langsamer.
+  Eine Nachricht zählt 60 Einheiten: Googles Tabelle nennt 20, und das kostet ein Abruf ohne
+  Inhalt; `app:gmail:quota-probe` hat für die Formate `full` und `raw` 60 gemessen. Ein
+  gelerntes Limit wird nach einem Tag vergessen, damit ein angehobenes wiedergefunden wird.
+  Was ein Konto verbraucht hat und wann es zuletzt abgelehnt wurde, liegt in einem Cache-Pool
+  in der Datenbank, sodass alle Worker aus einem Kontingent schöpfen. Eine Ablehnung ist auf
+  diesem Weg nirgends ein Fehler: Ein Stapel, eine Import-Seite oder ein Sync, der auf eine
+  trifft, wird zurückgestellt und läuft, wenn die Minute des Kontos vorbei ist.
+- **Eine Gmail-Nachricht, die angesehen und nicht gespeichert wird, wird notiert.** Der
+  Stapel-Handler lehnt eine Nachricht ab, deren Header sie keinem Konto hier zuordnen — einen
+  Entwurf, einen Chat, eine von einer „Senden als“-Adresse verschickte Mail — und kann eine
+  nicht speichern, die Gmail auflistet und mit 404 beantwortet. Jede bekommt eine Zeile in
+  `gmail_skipped_message` (`App\Entity\Mail\GmailSkippedMessage`) mit dem Grund, ihren Labels
+  und ihren Adress-Headern. Die Auflistung behandelt eine notierte id wie eine gespeicherte, die
+  Nachricht wird also nicht jede Stunde erneut abgerufen, und ein Import, bei dem jede
+  ausstehende Nachricht eine Antwort hat, endet in diesem Durchlauf statt an seiner
+  Versuchsgrenze; die Fortschrittszeile zählt sie als erledigt, denn Googles Gesamtzahl enthält
+  sie. `app:gmail:skipped` gibt die Notizen nach Art gruppiert aus, und `--forget` löscht sie
+  für ein Konto, sodass die nächste Auflistung erneut fragt. Eine Zeile verschwindet, wenn ihre
+  Nachricht doch gespeichert wird.
 - **Microsoft liest die erste Delta-Runde jedes Ordners seitenweise.** Ein Ordner ohne
   Delta-Link wird auf dem Konto eingeplant (`Account::$graphImport`), statt vom Abgleich
   aufgezählt zu werden, und `GraphApiSyncer::importPage()` geht diese Runde in Schritten von
