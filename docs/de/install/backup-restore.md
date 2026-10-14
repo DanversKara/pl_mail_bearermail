@@ -1,4 +1,4 @@
-<!-- translated-from: install/backup-restore.md sha1:bf79195c22d7a32064dd0b95d14bb8787cc7cdf9 -->
+<!-- translated-from: install/backup-restore.md sha1:f99d61f65926303958aabe83599188ef63a69bbb -->
 # Sichern und Wiederherstellen
 
 Eine plMail-Installation besteht aus drei Dingen, und eine Sicherung, die nur zwei davon enthält,
@@ -11,7 +11,7 @@ ihnen macht und wie du eine Installation auf einer anderen Maschine hochbringst.
 |---|---|---|
 | **Die Datenbank** | im Volume `database_data` | Jede Nachricht, jede Konversation, jedes Label, jeder Filter, jeder Kalender, jeder Benutzer und jedes App-Passwort |
 | **Der Verschlüsselungsschlüssel** | `APP_ENCRYPTION_KEY` in `var/secrets/generated.env`, auf dem Volume `app_secrets` | Ohne ihn ist jedes Postfachpasswort und jedes OAuth-Token in der Datenbank dauerhaft unlesbar |
-| **Die Blobs** | `attachments/`, `raw/` und `uploads/` unterhalb von `APP_STORAGE_DIR` | Anhangpfade werden relativ zum Projektstammverzeichnis in der Datenbank gespeichert; ohne die Dateien endet nach einer Wiederherstellung jeder Anhang mit 404 |
+| **Die Blobs** | `attachments/`, `raw/`, `uploads/` und `drive/` (Drive-Dateien) unterhalb von `APP_STORAGE_DIR` | Anhangpfade werden relativ zum Projektstammverzeichnis in der Datenbank gespeichert; ohne die Dateien endet nach einer Wiederherstellung jeder Anhang mit 404 |
 
 Die Datei mit den Geheimnissen enthält mehr als den Schlüssel — `APP_SECRET`, `POSTGRES_PASSWORD`,
 `MERCURE_JWT_SECRET`, das VAPID-Schlüsselpaar und die bei der Einrichtung gespeicherte

@@ -8,6 +8,11 @@ All credit for plMail itself goes to its author. This fork keeps the original li
 (**AGPL-3.0**, see [`LICENSE`](LICENSE)) and the original README, which follows further down,
 unchanged. Anything not listed under "What this fork adds" is the original project's work.
 
+### 📖 [Read the BearerMail Handbook / Guide →](https://docs.bearermail.com/)
+
+Installing, pairing, the app's features, updates, and troubleshooting — at
+[docs.bearermail.com](https://docs.bearermail.com/).
+
 > **Not the official project.** For plMail itself, its handbook, releases, the Android and iOS
 > apps, and support, go to [karatektus/pl_mail](https://github.com/karatektus/pl_mail). Please
 > report problems with the additions below here, not upstream.
@@ -111,13 +116,30 @@ cd pl_mail_bearermail
 cp .env.mail.dist .env.mail.local
 nano .env.mail.local      # MAIL_DOMAIN, MAIL_ACCOUNTS, relay, Cloudflare…
 
-# Build and start plMail plus the mail server
-docker compose --profile mail up -d --build
+# Pull and start plMail plus the mail server
+docker compose --profile mail pull
+docker compose --profile mail up -d
 ```
 
-This fork builds its image from source (`compose.yaml` builds `plmail-fork:latest`) rather than
-pulling upstream's published image, so the additions above are included. Database changes are
-applied automatically on start.
+This fork publishes its own image, `ghcr.io/danverskara/pl_mail_bearermail`, so the additions above
+are included and Admin → Updates reports new builds of this fork rather than of upstream:
+
+- **`latest`**, what `compose.yaml` pulls and the **Releases** channel follows, moves when a release
+  is cut: **Actions → Release → Run workflow** tags the current `main` with the next version
+  (v0.4.0, v0.4.1, …), makes a GitHub release titled with the version and its commit, and builds
+  the image.
+- **`main`** is rebuilt on every push to `main`, for the **Main** channel. Running it by hand
+  needs `BEARERMAIL_TAG=main` in your shell's environment.
+
+To upgrade, run the same `pull` and `up -d` again. Database changes are applied automatically on
+start.
+
+To have the server install new builds by itself, choose **Install automatically** in Admin → Updates
+and schedule the installer once: `bin/auto-update install`. See
+[Installing updates automatically](docs/install/upgrading.md#installing-updates-automatically).
+
+`docker compose up -d --build` still builds from source, for a server that cannot reach ghcr.io,
+but a local build has no commit stamped in, so Admin → Updates cannot compare it with anything.
 
 **Back up** the database (`docker compose exec php php bin/console app:backup`), the secrets in
 `var/secrets/generated.env`, and your `.env.mail.local`. The last one holds your mailbox passwords

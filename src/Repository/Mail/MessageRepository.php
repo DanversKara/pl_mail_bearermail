@@ -161,17 +161,34 @@ class MessageRepository extends ServiceEntityRepository
     /**
      * Messages received for one account since a time — for flood detection.
      */
-    public function countForAccountSince(int $accountId, \DateTimeImmutable $since): int
+    /**
+     * The user's account that received the most messages since $since, when
+     * that is at least $threshold: its address and the count, or null.
+     *
+     * One grouped query that needs no account list, for the flood banner on
+     * every inbox visit and every navigation of the list.
+     *
+     * @return array{email: string, count: int}|null
+     */
+    public function busiestAccountSince(User $user, \DateTimeImmutable $since, int $threshold): ?array
     {
-        return (int) $this->createQueryBuilder('m')
-            ->select('COUNT(m.id)')
+        $row = $this->createQueryBuilder('m')
+            ->select('a.email AS email', 'COUNT(m.id) AS received')
             ->join('m.thread', 't')
-            ->where('t.account = :account')
+            ->join('t.account', 'a')
+            ->where('a.usr = :user')
             ->andWhere('m.receivedAt >= :since')
-            ->setParameter('account', $accountId)
+            ->setParameter('user', $user)
             ->setParameter('since', $since, Types::DATETIME_IMMUTABLE)
+            ->groupBy('a.id', 'a.email')
+            ->having('COUNT(m.id) >= :threshold')
+            ->setParameter('threshold', $threshold)
+            ->orderBy('received', 'DESC')
+            ->setMaxResults(1)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getOneOrNullResult();
+
+        return null === $row ? null : ['email' => (string) $row['email'], 'count' => (int) $row['received']];
     }
 
     /**

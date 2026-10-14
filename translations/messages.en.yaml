@@ -1223,6 +1223,23 @@ admin:
         header: '%version% is available'
         intro: 'plMail checks every hour whether the channel you follow has published a newer build, and tells the administrators once per build: a notification on each device they have registered for push, and a note at the top of this area.'
         saved: 'Channel saved.'
+        saved_install: 'Saved.'
+        install:
+            label: 'When there is an update'
+            save: 'Save'
+            notify:
+                name: 'Tell me'
+                hint: 'Announce it here and by push; an administrator installs it on the server.'
+            auto:
+                name: 'Install automatically'
+                hint: 'The server installs it at night, after saving a copy of the database. Needs bin/auto-update scheduled on the server, once.'
+            setup:
+                heading: 'Not set up on this server yet'
+                body: 'The app cannot replace its own containers, so the server does the installing. Over SSH, in the folder BearerMail is installed in, run this once:'
+            seen: 'Server last asked'
+            last: 'Last install'
+            never: 'none yet'
+            failed: 'failed: %error%'
         channel:
             label: 'Follow'
             save: 'Save'
@@ -1263,6 +1280,7 @@ admin:
         how:
             heading: 'Updating'
             body: 'Pull the new image and recreate the containers; on a NAS, redeploy the app. plMail migrates its database when it starts, so read the changelog first for anything under "Before you upgrade".'
+            auto: 'This installs by itself tonight at about 04:17. To install it now instead, run on the server:'
         privacy: 'A check asks the registry for the newest %image% image and api.github.com what changed since this build. Nothing about this installation is sent beyond the requests themselves.'
         push:
             title: 'plMail %version% is available'

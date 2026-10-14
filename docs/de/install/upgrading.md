@@ -1,4 +1,4 @@
-<!-- translated-from: install/upgrading.md sha1:cd56ca54927898f35075d3948a2deb9257fc0a4a -->
+<!-- translated-from: install/upgrading.md sha1:667a9930c8414eb5b99a187973ba744c3a10fa93 -->
 # Aktualisieren
 
 plMail migriert seine eigene Datenbank beim Start. Diese eine Entscheidung prägt alles auf dieser
@@ -62,6 +62,14 @@ Start laufen. Genau deswegen wurde das geändert.
 Wähle bewusst. `latest` ist für die meisten Installationen richtig. `main` ist dafür da, das laufen
 zu lassen, woran gerade gearbeitet wird, und das Changelog wird es noch nicht beschreiben. Eine
 festgenagelte Version ist richtig, wenn du Upgrades lieber planst als empfängst.
+
+Die `compose.yaml` dieses Forks holt `ghcr.io/danverskara/pl_mail_bearermail:${BEARERMAIL_TAG:-latest}`.
+Seine Releases entstehen über **Actions → Release → Run workflow**, ohne dass du eine Version
+eintippst: Der Workflow taggt die Spitze von `main` mit der nächsten Version nach dem neuesten
+`v*`-Tag (standardmäßig Patch, auf Wunsch Minor oder Major), erstellt ein GitHub-Release mit Version
+und Commit im Titel und startet den Image-Build, der `latest` weiterbewegt. Ein Tag, den ein
+Workflow pusht, startet keinen anderen Workflow, deshalb startet der Release-Workflow den Build
+selbst.
 
 **Der typische Fehlerfall ist `pull_policy: always` auf einem beweglichen Tag.**
 `truenas.compose.yaml` setzt das, ein Redeploy von der NAS-App-Seite holt sich also, worauf dieser
@@ -150,7 +158,36 @@ Welches Image die Prüfungen lesen, wird beim Bauen als `APP_IMAGE` eingestempel
 `ghcr.io/karatektus/pl_mail`), neben `APP_VERSION` und `APP_COMMIT`. Ein Fork, der sein eigenes
 Image veröffentlicht, prüft also sein eigenes. Ein gesetztes `APP_IMAGE` in der Umgebung hat Vorrang.
 
-Die Seite installiert noch nichts; das erledigen die Befehle unter [Das Upgrade](#das-upgrade) oben.
+Die Seite installiert nichts von selbst: Die App läuft in den Containern, die eine Installation
+ersetzt. Führ entweder die Befehle unter [Das Upgrade](#das-upgrade) oben aus, oder lass das den
+Server erledigen, wie der nächste Abschnitt beschreibt.
+
+### Aktualisierungen automatisch installieren
+
+Admin → Aktualisierungen hat unter dem Kanal eine zweite Wahl, **Wenn es eine Aktualisierung gibt**:
+*Nur melden* (die Voreinstellung) oder *Automatisch installieren*. Die zweite ist eine Anweisung an
+`bin/auto-update`, ein Skript, das auf dem Server selbst läuft, nicht in einem Container. Plane es
+einmal pro Server ein, aus dem Ordner, in dem BearerMail installiert ist:
+
+```bash
+bin/auto-update install     # jede Nacht um 04:17, Protokoll in var/auto-update.log
+bin/auto-update             # oder einmal ausführen, jetzt
+bin/auto-update uninstall   # den Zeitplan entfernen
+```
+
+Jeder Lauf fragt die App (`app:updates:should-install`) und tut nichts, solange nicht *Automatisch
+installieren* gewählt ist und der Kanal einen neueren Build hat als den, der läuft. Dann sichert er
+einen Datenbank-Dump nach `var/update-backups/` (die letzten fünf bleiben), führt `git pull
+--ff-only`, `docker compose pull` und `docker compose up -d` für das Image des Kanals aus (`latest`
+für Veröffentlichungen, `main` für Main, übergeben als `BEARERMAIL_TAG`), baut die Container des
+Mailservers neu, wo sie laufen, und sagt der App, wie es ausgegangen ist (`app:updates:installed`).
+Die Seite zeigt, wann das Skript zuletzt gefragt hat und wie die letzte Installation endete, und
+solange es noch nie gefragt hat, wie du es einplanst.
+
+**Was es nicht sehen kann, ist, ob ein Build ein guter ist.** Der neue Build migriert die Datenbank
+beim Start, wie jedes Upgrade; der Dump ist der Weg zurück (siehe [Zurückrollen](#zurückrollen)).
+Ein `git pull`, der nicht vorspulen kann, weil auf dem Server eine versionierte Datei geändert wurde,
+hält die Installation an, bevor irgendetwas geholt wird.
 
 **Der Fehlerfall ist eine Prüfung, die die Registry nicht erreicht.** Eine Installation hinter einer
 Firewall bekommt keine Antwort. Die Seite sagt das und behält, was die letzte beantwortete Prüfung

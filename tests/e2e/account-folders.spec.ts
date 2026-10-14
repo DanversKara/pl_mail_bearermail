@@ -32,7 +32,7 @@ test.describe("account folders modal", () => {
         const modal = page.locator("#modal-backdrop");
 
         await expect(modal).toContainText(`Folders — ${ACCOUNT}`);
-        await expect(modal).toContainText("Switch a folder off and plMail stops fetching it");
+        await expect(modal).toContainText("Switch a folder off and BearerMail stops fetching it");
         await expect(modal).toContainText("No folders yet");
 
         await modal.getByRole("button", { name: "Close" }).click();

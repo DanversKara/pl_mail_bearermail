@@ -69,6 +69,36 @@ final class UpdatesControllerTest extends WebTestCase
         self::assertNull($check->error);
     }
 
+    /**
+     * The auto-install switch sticks both ways, and saving it records nothing
+     * on the installer's behalf: only bin/auto-update asking sets that.
+     *
+     * Stored, not rendered: a test build has no version stamped in, so it
+     * follows the Off channel, where the switch is not shown.
+     */
+    public function testAutoInstallIsKeptAndAsksForTheServerScript(): void
+    {
+        $client = $this->signedIn('e2e-admin@plmail.test');
+
+        $crawler = $client->request('GET', '/admin/updates');
+        $token   = (string) $crawler->filter('turbo-frame#admin-updates input[name="_token"]')->first()->attr('value');
+
+        $client->request('POST', '/admin/updates', ['_token' => $token, 'do' => 'install', 'install' => 'auto']);
+
+        self::assertResponseIsSuccessful();
+
+        static::getContainer()->get(EntityManagerInterface::class)->clear();
+        $check = static::getContainer()->get(UpdateCheckRepository::class)->current();
+
+        self::assertTrue($check?->autoInstall);
+        self::assertNull($check->installerSeenAt);
+
+        $client->request('POST', '/admin/updates', ['_token' => $token, 'do' => 'install', 'install' => 'notify']);
+
+        static::getContainer()->get(EntityManagerInterface::class)->clear();
+        self::assertFalse(static::getContainer()->get(UpdateCheckRepository::class)->current()?->autoInstall);
+    }
+
     private function signedIn(string $email): KernelBrowser
     {
         $client = static::createClient();

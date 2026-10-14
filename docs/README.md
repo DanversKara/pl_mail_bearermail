@@ -49,6 +49,7 @@ mechanism behind it.
 | [Platform notes](install/platforms.md) | Linux, Windows via WSL2, macOS, and NAS boxes |
 | [Behind a reverse proxy](install/reverse-proxy.md) | TLS, `APP_PUBLIC_URL`, `TRUSTED_PROXIES`, and what breaks without them |
 | [Configuration reference](install/configuration.md) | Every environment variable, what it does and what happens if it is wrong |
+| [Self-hosted mail server](install/self-hosted-mail-server.md) | Postfix, Dovecot and DKIM for your own domain, in the same compose stack: DNS, relaying, SMTP keys, dynamic DNS |
 | [Backup and restore](install/backup-restore.md) | What to back up, the encryption key, and restoring onto a new host |
 | [Configuration backup](install/config-backup.md) | Carrying an install's settings and credentials to another one, as one encrypted file |
 | [Upgrading](install/upgrading.md) | Migrations run on boot, what that means, and how to tell which build is running |

@@ -80,7 +80,7 @@ final readonly class ConfigBackupDatabase
     public const string LOG_SETTINGS = 'logSettings';
 
     /**
-     * The update channel — Admin → Updates. The channel only: what the last
+     * The update channel and auto-install — Admin → Updates. Those only: what the last
      * check found is this installation's own record, and would be wrong about
      * any other.
      */
@@ -395,7 +395,9 @@ final readonly class ConfigBackupDatabase
 
     /**
      * The chosen update channel, or null when the installation follows its
-     * build. Null is exported as null for the reason exportLogSettings()
+     * build, and whether newer builds install automatically. That one does
+     * nothing on a server until bin/auto-update is scheduled there, so carrying
+     * it cannot start an install the restoring administrator did not set up. Null is exported as null for the reason exportLogSettings()
      * gives: writing the channel the build implies would pin an installation
      * that was following it.
      *
@@ -409,7 +411,10 @@ final readonly class ConfigBackupDatabase
             return null;
         }
 
-        return ['channel' => $check->channel?->value];
+        return [
+            'channel'     => $check->channel?->value,
+            'autoInstall' => $check->autoInstall,
+        ];
     }
 
     /**
@@ -422,6 +427,9 @@ final readonly class ConfigBackupDatabase
         // A value this build does not know is "follow the build" rather than an
         // error: a backup from a newer plMail may name a channel this one lacks.
         $check->channel = UpdateChannel::tryFrom((string) $this->string($values, 'channel'));
+
+        // Absent from a backup older than auto-install: notify only, as before.
+        $check->autoInstall = true === ($values['autoInstall'] ?? false);
 
         if (null === $check->id) {
             $this->entityManager->persist($check);

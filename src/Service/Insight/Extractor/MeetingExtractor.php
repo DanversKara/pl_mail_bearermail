@@ -194,7 +194,7 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
                 $hour += 12;
             }
 
-            return [$hour, (int) ($m[2] ?? 0), $m[0]];
+            return [$hour, (int) $m[2], $m[0]];
         }
 
         if (1 === preg_match('~\b(noon|midday)\b~iu', $text, $m)) {
@@ -232,12 +232,12 @@ final readonly class MeetingExtractor implements InsightExtractorInterface
 
         // US 10/12 or 10/12/2026 (month first — this is a US install)
         if (1 === preg_match('~\b(1[0-2]|0?[1-9])/([12]\d|3[01]|0?[1-9])(?:/(\d{2}|\d{4}))?\b~', $text, $m)) {
-            $y = isset($m[3]) && '' !== $m[3] ? (int) $m[3] : $year;
+            $y = isset($m[3]) ? (int) $m[3] : $year;
             if ($y < 100) {
                 $y += 2000;
             }
 
-            return self::dayOf($today, $y, (int) $m[1], (int) $m[2], !isset($m[3]) || '' === $m[3]);
+            return self::dayOf($today, $y, (int) $m[1], (int) $m[2], !isset($m[3]));
         }
 
         $lower = mb_strtolower($text);
