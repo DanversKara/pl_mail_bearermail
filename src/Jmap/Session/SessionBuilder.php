@@ -95,6 +95,9 @@ final class SessionBuilder
                 // to draw once per account, and a client composing from the
                 // second account can ask the account it is composing from.
                 Capability::CONTACTS => new \stdClass(),
+                // The user's tabs, answered by every account — see
+                // Capability::INBOX_TABS.
+                Capability::INBOX_TABS => new \stdClass(),
             ];
 
             if ($accountId === $calendarAccountId) {
@@ -114,6 +117,7 @@ final class SessionBuilder
         if (null !== $primaryId) {
             $primaryAccounts[Capability::MAIL] = $primaryId;
             $primaryAccounts[Capability::CONTACTS] = $primaryId;
+            $primaryAccounts[Capability::INBOX_TABS] = $primaryId;
         }
 
         if (null !== $calendarAccountId) {
@@ -147,6 +151,7 @@ final class SessionBuilder
                 Capability::SYNC => new \stdClass(),
                 Capability::CONTACTS => $this->contactsCapabilities(),
                 Capability::TEMPLATES => $this->templatesCapabilities(),
+                Capability::INBOX_TABS => new \stdClass(),
             ] + (true === $this->drivePolicy?->isDisabled($user) ? [] : [
                 // BearerMail: absent for a user whose Drive is switched off, so
                 // the app hides the Drive screen instead of showing errors.

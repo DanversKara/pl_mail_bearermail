@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Form\Admin;
 
+use App\Form\SecretType;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -35,11 +35,13 @@ final class RelayConfigType extends AbstractType
                 'label'    => 'admin.mail_server.relay.username_label',
                 'help'     => 'admin.mail_server.relay.username_help',
             ])
-            ->add('password', PasswordType::class, [
+            // SecretType, not PasswordType: a password input here is one a
+            // password manager fills with this site's login, and saving the
+            // form would then make that the relay's password.
+            ->add('password', SecretType::class, [
                 'required' => false,
                 'label'    => 'admin.mail_server.relay.password_label',
                 'help'     => 'admin.mail_server.relay.password_help',
-                'attr'     => ['autocomplete' => 'new-password'],
             ]);
     }
 

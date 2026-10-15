@@ -57,19 +57,19 @@ poll would empty a field mid-paste.
                 <div>
                     {{ form_label(form.host) }}
                     {{ form_widget(form.host, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink'}}) }}
-                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.host) }}</p>
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.host.vars.help|trans }}</p>
                     {{ form_errors(form.host) }}
                 </div>
                 <div>
                     {{ form_label(form.username) }}
                     {{ form_widget(form.username, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink'}}) }}
-                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.username) }}</p>
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.username.vars.help|trans }}</p>
                     {{ form_errors(form.username) }}
                 </div>
                 <div>
                     {{ form_label(form.password) }}
                     {{ form_widget(form.password, {'attr': {'class': 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink', 'placeholder': hasPassword ? ('admin.mail_server.relay.password_set'|trans) : ''}}) }}
-                    <p class="mt-1 text-xs text-ink-faint">{{ form.help(form.password) }}</p>
+                    <p class="mt-1 text-xs text-ink-faint">{{ form.password.vars.help|trans }}</p>
                     {{ form_errors(form.password) }}
                 </div>
                 <div>

@@ -2,6 +2,7 @@
 
 namespace App\Entity\Mail;
 
+use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\ArrivalPlace;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Domain\Enum\Mail\MessageFlag;
@@ -29,6 +30,12 @@ use Doctrine\ORM\Mapping as ORM;
 // for one mailbox), and no query looks up a bare UID.
 #[ORM\UniqueConstraint(name: 'uniq_message_mailbox_imap_uid', columns: ['mailbox_id', 'imap_uid'])]
 #[ORM\Index(name: 'idx_message_search_vector', columns: ['search_vector'])]
+// Partial, and declared here so the mapping and the migration agree: without an
+// index of its own on this foreign-key column Doctrine would go on wanting a
+// full one, on the largest table in the schema, for a column that is NULL on
+// nearly every row. Serves "which mail is in this category" and the SET NULL a
+// category's removal performs.
+#[ORM\Index(name: 'idx_message_rule_category', columns: ['rule_category_id'], options: ['where' => 'rule_category_id IS NOT NULL'])]
 // Threading reads both of these on every synced message. message_id is looked up
 // by value across an account (parent lookup for References threading); the
 // provider key is looked up account-scoped, so account trails it the same way
@@ -152,6 +159,14 @@ class Message extends MessageModel
 
 
 
+    /**
+     * When the message went out (for received mail, when it arrived).
+     *
+     * An unsent draft has none, however it came to be here: the editor, the
+     * send queue and the thread all read "has a sentAt" as "has gone out". So
+     * a sync builder must leave it null for a draft, or a draft written in
+     * another client is listed and then refused (404) by the editor.
+     */
     #[ORM\Column(nullable: true)]
     public ?DateTimeImmutable $sentAt = null;
 
@@ -448,6 +463,31 @@ class Message extends MessageModel
     public ?MessageCategory $aiCategory = null;
 
     /**
+     * The category a FILTER filed this message under, when it is one the
+     * reader made themselves.
+     *
+     * A THIRD OPINION, AND THE REASON IT IS ITS OWN COLUMN
+     * ────────────────────────────────────────────────────
+     * Not written into $category, for the reason $aiCategory is not, and for a
+     * sharper one besides. $category is a pure function of persisted data that
+     * five writers recompute — arrival, the backfill, the re-sort a settings
+     * change triggers, the assistant's release, Gmail enrichment — and every one
+     * of them overwrites it. A filter's verdict written there would be erased by
+     * the next re-sort. Here nothing recomputes it: only a filter's action
+     * writes it, and only removing the category clears it.
+     *
+     * $category keeps the built-in the rules decided, which is also what a JMAP
+     * client is served: its tab vocabulary is closed, so a message filed in a
+     * tab of the reader's own still reads as the built-in it would have been in.
+     *
+     * ON DELETE SET NULL: removing the category un-files its mail in the
+     * database, with no sweep for the application to forget.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'rule_category_id', nullable: true, onDelete: 'SET NULL')]
+    public ?InboxCategory $ruleCategory = null;
+
+    /**
      * The Gmail account that can act on this message, when it is not this
      * message's own account.
      *
@@ -651,6 +691,44 @@ class Message extends MessageModel
      * Stays a method: it takes an argument and asks the collection about it, so
      * there is no single piece of state here to expose as a property.
      */
+    /**
+     * Whether the message is in Spam or Trash.
+     *
+     * Mail there is kept, listed and searchable like any other, and is not
+     * WORKED ON: no language model categorises it, nothing reads parcels,
+     * invoices or meetings out of it, its senders do not become contacts and
+     * it is not held back from the inbox tabs it is not in. Spam is where a
+     * forged invitation or a fake delivery notice ends up, and Trash is mail
+     * the user has already finished with — paying a model to read either, or
+     * putting an event from it in the calendar, is the wrong way round. See
+     * PostIngestPipeline and the steps it runs.
+     *
+     * Read off the labels the builders file a message under before it is
+     * stored, the same labels the folder list draws.
+     */
+    public function isSetAside(): bool
+    {
+        foreach ($this->labels as $label) {
+            if (LabelRole::Spam === $label->role || LabelRole::Trash === $label->role) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Whether the message is in Spam. See isSetAside(). */
+    public function isSpam(): bool
+    {
+        foreach ($this->labels as $label) {
+            if (LabelRole::Spam === $label->role) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function hasLabel(Label $label): bool
     {
         return $this->labels->contains($label);
@@ -663,6 +741,43 @@ class Message extends MessageModel
     public function hasFlag(MessageFlag $flag): bool
     {
         return in_array($flag->value, $this->flags, true);
+    }
+
+    /**
+     * A stored draft that the provider says has been sent.
+     *
+     * Sync stores a draft once, as an unsent draft, and never rebuilds a stored
+     * row, so sending it from Outlook or Gmail left it flagged `\Draft` with no
+     * sentAt: the editor would open it, the send queue would send it again, and
+     * discarding it would delete the sent copy at the provider. This is the one
+     * place that says what "was sent" means for the row, for every provider.
+     *
+     * The thread is ranked by $at, as the local send does (ThreadOrderingOnSendTest),
+     * but never moved backwards. Its category is not re-adopted: that is the
+     * threader's, and a draft's reply context was settled when it was written.
+     *
+     * Anything that is not an unsent draft is left exactly as it is, since the
+     * sync asks about every stored message the provider says is not a draft.
+     */
+    public function settleAsSent(DateTimeImmutable $at): void
+    {
+        if (false === $this->isDraft()) {
+            return;
+        }
+
+        $this->removeFlag(MessageFlag::DRAFT);
+
+        // A draft stored before synced drafts were kept unsent already has a
+        // sentAt (its receivedAt). That is the time it keeps, and the one the
+        // thread is ranked by: $at is only when this was noticed, and a mass
+        // re-read of old drafts must not float every conversation to the top.
+        $this->sentAt ??= $at;
+
+        $thread = $this->thread;
+
+        if (null !== $thread && (null === $thread->lastMessageAt || $this->sentAt > $thread->lastMessageAt)) {
+            $thread->lastMessageAt = $this->sentAt;
+        }
     }
 
     /**

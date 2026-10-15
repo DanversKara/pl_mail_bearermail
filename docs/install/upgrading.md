@@ -67,8 +67,8 @@ major when chosen), makes a GitHub release titled with the version and the commi
 image build that moves `latest`. A tag pushed by a workflow starts no other workflow, so the
 release workflow starts the build itself.
 
-**The failure mode is `pull_policy: always` on a moving tag.** `truenas.compose.yaml` sets it, so a
-redeploy from the NAS app page picks up whatever that tag now points at — which is convenient on
+**The failure mode is `pull_policy: always` on a moving tag.** With it, a redeploy from a NAS app
+page picks up whatever that tag now points at — which is convenient on
 `latest` and surprising on `main`.
 
 ## Upgrading
