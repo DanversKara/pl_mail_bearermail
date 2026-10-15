@@ -120,7 +120,13 @@ column.
   relays ciphertext. `FcmSender` sends such a payload sealed or not at all;
   `StateChange` and `PushVerification` carry no content and stay readable.
 - `Push/PushDispatcher` fans out to a user's devices, per transport. Draining is
-  driven by `App\Infrastructure\Event\Subscriber\JmapPushSubscriber`.
+  driven by `App\Infrastructure\Event\Subscriber\JmapPushSubscriber`, which
+  drains two buffers from `StateManager`: what changed (`drainDirty()`) and on
+  which accounts mail arrived (`drainArrivals()`). A subscription with
+  `arrivalsOnly` — the in-app browser/PWA device, set by `WebPushController` —
+  is sent a StateChange only when its user had an arrival; every other row is
+  sent every StateChange. "Arrived" is decided by `PostIngestPipeline` (a live
+  batch, filed in the Inbox), not by an Email being created.
 
 **Appearance glue**
 - `Mapper/AppearanceMapper` — `App\Entity\Embeddable\Appearance` → the JMAP
@@ -234,6 +240,28 @@ Get these wrong and things fail quietly rather than loudly.
   did not is the failure this whole layer is careful about. `app:backfill
   category` is what fills those in, and re-running it after a change to
   `MessageCategorizer` needs no resync — it reads only persisted data.
+
+  **The tabs as the reader arranged them are a second, separate surface:
+  `urn:plmail:params:jmap:inboxtabs`.** The five stay a closed vocabulary on
+  `Thread.category` and `threadCategory`, because a sixth value would break
+  every client that has never heard of it. A client that knows the extension
+  reads `InboxTab/get` instead — every tab in the reader's order, the built-in
+  ones with `isEnabled`, the reader's own with their `name` — and draws from
+  `Thread.inboxTab`, filters with `threadInboxTab`, and moves a conversation
+  with `Thread/set { inboxTab }`. Those three follow the web exactly: a
+  conversation filed in a tab of the reader's own is in that tab and in no
+  built-in one, a category the reader switched off is listed under Primary,
+  and a switched-off tab is no tab (`threadInboxTab` matches nothing,
+  `Thread/set` refuses it). `InboxTabMapper` is where that rule is written for
+  JMAP and `MessageThreadRepository::narrowToCategory()` for the web.
+
+  The tabs are the user's, and JMAP state is per account, so a change is
+  recorded in every account's change log (`InboxTabChanges`) — the way a label
+  is a Mailbox in each account — and every account answers `InboxTab/get`
+  with the same list. A re-sort that moves conversations between tabs records
+  each one it moved as a Thread change, so `Thread/changes` tells a phone; it
+  used to rewrite the column and tell nobody.
+
 - **A JMAP CalendarEvent id is a `calendar_event` id — the series.** The query
   that finds events is a `tsrange &&` overlap over `calendar_event_occurrence`,
   so the ids the database hands back are *occurrence* ids and
@@ -476,8 +504,8 @@ Get these wrong and things fail quietly rather than loudly.
 - **`var/attachments`, `var/raw` and `var/uploads` must be shared storage.** The
   workers write them, the web container serves them. `php` overlays `/app/var`
   with a private volume for cache/logs, so those three paths are bound
-  explicitly in every service — see `compose.override.yaml` and
-  `truenas.compose.yaml`. The Dockerfile deliberately no longer declares
+  explicitly in every service — see `compose.yaml` and `compose.dev.yaml`.
+  The Dockerfile deliberately no longer declares
   `VOLUME /app/var/`; it gave each container its own anonymous volume there,
   which made downloads 404 and lost the data on every container recreate.
 - **Every path that changes a JMAP-visible property must call

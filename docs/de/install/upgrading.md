@@ -1,4 +1,4 @@
-<!-- translated-from: install/upgrading.md sha1:667a9930c8414eb5b99a187973ba744c3a10fa93 -->
+<!-- translated-from: install/upgrading.md sha1:678c715f4f1b1b5589f484e2fc86435f83f9875e -->
 # Aktualisieren
 
 plMail migriert seine eigene Datenbank beim Start. Diese eine Entscheidung prägt alles auf dieser
@@ -72,7 +72,7 @@ Workflow pusht, startet keinen anderen Workflow, deshalb startet der Release-Wor
 selbst.
 
 **Der typische Fehlerfall ist `pull_policy: always` auf einem beweglichen Tag.**
-`truenas.compose.yaml` setzt das, ein Redeploy von der NAS-App-Seite holt sich also, worauf dieser
+Damit holt sich ein Redeploy von einer NAS-App-Seite, worauf dieser
 Tag inzwischen zeigt — bequem bei `latest` und überraschend bei `main`.
 
 ## Das Upgrade
