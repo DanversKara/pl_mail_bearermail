@@ -190,7 +190,7 @@ Variables:
                                                     {% set links = shareCounts[file.id] ?? 0 %}
                                                     <li class="drive-item group relative
                                                                grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_6rem_9rem_7rem] items-center gap-3 px-3 py-2 hover:bg-hover rounded-lg transition-colors
-                                                               group-data-[view=grid]/files:flex group-data-[view=grid]/files:flex-col group-data-[view=grid]/files:items-stretch group-data-[view=grid]/files:gap-0 group-data-[view=grid]/files:p-0 group-data-[view=grid]/files:rounded-xl group-data-[view=grid]/files:border group-data-[view=grid]/files:border-line group-data-[view=grid]/files:bg-raised/60 group-data-[view=grid]/files:overflow-hidden"
+                                                               group-data-[view=grid]/files:flex group-data-[view=grid]/files:flex-col group-data-[view=grid]/files:items-stretch group-data-[view=grid]/files:gap-0 group-data-[view=grid]/files:p-0 group-data-[view=grid]/files:rounded-xl group-data-[view=grid]/files:border group-data-[view=grid]/files:border-line group-data-[view=grid]/files:bg-raised/60"
                                                         data-drive--explorer-target="item" data-name="{{ file.filename|lower }}">
 
                                                         <a href="{{ path('app_drive_download', {id: file.id}) }}" data-turbo="false"
@@ -198,7 +198,7 @@ Variables:
                                                                   group-data-[view=grid]/files:flex-col group-data-[view=grid]/files:items-stretch group-data-[view=grid]/files:gap-0"
                                                            title="{{ 'drive.download'|trans }} — {{ file.filename }}">
                                                             <span class="shrink-0 w-8 h-8 rounded-lg bg-sunken/60 flex items-center justify-center
-                                                                         group-data-[view=grid]/files:w-auto group-data-[view=grid]/files:h-24 group-data-[view=grid]/files:rounded-none">
+                                                                         group-data-[view=grid]/files:w-auto group-data-[view=grid]/files:h-24 group-data-[view=grid]/files:rounded-b-none group-data-[view=grid]/files:rounded-t-[11px]">
                                                                 <i class="fa-solid {{ kind.icon }} {{ kind.tint }} group-data-[view=grid]/files:text-4xl" aria-hidden="true"></i>
                                                             </span>
                                                             <span class="min-w-0 group-data-[view=grid]/files:px-3 group-data-[view=grid]/files:pt-2.5">
