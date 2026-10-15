@@ -222,6 +222,10 @@ services:
 
   database:
     image: postgres:${POSTGRES_VERSION:-18}-alpine
+    # BearerMail: without this the database stayed down after the host
+    # rebooted, and the web server and workers, which wait for it, sat at
+    # "starting" forever. Every other long-running service already had it.
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-app}
       POSTGRES_USER: ${POSTGRES_USER:-app}
