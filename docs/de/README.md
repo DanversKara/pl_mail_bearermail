@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha1:594d684ec72e4ffec51215d56bf5d4bd57b13022 -->
+<!-- translated-from: README.md sha1:78b8871436f956dd3a80280b7dbf088ff1df56cb -->
 
 # plMail-Dokumentation
 

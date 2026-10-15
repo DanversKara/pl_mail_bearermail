@@ -515,7 +515,7 @@ admin:
         people:
             default: 'par défaut'
             disabled: 'Drive désactivé'
-            files: '{1}1 fichier|]1,Inf[%count% fichiers'
+            files: '{1}1 fichier|[0,Inf[%count% fichiers'
             heading: 'Stockage par personne'
             help: 'Laissez la limite vide pour utiliser la valeur par défaut. Désactiver le Drive coupe aussi tous les liens que cette personne a partagés.'
             of: 'sur'

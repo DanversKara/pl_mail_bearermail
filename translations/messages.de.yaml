@@ -122,7 +122,7 @@ admin:
             heading: Speicher pro Person
             help: Limit leer lassen für den Standard. Drive abschalten stoppt auch alle geteilten Links dieser Person.
             of: von
-            files: '{1}1 Datei|]1,Inf[%count% Dateien'
+            files: '{1}1 Datei|[0,Inf[%count% Dateien'
             quota: Eigenes Limit (MB)
             default: Standard
             disabled: Drive aus

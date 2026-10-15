@@ -1180,7 +1180,7 @@ admin:
             heading: "Cargo by hand"
             help: "Leave the limit empty to use the default. Closin' a hold also stops every link that hand has shared."
             of: "o'"
-            files: "{1}1 crate|]1,Inf[%count% crates"
+            files: "{1}1 crate|[0,Inf[%count% crates"
             quota: "Own limit (MB)"
             default: "default"
             disabled: "Hold closed"

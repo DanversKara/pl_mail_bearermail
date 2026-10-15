@@ -122,7 +122,7 @@ admin:
             heading: Storage by person
             help: Leave the limit empty to use the default. Switching Drive off also stops every link that person has shared.
             of: of
-            files: '{1}1 file|]1,Inf[%count% files'
+            files: '{1}1 file|[0,Inf[%count% files'
             quota: Own limit (MB)
             default: default
             disabled: Drive off
