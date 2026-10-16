@@ -26,6 +26,8 @@ final class MailPreset
         public readonly int     $smtpPort,
         public readonly string  $smtpEncryption,
         public readonly ?string $note = null,
+        /** True for the fork's built-in mail server; lets the app auto-detect it from MAIL_DOMAIN. */
+        public readonly bool    $native = false,
     ) {
     }
 
@@ -46,6 +48,7 @@ final class MailPreset
             smtpPort:       (int) $data['smtp']['port'],
             smtpEncryption: (string) $data['smtp']['encryption'],
             note:           $data['note'] ?? null,
+            native:         (bool) ($data['native'] ?? false),
         );
     }
 

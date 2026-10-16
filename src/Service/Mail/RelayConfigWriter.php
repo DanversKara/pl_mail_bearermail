@@ -18,9 +18,9 @@ namespace App\Service\Mail;
  *   MAIL_RELAY_USER="api-key"
  *   MAIL_RELAY_PASS="secret"
  *
- * An absent file (or an empty RELAYHOST) means direct delivery. Env vars
- * (MAIL_RELAYHOST etc.) override the file when non-empty — the entrypoint
- * decides that, not this class.
+ * An absent file (or an empty RELAYHOST) means direct delivery. When both
+ * exist, the file wins over env vars (MAIL_RELAYHOST etc.) — the entrypoint
+ * reads "${FILE_RELAYHOST:-$RELAYHOST}", not this class.
  *
  * The password sits in plaintext in a root-owned volume on the user's own
  * server — the same posture as the env-var configuration it replaces.

@@ -5,6 +5,19 @@
 # note:       optional hint rendered under the dropdown (translation-free, short)
 presets:
 
+    # ── Self-hosted ─────────────────────────────────────────────────────
+    # The mail server shipped with this plMail fork (Postfix + Dovecot in the
+    # "mail" compose profile). Marked native so the app can auto-detect it
+    # from the MAIL_DOMAIN env var (see MailPresetProvider).
+    bearermail:
+        name: BearerMail (built-in server)
+        group: Self-hosted
+        native: true
+        domains: []
+        note: 'Mailbox must exist in MAIL_ACCOUNTS first; the username is your full email address.'
+        imap: { host: mailstore, port: 143, encryption: none }
+        smtp: { host: mta, port: 587, encryption: none }
+
     # ── Deutschland / DACH ────────────────────────────────────────────────
     gmx:
         name: GMX

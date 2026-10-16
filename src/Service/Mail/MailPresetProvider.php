@@ -21,6 +21,8 @@ final class MailPresetProvider
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/mail_presets.yaml')]
         private readonly string $presetFile,
+        #[Autowire('%env(default::MAIL_DOMAIN)%')]
+        private readonly ?string $mailDomain = null,
     ) {
     }
 
@@ -61,8 +63,14 @@ final class MailPresetProvider
 
     public function findByDomain(string $domain): ?MailPreset
     {
+        $domain = strtolower($domain);
+
         foreach ($this->all() as $preset) {
             if (true === $preset->matchesDomain($domain)) {
+                return $preset;
+            }
+
+            if ($preset->native && $domain === $this->nativeMailDomain()) {
                 return $preset;
             }
         }
@@ -96,9 +104,33 @@ final class MailPresetProvider
         $payload = [];
 
         foreach ($this->all() as $preset) {
-            $payload[$preset->key] = $preset->toClientArray();
+            $row = $preset->toClientArray();
+
+            // The native preset ships with no static domains (the operator's
+            // own domain is unknowable at release time). Advertise MAIL_DOMAIN
+            // so the form's auto-detect picks it up from the typed address.
+            if ($preset->native && null !== ($domain = $this->nativeMailDomain())) {
+                $row['domains'][] = $domain;
+            }
+
+            $payload[$preset->key] = $row;
         }
 
         return $payload;
+    }
+
+    /**
+     * The domain of the built-in mail server, when the operator configured one.
+     * "example.com" is the entrypoint's unset sentinel, not a real domain.
+     */
+    private function nativeMailDomain(): ?string
+    {
+        $domain = strtolower(trim((string) $this->mailDomain));
+
+        if ('' === $domain || 'example.com' === $domain) {
+            return null;
+        }
+
+        return $domain;
     }
 }
