@@ -28,6 +28,7 @@ Variables: preview (ParsedContact[]|null), previewTotal, format, tokenId.
                 <p class="text-xs text-ink-faint mb-3">{{ 'contacts.import_hint'|trans }}</p>
                 <form method="post" action="{{ path('app_contacts_import_upload') }}" enctype="multipart/form-data"
                       class="flex items-center gap-2 flex-wrap"
+                      data-turbo="false"
                       data-controller="contacts--form" data-action="submit->contacts--form#uploading">
                     <input type="hidden" name="_token" value="{{ csrf_token('contacts_import') }}">
                     <label class="{{ btnGhost }} cursor-pointer">
