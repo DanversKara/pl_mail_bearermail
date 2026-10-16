@@ -15,3 +15,12 @@ same one the Android app uses.
               aria-hidden="true">{{ contact.displayName|slice(0, 1)|upper }}</span>
     {% endif %}
 {% endmacro %}
+
+{#
+field(key, draft, contact): the value a form input should show — the failed
+submit's draft value when present, else the contact's, else empty. (Twig
+cannot call an arrow function stored in a variable, so this is a macro.)
+#}
+{% macro field(key, draft, contact) -%}
+    {{- draft ? (draft[key]|default('')) : (contact ? attribute(contact, key) : '') -}}
+{%- endmacro %}

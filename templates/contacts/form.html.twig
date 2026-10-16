@@ -15,7 +15,6 @@ the failed create's submitted values).
 {% block title %}{{ (isNew ? 'contacts.new' : 'contacts.edit')|trans }} — {{ 'app.name'|trans }}{% endblock %}
 
 {% set d = draft|default(null) %}
-{% set v = (key) => d ? (d[key]|default('')) : (contact ? attribute(contact, key) : '') %}
 {% set draftEmails = d ? (d.emails|default([])) : (contact ? contact.emails : []) %}
 {% set draftPhones = d ? (d.phones|default([])) : (contact ? contact.phones : []) %}
 {% set draftAddresses = d ? (d.addresses|default([])) : (contact ? contact.addresses : []) %}
@@ -45,27 +44,27 @@ the failed create's submitted values).
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div class="sm:col-span-2">
                         <label class="{{ labelCls }}" for="f-displayName">{{ 'contacts.display_name'|trans }}</label>
-                        <input id="f-displayName" name="displayName" required maxlength="255" value="{{ v('displayName') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-displayName" name="displayName" required maxlength="255" value="{{ cm.field('displayName', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                     <div>
                         <label class="{{ labelCls }}" for="f-givenName">{{ 'contacts.given_name'|trans }}</label>
-                        <input id="f-givenName" name="givenName" maxlength="255" value="{{ v('givenName') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-givenName" name="givenName" maxlength="255" value="{{ cm.field('givenName', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                     <div>
                         <label class="{{ labelCls }}" for="f-familyName">{{ 'contacts.family_name'|trans }}</label>
-                        <input id="f-familyName" name="familyName" maxlength="255" value="{{ v('familyName') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-familyName" name="familyName" maxlength="255" value="{{ cm.field('familyName', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                     <div>
                         <label class="{{ labelCls }}" for="f-nickname">{{ 'contacts.nickname'|trans }}</label>
-                        <input id="f-nickname" name="nickname" maxlength="255" value="{{ v('nickname') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-nickname" name="nickname" maxlength="255" value="{{ cm.field('nickname', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                     <div>
                         <label class="{{ labelCls }}" for="f-company">{{ 'contacts.company'|trans }}</label>
-                        <input id="f-company" name="company" maxlength="255" value="{{ v('company') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-company" name="company" maxlength="255" value="{{ cm.field('company', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                     <div class="sm:col-span-2">
                         <label class="{{ labelCls }}" for="f-jobTitle">{{ 'contacts.job_title'|trans }}</label>
-                        <input id="f-jobTitle" name="jobTitle" maxlength="255" value="{{ v('jobTitle') }}" class="{{ fieldCls }}" autocomplete="off">
+                        <input id="f-jobTitle" name="jobTitle" maxlength="255" value="{{ cm.field('jobTitle', d, contact) }}" class="{{ fieldCls }}" autocomplete="off">
                     </div>
                 </div>
             </section>
@@ -226,7 +225,7 @@ the failed create's submitted values).
                 <div class="flex flex-col gap-3">
                     <div>
                         <label class="{{ labelCls }}" for="f-notes">{{ 'contacts.notes'|trans }}</label>
-                        <textarea id="f-notes" name="notes" rows="4" class="{{ fieldCls }} h-auto py-2">{{ v('notes') }}</textarea>
+                        <textarea id="f-notes" name="notes" rows="4" class="{{ fieldCls }} h-auto py-2">{{ cm.field('notes', d, contact) }}</textarea>
                     </div>
                     <div>
                         <label class="{{ labelCls }}" for="f-tags">{{ 'contacts.tags'|trans }}</label>
