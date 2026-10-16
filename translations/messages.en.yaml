@@ -4866,6 +4866,8 @@ contacts:
     import_hint: 'A .vcf/.vcard address-book export or a .csv file. Duplicates are checked after import.'
     import_choose: Choose file
     import_formats: '.vcf, .vcard or .csv'
+    import_upload: 'Upload & preview'
+    import_uploading: 'Uploading…'
     import_no_file: 'No file was uploaded.'
     import_bad_format: 'Only .vcf/.vcard and .csv files can be imported.'
     import_expired: 'The staged import expired. Please upload the file again.'

@@ -4870,6 +4870,8 @@ contacts:
     import_hint: 'Un export de carnet d’adresses .vcf/.vcard ou un fichier .csv. Les doublons sont vérifiés après l’import.'
     import_choose: Choisir un fichier
     import_formats: '.vcf, .vcard ou .csv'
+    import_upload: 'Importer & aperçu'
+    import_uploading: 'Envoi en cours…'
     import_no_file: 'Aucun fichier téléversé.'
     import_bad_format: 'Seuls les fichiers .vcf/.vcard et .csv peuvent être importés.'
     import_expired: 'L’import préparé a expiré. Veuillez renvoyer le fichier.'

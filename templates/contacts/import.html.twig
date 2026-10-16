@@ -27,14 +27,20 @@ Variables: preview (ParsedContact[]|null), previewTotal, format, tokenId.
                 <h2 class="text-sm font-semibold text-ink mb-1">{{ 'contacts.import_step1'|trans }}</h2>
                 <p class="text-xs text-ink-faint mb-3">{{ 'contacts.import_hint'|trans }}</p>
                 <form method="post" action="{{ path('app_contacts_import_upload') }}" enctype="multipart/form-data"
-                      class="flex items-center gap-2 flex-wrap">
+                      class="flex items-center gap-2 flex-wrap"
+                      data-controller="contacts--form" data-action="submit->contacts--form#uploading">
                     <input type="hidden" name="_token" value="{{ csrf_token('contacts_import') }}">
                     <label class="{{ btnGhost }} cursor-pointer">
                         <i class="fa-solid fa-file-arrow-up text-xs" aria-hidden="true"></i>{{ 'contacts.import_choose'|trans }}
                         <input type="file" name="file" accept=".vcf,.vcard,.csv" required class="sr-only"
-                               data-controller="contacts--form" data-action="change->contacts--form#submitForm">
+                               data-contacts--form-target="fileInput"
+                               data-action="change->contacts--form#fileChosen">
                     </label>
-                    <span class="text-xs text-ink-faint">{{ 'contacts.import_formats'|trans }}</span>
+                    <button type="submit" class="{{ btnPrimary }}" data-contacts--form-target="uploadBtn">
+                        <i class="fa-solid fa-upload text-xs" aria-hidden="true"></i>{{ 'contacts.import_upload'|trans }}
+                    </button>
+                    <span class="text-xs text-ink-faint" data-contacts--form-target="status"
+                          data-uploading="{{ 'contacts.import_uploading'|trans }}">{{ 'contacts.import_formats'|trans }}</span>
                 </form>
             </section>
 

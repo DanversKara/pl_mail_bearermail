@@ -15,6 +15,7 @@ export default class extends Controller {
         "emailRows", "emailTemplate",
         "phoneRows", "phoneTemplate",
         "addressRows", "addressTemplate",
+        "fileInput", "uploadBtn", "status",
     ]
 
     addEmail()   { this.#add(this.emailRowsTarget, this.emailTemplateTarget) }
@@ -29,6 +30,32 @@ export default class extends Controller {
     submitForm(event) {
         if (event.target.files?.length) {
             event.target.form.requestSubmit()
+        }
+    }
+
+    /**
+     * Import page: a file was picked — show its name and submit. The form
+     * also has a real submit button, so the upload works even if this
+     * controller never loads; this is the convenience path, not the only one.
+     */
+    fileChosen(event) {
+        const file = event.target.files?.[0]
+        if (this.hasStatusTarget && file) {
+            this.statusTarget.textContent = file.name
+        }
+        if (file) {
+            event.target.form.requestSubmit()
+        }
+    }
+
+    /** Import page: the upload is on its way — say so instead of silence. */
+    uploading() {
+        if (this.hasUploadBtnTarget) {
+            this.uploadBtnTarget.disabled = true
+            this.uploadBtnTarget.classList.add("opacity-60", "pointer-events-none")
+        }
+        if (this.hasStatusTarget) {
+            this.statusTarget.textContent = this.statusTarget.dataset.uploading || "Uploading…"
         }
     }
 
