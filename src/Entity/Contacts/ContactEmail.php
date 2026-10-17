@@ -45,6 +45,8 @@ class ContactEmail
         $emailEntity->email = mb_strtolower(trim($email));
         $emailEntity->label = $label;
         $emailEntity->isPrimary = $isPrimary;
+        // See ContactPhone::create(): keep $contact->emails in step with the new row.
+        $contact->emails->add($emailEntity);
 
         return $emailEntity;
     }

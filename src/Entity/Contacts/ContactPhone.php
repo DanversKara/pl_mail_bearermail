@@ -45,6 +45,10 @@ class ContactPhone
         $phoneEntity->phone = $phone;
         $phoneEntity->label = $label;
         $phoneEntity->isPrimary = $isPrimary;
+        // Keep the in-memory collection in step with the new row: callers
+        // de-duplicate by looking at $contact->phones, and the collection of
+        // a freshly created contact is never reloaded from the database.
+        $contact->phones->add($phoneEntity);
 
         return $phoneEntity;
     }
