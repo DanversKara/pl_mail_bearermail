@@ -48,6 +48,18 @@ export default class extends Controller {
         }
     }
 
+    /**
+     * Import page: "Upload & preview" with no file yet. The file input is
+     * required but visually hidden, so the browser cannot show its validation
+     * message and the click would silently do nothing — open the picker.
+     */
+    uploadClicked(event) {
+        if (this.hasFileInputTarget && !this.fileInputTarget.files?.length) {
+            event.preventDefault()
+            this.fileInputTarget.click()
+        }
+    }
+
     /** Import page: the upload is on its way — say so instead of silence. */
     uploading() {
         if (this.hasUploadBtnTarget) {

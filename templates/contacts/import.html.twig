@@ -37,7 +37,8 @@ Variables: preview (ParsedContact[]|null), previewTotal, format, tokenId.
                                data-contacts--form-target="fileInput"
                                data-action="change->contacts--form#fileChosen">
                     </label>
-                    <button type="submit" class="{{ btnPrimary }}" data-contacts--form-target="uploadBtn">
+                    <button type="submit" class="{{ btnPrimary }}" data-contacts--form-target="uploadBtn"
+                            data-action="click->contacts--form#uploadClicked">
                         <i class="fa-solid fa-upload text-xs" aria-hidden="true"></i>{{ 'contacts.import_upload'|trans }}
                     </button>
                     <span class="text-xs text-ink-faint" data-contacts--form-target="status"
