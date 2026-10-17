@@ -24,7 +24,7 @@ final class ContactQueryMethod implements JmapMethod
     /**
      * @var list<string>
      */
-    private const array ACCEPTED_ARGUMENTS = ['accountId', 'filter', 'sort', 'limit'];
+    private const array ACCEPTED_ARGUMENTS = ['accountId', 'filter', 'sort', 'position', 'limit'];
 
     /**
      * @var list<string>
@@ -59,17 +59,22 @@ final class ContactQueryMethod implements JmapMethod
 
         $filter = $this->resolveFilter($arguments['filter'] ?? null);
         $sort = $this->resolveSort($arguments['sort'] ?? null);
+        $position = $this->resolvePosition($arguments['position'] ?? null);
         $limit = $this->resolveLimit($arguments['limit'] ?? null);
 
         $ids = [];
 
-        foreach ($this->contacts->findForUser($context->user, $filter['text'], $filter['tag'], $sort, $limit, 0) as $contact) {
+        foreach ($this->contacts->findForUser($context->user, $filter['text'], $filter['tag'], $sort, $limit, $position) as $contact) {
             $ids[] = (string) $contact->id;
         }
 
         return [
             'accountId' => (string) $account->id,
             'ids' => $ids,
+            'position' => $position,
+            // A tag filter is applied after the page is read, so no honest
+            // total exists for it; clients stop on an empty page instead.
+            'total' => null === $filter['tag'] ? $this->contacts->countForUser($context->user, $filter['text']) : null,
         ];
     }
 
@@ -137,6 +142,19 @@ final class ContactQueryMethod implements JmapMethod
         }
 
         return $sort;
+    }
+
+    private function resolvePosition(mixed $position): int
+    {
+        if (null === $position) {
+            return 0;
+        }
+
+        if (false === is_int($position) || $position < 0) {
+            throw new MethodException('invalidArguments', '"position" must be an integer of at least 0.');
+        }
+
+        return $position;
     }
 
     /**
