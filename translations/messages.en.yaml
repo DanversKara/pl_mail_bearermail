@@ -4864,6 +4864,8 @@ contacts:
     import: Import
     import_step1: 'Step 1 — choose a file'
     import_hint: 'A .vcf/.vcard address-book export or a .csv file. Duplicates are checked after import.'
+    in_address_book: 'In your contacts'
+    add_to_address_book: 'Add to contacts'
     import_choose: Choose file
     import_formats: '.vcf, .vcard or .csv'
     import_upload: 'Upload & preview'
