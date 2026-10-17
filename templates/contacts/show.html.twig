@@ -60,7 +60,7 @@ inRelations (ones pointing at it), refEmails (ReferenceEmailFinder rows).
                             <div class="flex items-start gap-2.5 min-w-0">
                                 <i class="fa-solid fa-envelope w-4 text-center text-ink-faint mt-0.5 shrink-0" aria-hidden="true"></i>
                                 <div class="min-w-0">
-                                    <a href="mailto:{{ email.email }}" class="text-accent hover:underline break-all">{{ email.email }}</a>
+                                    <a href="{{ path('app_compose_new', {to: email.email, name: contact.displayName}) }}" data-turbo-frame="compose_dock" class="text-accent hover:underline break-all">{{ email.email }}</a>
                                     <span class="text-xs text-ink-faint ml-1.5">{{ ('contacts.label_' ~ email.label)|trans }}{{ email.isPrimary ? ' · ' ~ 'contacts.primary_short'|trans }}</span>
                                 </div>
                             </div>
