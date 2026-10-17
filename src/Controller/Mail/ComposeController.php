@@ -5,6 +5,7 @@ namespace App\Controller\Mail;
 use App\Controller\ChecksCsrf;
 use App\Controller\RendersTurboStreams;
 use App\Domain\DTO\Mail\ComposeContext;
+use App\Domain\Helper\AddressHelper;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
 use App\Entity\Mail\MessagePart;
@@ -130,6 +131,13 @@ class ComposeController extends AbstractController
             // reason.
             $message->bodyHtml = $this->window->signatureSeed($account);
 
+            // /compose/new?to=ada@example.com&name=Ada — how a contact, a
+            // link or a mailto: handler opens a composer already addressed.
+            $recipients = $this->recipientsFromQuery();
+            if ([] !== $recipients) {
+                $message->toAddresses = $recipients;
+            }
+
         } else {
             $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $message);
             $this->assertEditableDraft($message);
@@ -141,6 +149,56 @@ class ComposeController extends AbstractController
         $this->addressFields->hydrate($form, $message, $this->getUser());
 
         return $this->renderWindow($form, $message, $ctx);
+    }
+
+    /**
+     * Recipients named in the URL of a brand-new composer.
+     *
+     * `to` is a comma-separated address list (display names allowed); `name`
+     * labels the address when exactly one was given. Anything that is not a
+     * valid address is dropped rather than refused: this is a link someone else
+     * may have written, and a composer that opens without the bad part is
+     * kinder than an error page.
+     *
+     * @return list<array{name: string, address: string}>
+     */
+    private function recipientsFromQuery(): array
+    {
+        $request = $this->requestStack->getCurrentRequest();
+        $raw     = $request?->query->get('to');
+
+        if (null === $request || false === is_string($raw) || '' === trim($raw)) {
+            return [];
+        }
+
+        $label = $request->query->get('name');
+        $label = is_string($label) ? trim($label) : '';
+
+        $fragments = array_slice(AddressHelper::splitList($raw), 0, 20);
+        $out       = [];
+        $seen      = [];
+
+        foreach ($fragments as $fragment) {
+            $address = AddressHelper::email($fragment);
+
+            if (false === AddressHelper::isValidEmail($address) || isset($seen[$address])) {
+                continue;
+            }
+
+            // "Ada Lovelace <ada@example.com>": the name is what precedes the
+            // angle bracket. A bare address has none.
+            $open = strrpos($fragment, '<');
+            $name = false === $open ? '' : AddressHelper::name(substr($fragment, 0, $open));
+
+            $seen[$address] = true;
+            $out[]          = ['name' => $name, 'address' => $address];
+        }
+
+        if (1 === count($out) && '' !== $label && '' === $out[0]['name']) {
+            $out[0]['name'] = mb_substr($label, 0, 200);
+        }
+
+        return $out;
     }
 
     #[Route('/reply/{id}', name: 'reply', methods: ['GET'])]
