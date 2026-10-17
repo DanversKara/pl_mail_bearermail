@@ -50,6 +50,7 @@ class ContactAddress
         $address = new self();
         $address->contact = $contact;
         $address->label = $label;
+        $contact->addresses->add($address);
 
         return $address;
     }
