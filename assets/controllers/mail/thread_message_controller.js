@@ -14,6 +14,12 @@ export default class extends Controller {
     }
 
     toggle(event) {
+        // The address-book badge sits inside the clickable header; pressing it
+        // is about the sender, not about folding the message.
+        if (event?.target?.closest?.("[data-no-toggle]")) {
+            return;
+        }
+
         this.expandedValue = !this.expandedValue;
     }
 

@@ -4868,6 +4868,8 @@ contacts:
     import: Importer
     import_step1: 'Étape 1 — choisir un fichier'
     import_hint: 'Un export de carnet d’adresses .vcf/.vcard ou un fichier .csv. Les doublons sont vérifiés après l’import.'
+    in_address_book: 'Dans vos contacts'
+    add_to_address_book: 'Ajouter aux contacts'
     import_choose: Choisir un fichier
     import_formats: '.vcf, .vcard ou .csv'
     import_upload: 'Importer & aperçu'
