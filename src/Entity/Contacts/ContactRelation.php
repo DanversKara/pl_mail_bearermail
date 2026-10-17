@@ -44,4 +44,11 @@ class ContactRelation
 
         return $relation;
     }
+
+    /** Points the relation at different contacts; the properties are private(set). */
+    public function repoint(Contact $ownerContact, Contact $relatedContact): void
+    {
+        $this->ownerContact = $ownerContact;
+        $this->relatedContact = $relatedContact;
+    }
 }

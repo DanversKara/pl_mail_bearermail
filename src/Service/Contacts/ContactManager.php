@@ -165,11 +165,7 @@ final class ContactManager
             }
         }
 
-        $row = new ContactEmail();
-        $row->contact = $contact;
-        $row->email = $normalized;
-        $row->label = $label;
-        $row->isPrimary = $primary;
+        $row = ContactEmail::create($contact, $normalized, $label, $primary);
         $this->em->persist($row);
         $this->em->flush();
 
@@ -192,11 +188,7 @@ final class ContactManager
             }
         }
 
-        $row = new ContactPhone();
-        $row->contact = $contact;
-        $row->phone = $normalized;
-        $row->label = $label;
-        $row->isPrimary = $primary;
+        $row = ContactPhone::create($contact, $normalized, $label, $primary);
         $this->em->persist($row);
         $this->em->flush();
 
@@ -223,9 +215,7 @@ final class ContactManager
      */
     public function addAddress(Contact $contact, array $data): ContactAddress
     {
-        $row = new ContactAddress();
-        $row->contact = $contact;
-        $row->label = (string) ($data['label'] ?? 'other');
+        $row = ContactAddress::create($contact, (string) ($data['label'] ?? 'other'));
         foreach (['street', 'city', 'region', 'postcode', 'country'] as $key) {
             $value = $data[$key] ?? null;
             $row->{$key} = (null === $value || '' === trim((string) $value))
