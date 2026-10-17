@@ -6,6 +6,7 @@ namespace App\Repository\Contacts;
 
 use App\Entity\Contacts\Contact;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -99,8 +100,12 @@ class ContactRepository extends ServiceEntityRepository
 
         $qb->setMaxResults($limit)->setFirstResult($offset);
 
+        // The emails join is a collection join: limit/offset on plain results
+        // would count joined rows (a contact with three emails is three rows),
+        // so a page could cut a contact short and the next one repeat it. The
+        // Paginator pages by contact instead.
         /** @var list<Contact> $contacts */
-        $contacts = $qb->getQuery()->getResult();
+        $contacts = array_values(iterator_to_array(new Paginator($qb->getQuery(), true), false));
 
         if (null !== $tag && '' !== $tag) {
             $contacts = array_values(array_filter(
@@ -110,6 +115,28 @@ class ContactRepository extends ServiceEntityRepository
         }
 
         return $contacts;
+    }
+
+    /**
+     * How many contacts findForUser() would return across all pages for
+     * this search — distinct contacts, not joined email rows. Tag filtering
+     * happens in PHP after the page is read, so it cannot be counted here.
+     */
+    public function countForUser(UserInterface $user, ?string $search): int
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->select('COUNT(DISTINCT c.id)')
+            ->leftJoin('c.emails', 'e')
+            ->where('c.usr = :user')
+            ->andWhere('c.trashedAt IS NULL')
+            ->setParameter('user', $user);
+
+        if (null !== $search && '' !== trim($search)) {
+            $qb->andWhere('(c.displayName ILIKE :search OR c.givenName ILIKE :search OR c.familyName ILIKE :search OR c.nickname ILIKE :search OR c.company ILIKE :search OR e.email ILIKE :search)')
+                ->setParameter('search', '%' . mb_strtolower(trim($search)) . '%');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
     /**
