@@ -48,4 +48,10 @@ class ContactPhone
 
         return $phoneEntity;
     }
+
+    /** Re-parents this row; the only writer of $contact outside create(), because the property is private(set). */
+    public function moveTo(Contact $contact): void
+    {
+        $this->contact = $contact;
+    }
 }

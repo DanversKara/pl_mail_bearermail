@@ -71,14 +71,7 @@ final class ContactMerger
             $this->em->remove($contact);
         }
 
-        $now = new DateTimeImmutable();
-        $record = new ContactMergeRecord();
-        $record->usr = $user;
-        $record->keptContact = $keep;
-        $record->mergedIds = $mergeIds;
-        $record->snapshot = $snapshot;
-        $record->mergedAt = $now;
-        $record->undoUntil = $now->modify('+90 days');
+        $record = ContactMergeRecord::create($user, $keep, $mergeIds, $snapshot);
         $this->em->persist($record);
         $this->em->flush();
 
@@ -160,7 +153,7 @@ final class ContactMerger
             if (in_array($normalized, $keptEmails, true)) {
                 $this->em->remove($email);
             } else {
-                $email->contact = $keep;
+                $email->moveTo($keep);
                 $keptEmails[] = $normalized;
             }
         }
@@ -174,7 +167,7 @@ final class ContactMerger
             if (in_array($key, $keptPhones, true)) {
                 $this->em->remove($phone);
             } else {
-                $phone->contact = $keep;
+                $phone->moveTo($keep);
                 $keptPhones[] = $key;
             }
         }
@@ -187,7 +180,7 @@ final class ContactMerger
             if (in_array($this->addressKey($address), $keptAddresses, true)) {
                 $this->em->remove($address);
             } else {
-                $address->contact = $keep;
+                $address->moveTo($keep);
                 $keptAddresses[] = $this->addressKey($address);
             }
         }
@@ -266,8 +259,7 @@ final class ContactMerger
                 continue;
             }
 
-            $relation->ownerContact = $newOwner;
-            $relation->relatedContact = $newRelated;
+            $relation->repoint($newOwner, $newRelated);
         }
     }
 
@@ -330,25 +322,25 @@ final class ContactMerger
     private function recreateChildren(Contact $contact, array $snapshot): void
     {
         foreach ($snapshot['emails'] ?? [] as $row) {
-            $email = new ContactEmail();
-            $email->contact = $contact;
-            $email->email = (string) ($row['email'] ?? '');
-            $email->label = (string) ($row['label'] ?? 'other');
-            $email->isPrimary = (bool) ($row['isPrimary'] ?? false);
+            $email = ContactEmail::create(
+                $contact,
+                (string) ($row['email'] ?? ''),
+                (string) ($row['label'] ?? 'other'),
+                (bool) ($row['isPrimary'] ?? false),
+            );
             $this->em->persist($email);
         }
         foreach ($snapshot['phones'] ?? [] as $row) {
-            $phone = new ContactPhone();
-            $phone->contact = $contact;
-            $phone->phone = (string) ($row['phone'] ?? '');
-            $phone->label = (string) ($row['label'] ?? 'other');
-            $phone->isPrimary = (bool) ($row['isPrimary'] ?? false);
+            $phone = ContactPhone::create(
+                $contact,
+                (string) ($row['phone'] ?? ''),
+                (string) ($row['label'] ?? 'other'),
+                (bool) ($row['isPrimary'] ?? false),
+            );
             $this->em->persist($phone);
         }
         foreach ($snapshot['addresses'] ?? [] as $row) {
-            $address = new ContactAddress();
-            $address->contact = $contact;
-            $address->label = (string) ($row['label'] ?? 'other');
+            $address = ContactAddress::create($contact, (string) ($row['label'] ?? 'other'));
             foreach (['street', 'city', 'region', 'postcode', 'country'] as $key) {
                 $address->{$key} = $row[$key] ?? null;
             }
