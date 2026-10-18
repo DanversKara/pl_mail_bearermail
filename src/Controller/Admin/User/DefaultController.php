@@ -70,6 +70,7 @@ final class DefaultController extends AbstractController
         private readonly UserRepository              $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly \App\Service\Drive\DrivePolicy $drivePolicy,
+        private readonly \App\Service\Mail\MailboxProvisioner $mailboxProvisioner,
     ) {}
 
     /**
@@ -142,6 +143,25 @@ final class DefaultController extends AbstractController
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+
+            // BearerMail: a mailbox on the built-in server, added as their mail
+            // account. Validated by the form; a failure here (the volume went
+            // away between the two) is reported, never a reason to lose the user.
+            if (true === $isNew && true === $form->has('mailbox')) {
+                $mailbox = trim((string) $form->get('mailbox')->getData());
+
+                if ('' !== $mailbox) {
+                    try {
+                        $this->mailboxProvisioner->provision(
+                            $user,
+                            $mailbox,
+                            (string) $form->get('plainPassword')->getData(),
+                        );
+                    } catch (\Throwable $e) {
+                        $refusal = trim(($refusal ?? '') . ' ' . $e->getMessage());
+                    }
+                }
+            }
 
             // The rest of the form is saved either way, which is why the
             // refusal is a toast and not a rejected submission: an admin who

@@ -64,6 +64,9 @@ final class PageRendersTest extends WebTestCase
         yield 'filters list' => ['/settings/filters/list'];
         yield 'filters editor' => ['/settings/filters/new'];
         yield 'label editor' => ['/labels/new'];
+        yield 'notes' => ['/notes'];
+        yield 'notes archive' => ['/notes?view=archive'];
+        yield 'notes bin' => ['/notes?view=trash'];
         yield 'account editor' => ['/account/new'];
         // Modal fragments with selects in them, which is why they are here:
         // testEverySelectIsEnhanced below walks this same list.

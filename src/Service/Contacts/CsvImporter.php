@@ -67,10 +67,7 @@ final class CsvImporter
             if ('' === trim($line)) {
                 continue;
             }
-            $row = str_getcsv($line);
-            if (false !== $row) {
-                $rows[] = $row;
-            }
+            $rows[] = str_getcsv($line);
         }
         if ([] === $rows) {
             return [];

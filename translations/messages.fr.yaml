@@ -1299,6 +1299,8 @@ admin:
         field:
             drive_disabled: 'Désactiver le Drive'
             drive_disabled_help: 'Bloque les envois et coupe tous les liens que cette personne a partagés.'
+            mailbox: Boîte mail
+            mailbox_help: 'Facultatif. Crée une boîte sur %domain% sur le serveur mail intégré avec le mot de passe initial et l’ajoute comme compte mail de cette personne. Laissez vide pour quelqu’un qui apporte sa propre messagerie.'
             drive_quota: 'Stockage Drive (Mo)'
             drive_quota_default: 'par défaut'
             drive_quota_help: 'Vide = la valeur par défaut d’Admin → Drive. 0 = aucune limite.'
@@ -4901,3 +4903,56 @@ contacts:
     merge_undo_expired: Le délai d’annulation de 90 jours pour cette fusion est dépassé.
     validation:
         name_required: 'Donnez un nom au contact.'
+notes:
+    nav: Notes
+    title: Notes
+    back: Retour
+    search: Rechercher dans les notes
+    title_placeholder: Titre
+    take_a_note: Créer une note…
+    checklist_placeholder: 'Un élément par ligne'
+    checklist_hint: 'Un élément par ligne. Mettez [x] devant un élément terminé.'
+    as_checklist: Liste de cases à cocher
+    add: Ajouter
+    save: Enregistrer
+    pinned: Épinglées
+    others: Autres
+    untitled: Note sans titre
+    empty_note: Note vide
+    more_items: '+ %count% de plus'
+    edited: 'Modifiée %when%'
+    pin: Épingler
+    unpin: Désépingler
+    archive: Archiver
+    unarchive: Désarchiver
+    delete: Mettre à la corbeille
+    restore: Restaurer
+    delete_forever: Supprimer définitivement
+    delete_forever_confirm: 'Supprimer définitivement cette note ? Impossible de revenir en arrière.'
+    empty_search: Aucune note ne correspond à cette recherche.
+    color: Couleur
+    color_none: Aucune couleur
+    views:
+        notes: Notes
+        archive: Archives
+        trash: Corbeille
+    empty:
+        notes: 'Les notes ajoutées ici ou sur votre téléphone apparaissent ici.'
+        archive: 'Les notes archivées apparaissent ici.'
+        trash: 'Aucune note dans la corbeille.'
+    colors:
+        red: Rouge
+        orange: Orange
+        yellow: Jaune
+        green: Vert
+        teal: Bleu-vert
+        blue: Bleu
+        purple: Violet
+        pink: Rose
+        brown: Marron
+        gray: Gris
+    link_types:
+        event: Événement
+        file: Fichier
+        contact: Contact
+        mail: E-mail

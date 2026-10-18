@@ -1305,6 +1305,8 @@ admin:
             drive_quota_default: default
             drive_disabled: Switch off Drive
             drive_disabled_help: Blocks uploads and stops every link this person has shared.
+            mailbox: Mailbox
+            mailbox_help: 'Optional. Creates a mailbox on %domain% on the built-in mail server with the initial password, and adds it as this person''s mail account. Leave empty for someone who brings their own mail.'
             email: Email address
             is_admin: Administrator
             is_admin_help: 'Can reach this panel, manage users and configure providers. Cannot read anyone else''s mail.'
@@ -4897,3 +4899,56 @@ contacts:
     merge_undo_expired: The 90-day undo window for this merge has expired.
     validation:
         name_required: 'Give the contact a name.'
+notes:
+    nav: Notes
+    title: Notes
+    back: Back
+    search: Search notes
+    title_placeholder: Title
+    take_a_note: Take a note…
+    checklist_placeholder: 'One item per line'
+    checklist_hint: 'One item per line. Put [x] in front of an item that is done.'
+    as_checklist: Checklist
+    add: Add
+    save: Save
+    pinned: Pinned
+    others: Others
+    untitled: Untitled note
+    empty_note: Empty note
+    more_items: '+ %count% more'
+    edited: 'Edited %when%'
+    pin: Pin
+    unpin: Unpin
+    archive: Archive
+    unarchive: Unarchive
+    delete: Move to bin
+    restore: Restore
+    delete_forever: Delete forever
+    delete_forever_confirm: 'Delete this note forever? This cannot be undone.'
+    empty_search: No notes match this search.
+    color: Colour
+    color_none: No colour
+    views:
+        notes: Notes
+        archive: Archive
+        trash: Bin
+    empty:
+        notes: 'Notes you add here or on your phone appear here.'
+        archive: 'Archived notes appear here.'
+        trash: 'No notes in the bin.'
+    colors:
+        red: Red
+        orange: Orange
+        yellow: Yellow
+        green: Green
+        teal: Teal
+        blue: Blue
+        purple: Purple
+        pink: Pink
+        brown: Brown
+        gray: Grey
+    link_types:
+        event: Event
+        file: File
+        contact: Contact
+        mail: Email

@@ -128,8 +128,15 @@ class ImapIdleCommand extends Command
             $this->shouldStop = true;
         };
 
-        pcntl_signal(SIGTERM, $handler);
-        pcntl_signal(SIGINT, $handler);
+        // restart_syscalls: false. IDLE spends nearly all its life blocked in a
+        // socket read that times out after thirty seconds; with the default
+        // (restart) the read simply resumed after the signal, so a stop request
+        // waited out the whole timeout — longer than app:work's 25-second grace,
+        // and "imap-supervisor did not stop in time and was killed" every
+        // restart. Not restarting interrupts the read at once; it comes back
+        // empty, and the loop sees $shouldStop.
+        pcntl_signal(SIGTERM, $handler, false);
+        pcntl_signal(SIGINT, $handler, false);
     }
 
     /**

@@ -9,6 +9,8 @@ admin.sso.error.issuer_missing: 'Zur Client-ID und zum Secret gehört ein Issuer
 admin.sso.error.issuer_not_https: 'Der Issuer muss mit https:// beginnen. plMail vertraut dem Anbieter wegen der TLS-Verbindung zu ihm.'
 admin.sso.error.secret_missing: 'Zum Issuer und zur Client-ID gehört ein Client-Secret. Alle drei oder keins davon.'
 admin.users.password_too_short: Mindestens {{ limit }} Zeichen — dieses Passwort wählst du für jemand anderen.
+admin.users.mailbox_invalid: 'Nur Buchstaben, Ziffern, Punkte, Binde- oder Unterstriche — nur der Teil vor @{{ domain }}.'
+admin.users.mailbox_taken: '{{ address }} gibt es auf dem Mailserver schon.'
 alias.invalid: Gib eine gültige E-Mail-Adresse ein.
 app_password.name_required: Gib dem App-Passwort einen Namen, damit du es später wiedererkennst.
 caldav.address_required: Gib die Adresse deines CalDAV-Servers ein — ohne sie hat plMail niemanden zu fragen.

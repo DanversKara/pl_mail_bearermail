@@ -367,7 +367,7 @@ final class ContactController extends AbstractController
     {
         $response = new Response($this->vcardExporter->exportAll($this->user()));
         $response->headers->set('Content-Type', 'text/vcard; charset=utf-8');
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'contacts.vcf');
+        $response->headers->set('Content-Disposition', $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'contacts.vcf'));
 
         return $response;
     }
@@ -377,7 +377,7 @@ final class ContactController extends AbstractController
     {
         $response = new Response($this->csvExporter->exportAll($this->user()));
         $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'contacts.csv');
+        $response->headers->set('Content-Disposition', $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'contacts.csv'));
 
         return $response;
     }

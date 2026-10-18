@@ -1,0 +1,112 @@
+{#
+notes/_macros.html.twig — pieces both notes pages draw.
+
+Card colours are Google Keep's light palette, used as they are in either
+theme with dark ink on top, so a colour reads the same on the phone and here.
+#}
+{% macro fill(color) -%}
+    {%- set palette = {
+        red: '#faafa8', orange: '#f39f76', yellow: '#fff8b8', green: '#e2f6d3', teal: '#b4ddd3',
+        blue: '#d4e4ed', purple: '#d3bfdb', pink: '#f6e2dd', brown: '#e9e3d4', gray: '#efeff1',
+    } -%}
+    {{- palette[color] ?? '' -}}
+{%- endmacro %}
+
+{% macro colorPicker(colors, selected) %}
+    {% import _self as nm %}
+    <fieldset class="flex flex-wrap items-center gap-1.5">
+        <legend class="sr-only">{{ 'notes.color'|trans }}</legend>
+        <label class="relative cursor-pointer" title="{{ 'notes.color_none'|trans }}">
+            <input type="radio" name="color" value="" class="peer sr-only" {{ selected is empty ? 'checked' }}>
+            <span class="flex w-6 h-6 rounded-full border border-line bg-surface peer-checked:ring-2 peer-checked:ring-accent items-center justify-center">
+                <i class="fa-solid fa-droplet-slash text-[10px] text-ink-faint" aria-hidden="true"></i>
+            </span>
+        </label>
+        {% for c in colors %}
+            <label class="relative cursor-pointer" title="{{ ('notes.colors.' ~ c)|trans }}">
+                <input type="radio" name="color" value="{{ c }}" class="peer sr-only" {{ selected == c ? 'checked' }}>
+                <span class="block w-6 h-6 rounded-full border border-black/10 peer-checked:ring-2 peer-checked:ring-accent"
+                      style="background: {{ nm.fill(c) }}"></span>
+            </label>
+        {% endfor %}
+    </fieldset>
+{% endmacro %}
+
+{% macro linkIcon(type) -%}
+    {{- {event: 'fa-calendar', file: 'fa-file', contact: 'fa-address-book', mail: 'fa-envelope'}[type] ?? 'fa-link' -}}
+{%- endmacro %}
+
+{% macro card(note, view, iconBtn) %}
+    {% import _self as nm %}
+    {% set bg = '' ~ nm.fill(note.color) %}
+    {% set token = csrf_token('notes_' ~ note.id) %}
+    <article class="group break-inside-avoid mb-4 rounded-xl border {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }} flex flex-col"
+             {% if bg %}style="background: {{ bg }}"{% endif %}>
+        <a href="{{ path('app_notes_edit', { id: note.id }) }}" class="block px-4 pt-3 pb-2 rounded-t-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            {% if note.title %}<h2 class="font-semibold text-[15px] leading-snug mb-1 break-words">{{ note.title }}</h2>{% endif %}
+            {% if note.body %}
+                <p class="text-sm whitespace-pre-line break-words line-clamp-[12] {{ bg ? 'opacity-90' : 'text-ink-muted' }}">{{ note.body }}</p>
+            {% endif %}
+            {% if not note.title and not note.body and note.items is empty %}
+                <p class="text-sm italic opacity-60">{{ 'notes.empty_note'|trans }}</p>
+            {% endif %}
+        </a>
+
+        {% if note.items is not empty %}
+            <ul class="px-3 pb-2 space-y-0.5">
+                {% for item in note.items|slice(0, 10) %}
+                    <li>
+                        <form method="post" action="{{ path('app_notes_action', { id: note.id, action: 'toggle' }) }}">
+                            <input type="hidden" name="_token" value="{{ token }}">
+                            <input type="hidden" name="item" value="{{ loop.index0 }}">
+                            <button type="submit" {{ view == 'trash' ? 'disabled' }}
+                                    class="w-full flex items-start gap-2 px-1 py-0.5 rounded text-left text-sm hover:bg-black/5">
+                                <i class="fa-regular {{ item.done ? 'fa-square-check' : 'fa-square' }} mt-0.5 opacity-70" aria-hidden="true"></i>
+                                <span class="break-words {{ item.done ? 'line-through opacity-60' }}">{{ item.text }}</span>
+                            </button>
+                        </form>
+                    </li>
+                {% endfor %}
+                {% if note.items|length > 10 %}
+                    <li class="px-1 text-xs opacity-60">{{ 'notes.more_items'|trans({'%count%': note.items|length - 10}) }}</li>
+                {% endif %}
+            </ul>
+        {% endif %}
+
+        {% if note.links is not empty %}
+            <div class="px-4 pb-2 flex flex-wrap gap-1.5">
+                {% for link in note.links %}
+                    <span class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5 max-w-full">
+                        <i class="fa-solid {{ nm.linkIcon(link.type) }} text-[10px] opacity-70" aria-hidden="true"></i>
+                        <span class="truncate">{{ link.title ?: ('notes.link_types.' ~ link.type)|trans }}</span>
+                    </span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="mt-auto flex items-center gap-0.5 px-2 pb-2 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            {% if view == 'trash' %}
+                {{ nm.actionButton(note, 'restore', 'fa-trash-arrow-up', 'notes.restore', token) }}
+                {{ nm.actionButton(note, 'destroy', 'fa-trash-can', 'notes.delete_forever', token, 'notes.delete_forever_confirm'|trans) }}
+            {% else %}
+                {% if view == 'notes' %}
+                    {{ nm.actionButton(note, 'pin', 'fa-thumbtack', note.pinned ? 'notes.unpin' : 'notes.pin', token) }}
+                {% endif %}
+                {{ nm.actionButton(note, 'archive', note.archived ? 'fa-box-open' : 'fa-box-archive', note.archived ? 'notes.unarchive' : 'notes.archive', token) }}
+                {{ nm.actionButton(note, 'trash', 'fa-trash', 'notes.delete', token) }}
+            {% endif %}
+        </div>
+    </article>
+{% endmacro %}
+
+{% macro actionButton(note, action, icon, label, token, confirm = null, return = '') %}
+    <form method="post" action="{{ path('app_notes_action', { id: note.id, action: action }) }}"
+          {% if confirm %}onsubmit="return confirm({{ confirm|json_encode|e('html_attr') }})"{% endif %}>
+        <input type="hidden" name="_token" value="{{ token }}">
+        {% if return %}<input type="hidden" name="return" value="{{ return }}">{% endif %}
+        <button type="submit" title="{{ label|trans }}" aria-label="{{ label|trans }}"
+                class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/10 cursor-pointer">
+            <i class="fa-solid {{ icon }} text-sm" aria-hidden="true"></i>
+        </button>
+    </form>
+{% endmacro %}

@@ -6,6 +6,7 @@ namespace App\Form\Admin;
 
 use App\Entity\User\User;
 use App\Form\PasswordManagerIgnore;
+use App\Service\Mail\MailServerMailboxes;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
@@ -14,10 +15,12 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Creating and editing a user, as an administrator.
@@ -46,6 +49,10 @@ use Symfony\Component\Validator\Constraints\PositiveOrZero;
  */
 final class UserFormType extends AbstractType
 {
+    public function __construct(private readonly MailServerMailboxes $mailboxes)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -84,6 +91,43 @@ final class UserFormType extends AbstractType
                     new Length(min: User::PASSWORD_MIN_LENGTH, minMessage: 'admin.users.password_too_short'),
                 ],
                 'attr' => ['autocomplete' => 'new-password'],
+            ]);
+        }
+
+        // BearerMail: a mailbox on the built-in mail server, made with the
+        // initial password and added as the new user's mail account, so they
+        // can send and receive the moment they sign in. Only on create, and only
+        // where the built-in server is running (MAIL_DOMAIN and the shared volume).
+        if (true === $options['is_new'] && true === $this->mailboxes->isAvailable()) {
+            $domain = (string) $this->mailboxes->domain();
+            $builder->add('mailbox', TextType::class, [
+                'label'       => 'admin.users.field.mailbox',
+                'help'        => 'admin.users.field.mailbox_help',
+                'help_translation_parameters' => ['%domain%' => $domain],
+                'mapped'      => false,
+                'required'    => false,
+                'attr'        => ['autocomplete' => 'off', 'placeholder' => 'name'] + PasswordManagerIgnore::ATTR,
+                'constraints' => [
+                    new Callback(function (mixed $value, ExecutionContextInterface $context): void {
+                        $value = trim((string) $value);
+                        if ('' === $value) {
+                            return;
+                        }
+                        $address = $this->mailboxes->addressFor($value);
+                        if (null === $address) {
+                            $context->buildViolation('admin.users.mailbox_invalid')
+                                ->setParameter('{{ domain }}', (string) $this->mailboxes->domain())
+                                ->addViolation();
+
+                            return;
+                        }
+                        if (true === $this->mailboxes->exists($address)) {
+                            $context->buildViolation('admin.users.mailbox_taken')
+                                ->setParameter('{{ address }}', $address)
+                                ->addViolation();
+                        }
+                    }),
+                ],
             ]);
         }
 

@@ -9,6 +9,8 @@ admin.sso.error.issuer_missing: 'Un émetteur est nécessaire avec l’ID client
 admin.sso.error.issuer_not_https: 'L’émetteur doit commencer par https://. plMail fait confiance au fournisseur grâce à la connexion TLS vers lui.'
 admin.sso.error.secret_missing: 'Un secret client est nécessaire avec l’émetteur et l’ID client. Les trois, ou aucun.'
 admin.users.password_too_short: Utilisez au moins {{ limit }} caractères — ce mot de passe est choisi pour quelqu’un d’autre.
+admin.users.mailbox_invalid: 'Lettres, chiffres, points, tirets ou soulignés uniquement — juste la partie avant @{{ domain }}.'
+admin.users.mailbox_taken: '{{ address }} existe déjà sur le serveur mail.'
 alias.invalid: Saisissez une adresse e-mail valide.
 app_password.name_required: Donnez un nom au mot de passe d’application pour le reconnaître plus tard.
 caldav.address_required: Saisissez l’adresse de votre serveur CalDAV — sans elle, plMail n’a personne à interroger.

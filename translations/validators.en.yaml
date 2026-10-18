@@ -10,6 +10,8 @@ admin.sso.error.issuer_missing: 'An issuer is needed with the client ID and the 
 admin.sso.error.issuer_not_https: 'The issuer has to start with https://. plMail trusts the provider because of the TLS connection to it.'
 admin.sso.error.secret_missing: 'A client secret is needed with the issuer and the client ID. All three, or none of them.'
 admin.users.password_too_short: Use at least {{ limit }} characters — this password is being chosen for someone else.
+admin.users.mailbox_invalid: 'Use letters, digits, dots, dashes or underscores — just the part before @{{ domain }}.'
+admin.users.mailbox_taken: '{{ address }} already exists on the mail server.'
 alias.invalid: Enter a valid email address.
 app_password.name_required: Give the app password a name so you can recognise it later.
 caldav.address_required: Enter the address of your CalDAV server — plMail has nothing to ask without one.
