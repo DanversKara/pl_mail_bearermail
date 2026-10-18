@@ -45,7 +45,9 @@ class ContactRepository extends ServiceEntityRepository
             ->setParameter('user', $user)
             ->setParameter('like', '%' . $q . '%')
             ->orderBy('c.displayName', 'ASC')
-            ->distinct()
+            // No DISTINCT: the row carries the JSON tags column, which Postgres
+            // cannot compare, so DISTINCT failed every autocomplete. A contact
+            // with several matching emails is deduplicated below instead.
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

@@ -146,11 +146,15 @@ jobs:
                       root = ET.parse('junit.xml').getroot()
                   except Exception as e:
                       print('::error::no junit report: %s' % e); raise SystemExit
+                  bad = []
                   for tc in root.iter('testcase'):
                       for kind in ('failure', 'error'):
                           for f in tc.findall(kind):
-                              msg = (f.get('message') or f.text or '').strip().replace('\n', ' ')[:600]
-                              print('::error::%s %s::%s' % (kind, tc.get('class', '') + '::' + tc.get('name', ''), msg))
+                              msg = (f.text or f.get('message') or '').strip().replace('\n', ' ')[:700]
+                              bad.append((tc.get('class', '') + '::' + tc.get('name', ''), msg))
+                  print('::error::%d failing: %s' % (len(bad), ' | '.join(n for n, _ in bad)[:3000]))
+                  for name, msg in bad[:8]:
+                      print('::error::%s :: %s' % (name, msg))
                   PY
                   exit ${status:-0}
 
