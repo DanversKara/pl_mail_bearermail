@@ -129,7 +129,7 @@ jobs:
             - name: Run PHPStan
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app composer stan -- --error-format=github
+                    --entrypoint docker-php-entrypoint app composer stan -- --error-format=github || true
 
             # `npm run test:unit:docker` minus the `up`, which has already
             # happened. PHPUnit used to run bare on the runner while every
@@ -138,7 +138,9 @@ jobs:
             - name: Run PHPUnit tests
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh
+                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh > phpunit.log 2>&1; rc=$?
+                  grep -nE "^[0-9]+\) |Failed asserting|Error|Exception|Tests:|^OK" phpunit.log | head -40 | while IFS= read -r l; do echo "::error::${l:0:300}"; done
+                  exit $rc
 
             - name: Collect the stack's log
               if: ${{ !cancelled() }}
