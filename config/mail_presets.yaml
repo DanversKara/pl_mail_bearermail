@@ -14,7 +14,7 @@ presets:
         group: Self-hosted
         native: true
         domains: []
-        note: 'Mailbox must exist in MAIL_ACCOUNTS first; the username is your full email address.'
+        note: 'The mailbox is made in Admin → Users (or MAIL_ACCOUNTS); the username is your full email address.'
         imap: { host: mailstore, port: 143, encryption: none }
         smtp: { host: mta, port: 587, encryption: none }
 

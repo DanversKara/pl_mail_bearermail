@@ -38,15 +38,37 @@ export TLS_CERT TLS_KEY
 
 # --- mailboxes -> Postfix virtual map ----------------------------------------
 # MAIL_ACCOUNTS="user1:pass1,user2:pass2"  (passwords live in the mailstore too)
-: > /etc/postfix/virtual
+# plMail adds mailboxes after start-up to /etc/plmail-mail-config/mailboxes
+# ("user@domain:{SHA512-CRYPT}...", Dovecot passwd-file format); they are
+# merged in here and again by the watcher below whenever the file changes.
+PLMAIL_MAILBOXES="/etc/plmail-mail-config/mailboxes"
 FIRST=""
 IFS=',' read -ra PAIRS <<< "${MAIL_ACCOUNTS:-}" || true
 for pair in "${PAIRS[@]}"; do
   user="${pair%%:*}"
   [ -n "$user" ] || continue
-  echo "${user}@${MAIL_DOMAIN} ${MAIL_DOMAIN}/${user}/" >> /etc/postfix/virtual
   if [ -z "$FIRST" ]; then FIRST="$user"; fi
 done
+build_mailboxes() {
+  : > /etc/postfix/virtual
+  local pair user addr
+  for pair in "${PAIRS[@]}"; do
+    user="${pair%%:*}"
+    [ -n "$user" ] || continue
+    echo "${user}@${MAIL_DOMAIN} ${MAIL_DOMAIN}/${user}/" >> /etc/postfix/virtual
+  done
+  if [ -f "$PLMAIL_MAILBOXES" ]; then
+    while IFS=':' read -r addr _; do
+      addr="$(echo "${addr:-}" | tr 'A-Z' 'a-z' | tr -d '[:space:]')"
+      case "$addr" in *"@${MAIL_DOMAIN}") ;; *) continue ;; esac
+      grep -qi "^${addr} " /etc/postfix/virtual && continue
+      echo "${addr} ${MAIL_DOMAIN}/${addr%@*}/" >> /etc/postfix/virtual
+    done < "$PLMAIL_MAILBOXES"
+  fi
+}
+mkdir -p /etc/plmail-mail-config
+touch "$PLMAIL_MAILBOXES"
+build_mailboxes
 # --- aliases -----------------------------------------------------------------
 # Every address that lands in an existing mailbox, rewritten through Postfix's
 # ALIAS map — not the mailbox map, whose entries reach Dovecot over LMTP under
@@ -114,11 +136,8 @@ build_aliases
 SENDER_KEYS="/etc/plmail-mail-config/smtp_key_senders"
 build_sender_logins() {
   {
-    for pair in "${PAIRS[@]}"; do
-      u="${pair%%:*}"
-      [ -n "$u" ] || continue
-      echo "${u}@${MAIL_DOMAIN} ${u}@${MAIL_DOMAIN}"
-    done
+    # Every mailbox (MAIL_ACCOUNTS and plMail's) may send as itself.
+    awk '{ print $1, $1 }' /etc/postfix/virtual
     printf '%s' "$ALIAS_LINES"
   } > /etc/postfix/sender_logins.base
   # Merge key logins into the mailbox's own line.
@@ -233,13 +252,14 @@ postfix check
   last=""
   while true; do
     sleep 15
-    current=$(cat "$RELAY_CONF" "$SENDER_KEYS" "$PLMAIL_ALIASES" 2>/dev/null | md5sum)
+    current=$(cat "$RELAY_CONF" "$SENDER_KEYS" "$PLMAIL_ALIASES" "$PLMAIL_MAILBOXES" 2>/dev/null | md5sum)
     if [ "$current" != "$last" ]; then
       if [ -n "$last" ]; then
-        echo "-- relay, SMTP keys or aliases changed, re-applying"
+        echo "-- relay, SMTP keys, aliases or mailboxes changed, re-applying"
       fi
       last="$current"
       apply_relay
+      build_mailboxes
       build_aliases
       build_sender_logins
       postfix reload 2>/dev/null || true

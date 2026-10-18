@@ -28,6 +28,9 @@ final class ImapSuperviseCommand extends Command
     private const int MAX_BACKOFF_SECONDS = 30;
     private const int BACKOFF_RESET_AFTER_UPTIME_SECONDS = 120;
 
+    /** How long IDLE children get to stop, together — well inside app:work's 25-second grace. */
+    private const int CHILD_STOP_SECONDS = 10;
+
     /** @var array<int, Process> */
     private array $processes = [];
 
@@ -291,8 +294,9 @@ final class ImapSuperviseCommand extends Command
         }
 
         $process = $this->processes[$mailboxId];
-        $process->signal(SIGTERM);
-        $process->wait();
+        // stop() rather than signal()+wait(): bounded, then SIGKILL, so one
+        // child that will not let go cannot freeze the reconcile loop.
+        $this->quietly(static fn () => $process->stop(self::CHILD_STOP_SECONDS, SIGTERM));
 
         unset($this->processes[$mailboxId]);
         unset($this->startedAt[$mailboxId]);
@@ -303,18 +307,54 @@ final class ImapSuperviseCommand extends Command
         $this->heartbeats->clear(ProcessHeartbeatService::TYPE_IMAP_IDLE, (string) $mailboxId);
     }
 
+    /**
+     * SIGTERM to every IDLE child at once, up to CHILD_STOP_SECONDS for all of
+     * them together, then SIGKILL for the rest.
+     *
+     * Waiting on each child without a limit is what got the whole supervisor
+     * killed by app:work: one child stuck in a read (or in the middle of a
+     * logout to a server that does not answer) held up everything behind it
+     * past the worker's 25-second grace. An IDLE child holds nothing worth
+     * finishing — a reconnect picks up exactly where it left off — so it is
+     * cut short well inside that grace instead.
+     */
     private function shutdownAllChildren(SymfonyStyle $io): void
     {
         foreach ($this->processes as $mailboxId => $process) {
             $io->text('Stopping mailbox ' . $mailboxId . ' (pid ' . $process->getPid() . ')');
-            $process->signal(SIGTERM);
+            $this->quietly(static fn () => $process->signal(SIGTERM));
+        }
+
+        $deadline = microtime(true) + self::CHILD_STOP_SECONDS;
+
+        while (microtime(true) < $deadline) {
+            $running = array_filter($this->processes, static fn (Process $process): bool => $process->isRunning());
+
+            if ([] === $running) {
+                break;
+            }
+
+            usleep(100000);
         }
 
         foreach ($this->processes as $mailboxId => $process) {
-            $process->wait();
+            if (true === $process->isRunning()) {
+                $io->text('Mailbox ' . $mailboxId . ' did not stop in time, killing it');
+                $this->quietly(static fn () => $process->stop(0, SIGKILL));
+            }
+
             $this->heartbeats->clear(ProcessHeartbeatService::TYPE_IMAP_IDLE, (string) $mailboxId);
         }
 
         $this->processes = [];
+    }
+
+    private function quietly(callable $action): void
+    {
+        try {
+            $action();
+        } catch (\Throwable) {
+            // A child that already exited cannot be signalled; that is fine.
+        }
     }
 }

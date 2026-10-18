@@ -54,6 +54,12 @@ chmod 600 /etc/dovecot/users
 # that passdb logs an error and fails as "temporary".
 mkdir -p /etc/plmail-mail-config
 touch /etc/plmail-mail-config/smtp_keys
+# Mailboxes plMail adds later (a second passdb, read on every login).
+touch /etc/plmail-mail-config/mailboxes
+mkdir -p "/var/mail/vhosts/${MAIL_DOMAIN}"
+chown 5000:5000 "/var/mail/vhosts/${MAIL_DOMAIN}"
+APP_MAILBOXES=$(grep -c ':' /etc/plmail-mail-config/mailboxes || true)
+echo "-- ${APP_MAILBOXES} mailbox(es) added from plMail"
 echo "-- ${COUNT} mailbox(es) provisioned"
 
 # --- BearerMail: block addresses that keep failing to sign in --------------

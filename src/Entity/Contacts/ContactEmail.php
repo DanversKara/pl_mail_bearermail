@@ -51,9 +51,26 @@ class ContactEmail
         return $emailEntity;
     }
 
-    /** Re-parents this row; the only writer of $contact outside create(), because the property is private(set). */
+    /**
+     * Re-parents this row; the only writer of $contact outside create(), because the property is private(set).
+     *
+     * Both contacts' collections are kept in step. Moving only the owning side
+     * left the row in the old contact's collection, and ContactMerger removes
+     * that contact next — cascade remove and orphanRemoval then deleted the
+     * row that had just been moved, so a merge silently lost the merged
+     * contact's emails.
+     */
     public function moveTo(Contact $contact): void
     {
+        if ($this->contact === $contact) {
+            return;
+        }
+
+        $this->contact->emails->removeElement($this);
         $this->contact = $contact;
+
+        if (false === $contact->emails->contains($this)) {
+            $contact->emails->add($this);
+        }
     }
 }

@@ -39,11 +39,33 @@ docker compose logs mta | sed -n '/== DKIM DNS/,/== end DKIM DNS/p'
 
 `MAIL_ACCOUNTS` is `localpart:password` pairs, comma-separated. Logins are
 the full address (`support@bearermail.com`). `postmaster@` and `abuse@` are
-aliased to the first mailbox automatically. To add or change mailboxes later,
-edit `.env.mail.local` and recreate the two containers:
+aliased to the first mailbox automatically. Changing `MAIL_ACCOUNTS` later
+needs the two containers recreated:
 
 ```bash
 docker compose --profile mail up -d --force-recreate mta mailstore
+```
+
+### Mailboxes for people you add later
+
+**Admin → Users → Add user** has a *Mailbox* field. Fill in a local part
+(`anna`) and plMail creates `anna@` your domain with the user's initial
+password and adds it as their mail account, so they can send and receive as
+soon as they sign in — no restart. These mailboxes live in
+`/etc/plmail-mail-config/mailboxes` on the shared volume: Dovecot reads it on
+every login, the MTA picks it up within about 15 seconds.
+
+From the console:
+
+```bash
+docker compose exec php bin/console app:mail:mailbox list
+docker compose exec php bin/console app:mail:mailbox create anna
+docker compose exec php bin/console app:mail:mailbox password anna
+docker compose exec php bin/console app:mail:mailbox remove anna
+# People who added a built-in-server account before this existed, and whose
+# sync fails with AUTHENTICATIONFAILED: give each of them the mailbox their
+# saved account signs in with (check first with --dry-run).
+docker compose exec php bin/console app:mail:mailbox from-accounts
 ```
 
 Each login may only send as its own address (Postfix
@@ -238,7 +260,7 @@ TLS on submission. Until then, don't publish 587.
 
 - No spam filtering (no Rspamd/SpamAssassin yet) and no greylisting.
 - No sieve filters, no quotas, no per-domain config — one domain per stack.
-- Mailbox management is the `MAIL_ACCOUNTS` setting in `.env.mail.local`, not a UI.
+- Mailboxes are made in Admin → Users or `app:mail:mailbox`; there is no quota or per-mailbox settings page yet.
 - Webmail *is* plMail itself — that's the point.
 
 All of those are reasonable next steps; the shape above is deliberately the
