@@ -127,10 +127,9 @@ jobs:
             # service ids out of the compiled test container, and the kernel
             # boot app-init did while migrating and seeding is what produced it.
             - name: Run PHPStan
-              continue-on-error: true
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app vendor/bin/phpstan analyse --configuration=phpstan.dist.neon --no-progress --error-format=github
+                    --entrypoint docker-php-entrypoint app composer stan
 
             # `npm run test:unit:docker` minus the `up`, which has already
             # happened. PHPUnit used to run bare on the runner while every
@@ -139,24 +138,7 @@ jobs:
             - name: Run PHPUnit tests
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh --log-junit /app/junit.xml || status=$?
-                  python3 - <<'PY'
-                  import xml.etree.ElementTree as ET
-                  try:
-                      root = ET.parse('junit.xml').getroot()
-                  except Exception as e:
-                      print('::error::no junit report: %s' % e); raise SystemExit
-                  bad = []
-                  for tc in root.iter('testcase'):
-                      for kind in ('failure', 'error'):
-                          for f in tc.findall(kind):
-                              msg = (f.text or f.get('message') or '').strip().replace('\n', ' ')[:700]
-                              bad.append((tc.get('class', '') + '::' + tc.get('name', ''), msg))
-                  print('::error::%d failing: %s' % (len(bad), ' | '.join(n for n, _ in bad)[:3000]))
-                  for name, msg in bad[:8]:
-                      print('::error::%s :: %s' % (name, msg))
-                  PY
-                  exit ${status:-0}
+                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh
 
             - name: Collect the stack's log
               if: ${{ !cancelled() }}
