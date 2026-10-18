@@ -4643,3 +4643,56 @@ contacts:
     merge_undo_expired: The 90-day window to undo this lashing has passed.
     validation:
         name_required: 'Give the shipmate a name.'
+notes:
+    nav: Scrawls
+    title: Scrawls
+    back: Back
+    search: Search the scrawls
+    title_placeholder: Title
+    take_a_note: Scrawl somethin'…
+    checklist_placeholder: 'One task per line'
+    checklist_hint: 'One task per line. Mark [x] afore a task that be done.'
+    as_checklist: Task list
+    add: Add
+    save: Stow it
+    pinned: Nailed to the mast
+    others: The rest
+    untitled: Untitled scrawl
+    empty_note: Empty scrawl
+    more_items: '+ %count% more'
+    edited: 'Mended %when%'
+    pin: Nail to the mast
+    unpin: Pry off the mast
+    archive: Stow in the hold
+    unarchive: Haul from the hold
+    delete: Toss in the brig
+    restore: Bring back aboard
+    delete_forever: Send to Davy Jones
+    delete_forever_confirm: 'Send this scrawl to Davy Jones for good? There be no fishin'' it back.'
+    empty_search: No scrawl answers to that.
+    color: Colour
+    color_none: No colour
+    views:
+        notes: Scrawls
+        archive: The hold
+        trash: The brig
+    empty:
+        notes: 'Scrawls ye make here or on yer spyglass-phone show up here.'
+        archive: 'Scrawls stowed in the hold show up here.'
+        trash: 'The brig be empty.'
+    colors:
+        red: Red
+        orange: Orange
+        yellow: Yellow
+        green: Green
+        teal: Teal
+        blue: Blue
+        purple: Purple
+        pink: Pink
+        brown: Brown
+        gray: Grey
+    link_types:
+        event: Rendezvous
+        file: Scroll
+        contact: Shipmate
+        mail: Bottle
