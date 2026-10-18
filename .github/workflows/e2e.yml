@@ -138,8 +138,8 @@ jobs:
             - name: Run PHPUnit tests
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh > phpunit.log 2>&1; rc=$?
-                  msg=$(tail -70 phpunit.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}'); echo "::error::${msg:0:12000}"
+                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh > phpunit.log 2>&1 && rc=0 || rc=$?
+                  msg=$(tail -70 phpunit.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}'); echo "::error::${msg:0:6000}"
                   exit $rc
 
             - name: Collect the stack's log
