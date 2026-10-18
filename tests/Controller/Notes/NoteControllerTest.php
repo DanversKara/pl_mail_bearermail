@@ -32,7 +32,7 @@ final class NoteControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         $title = 'Groceries ' . bin2hex(random_bytes(3));
-        $form  = $crawler->filter('form[action="/notes"]')->form([
+        $form  = $crawler->filter('form[method="post"][action="/notes"]')->form([
             'title'     => $title,
             'body'      => "milk\n[x] eggs\n\n",
             'checklist' => '1',
