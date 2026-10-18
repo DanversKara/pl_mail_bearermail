@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:1f3b51a6f659a64adbc57fb6125f4885ce518f82 -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:737c62ba5cff4ab3acb6d710723b47eb44487a9d -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -761,6 +761,7 @@ Alles, was in [`src/Jmap/Method/`](../src/Jmap/Method/) registriert ist:
 | `Identity/get` / `Identity/set` | |
 | `Template/get` / `Template/set` / `Template/render` | `urn:plmail:params:jmap:templates`. Kein `accountId`-Argument bei get und set; pro Benutzer. Siehe [Vorlagen](#vorlagen). |
 | `TemplateFolder/get` / `TemplateFolder/set` | Dieselbe Capability. Die Ordner, die ein Benutzer angelegt hat; die Konto-Ordner des Web-Baums sind keine Objekte. |
+| `Note/get` / `Note/set` | `urn:plmail:params:jmap:notes`. Kein `accountId`-Argument; pro Benutzer. Siehe [Notizen](#notizen). |
 
 **Heute nicht implementiert.** Nichts davon ist ein bewusster Ausschluss — es wurde bisher nur
 nicht gebraucht. Wenn dein Client etwas davon will, **frag danach, statt darum herum zu
@@ -1190,6 +1191,37 @@ Von-Auswahlfeld, das sonst nichts ändert, muss trotzdem speichern.
   `"draftIdentity": true` in der `urn:ietf:params:jmap:mail`-Capability des Kontos. Einer, der sie
   nicht kennt, lehnt den ganzen Update-Patch als `invalidPatch` ab, weil er eine Eigenschaft nennt,
   die er nicht ändern kann — lass den Schlüssel dort also weg.
+
+### Notizen
+
+Notizen im Stil von Google Keep. Deklariere `urn:plmail:params:jmap:notes` in `using`. Pro Benutzer, wie
+Vorlagen: keine der beiden Methoden nimmt ein `accountId` (schickst du eins, kommt `invalidArguments`).
+Das Capability-Objekt der Session nennt die geschlossenen Vokabulare: `colors`, `linkTypes` und die
+Größenlimits `maxBody`, `maxItems`, `maxLinks`.
+
+| `Note` | |
+|---|---|
+| `id` | |
+| `title` | String, darf leer sein. Eine Zeile, höchstens 255 Zeichen. |
+| `body` | Klartext, Zeilenumbrüche bleiben erhalten, höchstens `maxBody` Zeichen. Nirgends HTML. |
+| `items` | Checkliste: Liste von `{text, done}` in Reihenfolge, höchstens `maxItems`. Leer bei einer Textnotiz. Eine Notiz kann beides tragen. |
+| `color` | Eines aus `colors` oder `null` für die Standardkarte. Ein Client bildet die Namen auf seine eigene Palette ab. |
+| `pinned`, `archived` | Booleans. |
+| `trashed` | Boolean. Der Server merkt sich den Zeitpunkt; der Papierkorb wird noch von nichts geleert. |
+| `links` | Liste von `{type, id, title}`, `type` aus `linkTypes` (`event`, `file`, `contact`, `mail`), höchstens `maxLinks`. |
+| `createdAt`, `updatedAt` | UTCDate, nur lesbar. |
+
+**Verknüpfungen sind Verweise, keine Fremdschlüssel.** `id` ist die Id, die das andere Objekt auf seiner
+eigenen Oberfläche hat (die Id eines `CalendarEvent`, einer Drive-Datei, eines Kontakts, einer `Email`);
+der Server prüft nicht, ob es sie gibt. `title` ist die Bezeichnung, die das Ziel beim Verknüpfen hatte,
+damit eine Liste ohne vier weitere Abrufe gezeichnet werden kann; ein Client sollte sie auffrischen, sobald
+er das echte Objekt hat. Ein wiederholtes `{type, id}` fällt zu einer Verknüpfung zusammen. Für „Notizen zu
+diesem Termin" filterst du die Liste, die du ohnehin hältst, nach Verknüpfungen mit passendem `type`/`id`.
+
+**`/get` mit `ids: null` liefert alles, angeheftete zuerst. Es gibt weder `/query` noch `/changes`.**
+`state` ist ein Hash der Liste, kein Zähler; weicht er von deinem ab, ruf erneut ab. `/set` ersetzt ganze
+Eigenschaften (`items` und `links` werden vollständig gesendet) und beachtet `ifInState`
+(`stateMismatch`). Zu große oder fehlerhafte Eingaben werden mit `invalidProperties` abgelehnt, nie gekürzt.
 
 ### Vorlagen
 
