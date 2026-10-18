@@ -4904,6 +4904,29 @@ contacts:
     validation:
         name_required: 'Donnez un nom au contact.'
 notes:
+    saving: 'Enregistrement…'
+    saved: 'Enregistrée'
+    save_failed: 'Non enregistrée — vérifiez la connexion'
+    list_item: 'Élément de liste'
+    remove_item: 'Supprimer l’élément'
+    labels_placeholder: 'Libellés, séparés par des virgules'
+    unlink: 'Retirer le lien'
+    add_link: 'Lier'
+    show_checkboxes: 'Afficher les cases à cocher'
+    hide_checkboxes: 'Masquer les cases à cocher'
+    undo: 'Annuler'
+    redo: 'Rétablir'
+    close: 'Fermer'
+    add_note: 'Ajouter une note'
+    none_linked: 'Aucune note pour l’instant.'
+    new_note: 'Nouvelle note'
+    new_list: 'Nouvelle liste'
+    format:
+        bold: 'Gras'
+        italic: 'Italique'
+        underline: 'Souligné'
+        heading: 'Titre'
+        bullets: 'Liste à puces'
     nav: Notes
     title: Notes
     back: Retour

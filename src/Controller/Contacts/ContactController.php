@@ -64,6 +64,7 @@ final class ContactController extends AbstractController
         private readonly ReferenceEmailFinder $referenceEmails,
         private readonly TranslatorInterface $translator,
         private readonly EntityManagerInterface $em,
+        private readonly \App\Repository\Note\NoteRepository $notes,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
     ) {}
@@ -113,6 +114,7 @@ final class ContactController extends AbstractController
             'outRelations' => $relationRepo->findBy(['ownerContact' => $contact]),
             'inRelations'  => $relationRepo->findBy(['relatedContact' => $contact]),
             'refEmails'    => $this->referenceEmails->findForContact($user, $contact, 50),
+            'notes'        => $this->notes->findLinkedTo($user, 'contact', (string) $contact->id),
         ]);
     }
 

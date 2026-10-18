@@ -4900,6 +4900,29 @@ contacts:
     validation:
         name_required: 'Give the contact a name.'
 notes:
+    saving: 'Saving…'
+    saved: 'Saved'
+    save_failed: 'Not saved — check your connection'
+    list_item: 'List item'
+    remove_item: 'Remove item'
+    labels_placeholder: 'Labels, separated by commas'
+    unlink: 'Remove link'
+    add_link: 'Link'
+    show_checkboxes: 'Show checkboxes'
+    hide_checkboxes: 'Hide checkboxes'
+    undo: 'Undo'
+    redo: 'Redo'
+    close: 'Close'
+    add_note: 'Add note'
+    none_linked: 'No notes yet.'
+    new_note: 'New note'
+    new_list: 'New list'
+    format:
+        bold: 'Bold'
+        italic: 'Italic'
+        underline: 'Underline'
+        heading: 'Heading'
+        bullets: 'Bulleted list'
     nav: Notes
     title: Notes
     back: Back

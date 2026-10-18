@@ -50,13 +50,33 @@ final class NoteControllerTest extends WebTestCase
         $crawler = $client->request('GET', '/notes/' . $note->id);
         self::assertResponseIsSuccessful();
 
-        $toggle = (string) $crawler->filter('form[action="/notes/' . $note->id . '"] input[name="_token"]')->attr('value');
+        $toggle = (string) $crawler->filter('form[action="/notes/' . $note->id . '/close"] input[name="_token"]')->attr('value');
         $client->request('POST', '/notes/' . $note->id . '/toggle', ['_token' => $toggle, 'item' => 0]);
 
         $em = static::getContainer()->get(EntityManagerInterface::class);
         $em->clear();
         $note = $em->find(Note::class, $note->id);
         self::assertTrue($note->items[0]['done']);
+
+        // The editor's autosave replaces the whole note, labels included.
+        $client->request('POST', '/notes/' . $note->id . '/autosave', [], [], [
+            'CONTENT_TYPE'      => 'application/json',
+            'HTTP_X-CSRF-Token' => $toggle,
+        ], json_encode([
+            'title'     => $title,
+            'checklist' => false,
+            'body'      => "# Shop\n**milk**",
+            'color'     => 'blue',
+            'labels'    => ['Home', 'home', ' Errands '],
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $em->clear();
+        $note = $em->find(Note::class, $note->id);
+        self::assertSame("# Shop\n**milk**", $note->body);
+        self::assertSame([], $note->items);
+        self::assertSame('blue', $note->color);
+        self::assertSame(['Home', 'Errands'], $note->labels);
 
         $client->request('POST', '/notes/' . $note->id . '/destroy', ['_token' => $toggle]);
         self::assertResponseRedirects('/notes?view=trash');

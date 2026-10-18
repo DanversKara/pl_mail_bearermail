@@ -19,7 +19,7 @@ final class NoteMapper
 {
     /** Every property of a Note, in the order they are documented. */
     public const array PROPERTIES = [
-        'id', 'title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links', 'createdAt', 'updatedAt',
+        'id', 'title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links', 'labels', 'createdAt', 'updatedAt',
     ];
 
     /**
@@ -37,6 +37,7 @@ final class NoteMapper
             'archived'  => $note->archived,
             'trashed'   => null !== $note->trashedAt,
             'links'     => array_values($note->links),
+            'labels'    => array_values($note->labels),
             'createdAt' => $this->utc($note->createdAt),
             'updatedAt' => $this->utc($note->updatedAt),
         ];

@@ -3,6 +3,8 @@ notes/_macros.html.twig — pieces both notes pages draw.
 
 Card colours are Google Keep's light palette, used as they are in either
 theme with dark ink on top, so a colour reads the same on the phone and here.
+No inline handlers anywhere: the app's CSP refuses them (confirmations go
+through notes--confirm).
 #}
 {% macro fill(color) -%}
     {%- set palette = {
@@ -12,19 +14,19 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
     {{- palette[color] ?? '' -}}
 {%- endmacro %}
 
-{% macro colorPicker(colors, selected) %}
+{% macro colorPicker(colors, selected, action = null) %}
     {% import _self as nm %}
     <fieldset class="flex flex-wrap items-center gap-1.5">
         <legend class="sr-only">{{ 'notes.color'|trans }}</legend>
         <label class="relative cursor-pointer" title="{{ 'notes.color_none'|trans }}">
-            <input type="radio" name="color" value="" class="peer sr-only" {{ selected is empty ? 'checked' }}>
+            <input type="radio" name="color" value="" class="peer sr-only" {{ selected is empty ? 'checked' }} {% if action %}data-action="{{ action }}"{% endif %}>
             <span class="flex w-6 h-6 rounded-full border border-line bg-surface peer-checked:ring-2 peer-checked:ring-accent items-center justify-center">
                 <i class="fa-solid fa-droplet-slash text-[10px] text-ink-faint" aria-hidden="true"></i>
             </span>
         </label>
         {% for c in colors %}
             <label class="relative cursor-pointer" title="{{ ('notes.colors.' ~ c)|trans }}">
-                <input type="radio" name="color" value="{{ c }}" class="peer sr-only" {{ selected == c ? 'checked' }}>
+                <input type="radio" name="color" value="{{ c }}" class="peer sr-only" {{ selected == c ? 'checked' }} {% if action %}data-action="{{ action }}"{% endif %}>
                 <span class="block w-6 h-6 rounded-full border border-black/10 peer-checked:ring-2 peer-checked:ring-accent"
                       style="background: {{ nm.fill(c) }}"></span>
             </label>
@@ -36,7 +38,20 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
     {{- {event: 'fa-calendar', file: 'fa-file', contact: 'fa-address-book', mail: 'fa-envelope'}[type] ?? 'fa-link' -}}
 {%- endmacro %}
 
-{% macro card(note, view, iconBtn) %}
+{# Where a link opens on the web, or nothing when there is no page for it. #}
+{% macro linkHref(link) -%}
+    {%- if link.type == 'contact' and link.id matches '/^\\d+$/' -%}
+        {{- path('app_contacts_show', { id: link.id }) -}}
+    {%- elseif link.type == 'mail' and link.id matches '/^\\d+$/' -%}
+        {{- path('app_mail_message', { id: link.id }) -}}
+    {%- elseif link.type == 'event' -%}
+        {{- path('app_calendar_index') -}}
+    {%- elseif link.type == 'file' -%}
+        {{- path('app_drive_list') -}}
+    {%- endif -%}
+{%- endmacro %}
+
+{% macro card(note, view) %}
     {% import _self as nm %}
     {% set bg = '' ~ nm.fill(note.color) %}
     {% set token = csrf_token('notes_' ~ note.id) %}
@@ -45,7 +60,7 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
         <a href="{{ path('app_notes_edit', { id: note.id }) }}" class="block px-4 pt-3 pb-2 rounded-t-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             {% if note.title %}<h2 class="font-semibold text-[15px] leading-snug mb-1 break-words">{{ note.title }}</h2>{% endif %}
             {% if note.body %}
-                <p class="text-sm whitespace-pre-line break-words line-clamp-[12] {{ bg ? 'opacity-90' : 'text-ink-muted' }}">{{ note.body }}</p>
+                <div class="text-sm break-words line-clamp-[12] {{ bg ? 'opacity-90' : 'text-ink-muted' }}">{{ note.body|note_format }}</div>
             {% endif %}
             {% if not note.title and not note.body and note.items is empty %}
                 <p class="text-sm italic opacity-60">{{ 'notes.empty_note'|trans }}</p>
@@ -73,13 +88,17 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
             </ul>
         {% endif %}
 
-        {% if note.links is not empty %}
+        {% if note.labels is not empty or note.links is not empty %}
             <div class="px-4 pb-2 flex flex-wrap gap-1.5">
+                {% for name in note.labels %}
+                    <a href="{{ path('app_notes_list', { label: name }) }}" class="inline-flex items-center h-6 px-2 rounded-full text-xs bg-black/5 hover:bg-black/10 max-w-full truncate">{{ name }}</a>
+                {% endfor %}
                 {% for link in note.links %}
-                    <span class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5 max-w-full">
+                    {% set href = nm.linkHref(link) ~ '' %}
+                    <a {% if href %}href="{{ href }}"{% endif %} class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5 max-w-full {{ href ? 'hover:bg-black/10' }}">
                         <i class="fa-solid {{ nm.linkIcon(link.type) }} text-[10px] opacity-70" aria-hidden="true"></i>
                         <span class="truncate">{{ link.title ?: ('notes.link_types.' ~ link.type)|trans }}</span>
-                    </span>
+                    </a>
                 {% endfor %}
             </div>
         {% endif %}
@@ -90,7 +109,7 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
                 {{ nm.actionButton(note, 'destroy', 'fa-trash-can', 'notes.delete_forever', token, 'notes.delete_forever_confirm'|trans) }}
             {% else %}
                 {% if view == 'notes' %}
-                    {{ nm.actionButton(note, 'pin', 'fa-thumbtack', note.pinned ? 'notes.unpin' : 'notes.pin', token) }}
+                    {{ nm.actionButton(note, 'pin', 'fa-thumbtack', note.pinned ? 'notes.unpin' : 'notes.pin', token, null, '', note.pinned) }}
                 {% endif %}
                 {{ nm.actionButton(note, 'archive', note.archived ? 'fa-box-open' : 'fa-box-archive', note.archived ? 'notes.unarchive' : 'notes.archive', token) }}
                 {{ nm.actionButton(note, 'trash', 'fa-trash', 'notes.delete', token) }}
@@ -99,14 +118,48 @@ theme with dark ink on top, so a colour reads the same on the phone and here.
     </article>
 {% endmacro %}
 
-{% macro actionButton(note, action, icon, label, token, confirm = null, return = '') %}
+{% macro actionButton(note, action, icon, label, token, confirm = null, return = '', active = false) %}
     <form method="post" action="{{ path('app_notes_action', { id: note.id, action: action }) }}"
-          {% if confirm %}onsubmit="return confirm({{ confirm|json_encode|e('html_attr') }})"{% endif %}>
+          {% if confirm %}data-controller="notes--confirm" data-notes--confirm-message-value="{{ confirm }}" data-action="submit->notes--confirm#ask"{% endif %}>
         <input type="hidden" name="_token" value="{{ token }}">
         {% if return %}<input type="hidden" name="return" value="{{ return }}">{% endif %}
-        <button type="submit" title="{{ label|trans }}" aria-label="{{ label|trans }}"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/10 cursor-pointer">
+        <button type="submit" title="{{ label|trans }}" aria-label="{{ label|trans }}" {% if active %}aria-pressed="true"{% endif %}
+                class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/10 cursor-pointer {{ active ? 'text-accent' }}">
             <i class="fa-solid {{ icon }} text-sm" aria-hidden="true"></i>
         </button>
     </form>
+{% endmacro %}
+
+{# The notes linked to one thing (a contact, an event), with "Add note". #}
+{% macro linkedNotes(notes, type, id, title, returnTo) %}
+    {% import _self as nm %}
+    <section class="space-y-2">
+        <div class="flex items-center gap-2">
+            <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wider flex-1">{{ 'notes.title'|trans }}</h2>
+            <form method="post" action="{{ path('app_notes_new') }}" data-turbo-frame="_top">
+                <input type="hidden" name="_token" value="{{ csrf_token('notes_new') }}">
+                <input type="hidden" name="link_type" value="{{ type }}">
+                <input type="hidden" name="link_id" value="{{ id }}">
+                <input type="hidden" name="link_title" value="{{ title }}">
+                <input type="hidden" name="return" value="{{ returnTo }}">
+                <button type="submit" class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium text-ink-muted hover:bg-hover border border-line cursor-pointer">
+                    <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>{{ 'notes.add_note'|trans }}
+                </button>
+            </form>
+        </div>
+        {% for note in notes %}
+            {% set bg = '' ~ nm.fill(note.color) %}
+            <a href="{{ path('app_notes_edit', { id: note.id, return: returnTo }) }}" data-turbo-frame="_top"
+               class="block rounded-lg border px-3 py-2 text-sm hover:shadow-sm {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }}"
+               {% if bg %}style="background: {{ bg }}"{% endif %}>
+                <div class="font-medium truncate">{{ note.title ?: 'notes.untitled'|trans }}</div>
+                {% if note.body %}<div class="text-xs opacity-70 line-clamp-2">{{ note.body|note_format }}</div>{% endif %}
+                {% if note.items is not empty %}
+                    <div class="text-xs opacity-70 truncate">{% for i in note.items %}{{ i.done ? '☑ ' : '☐ ' }}{{ i.text }}{{ not loop.last ? ' · ' }}{% endfor %}</div>
+                {% endif %}
+            </a>
+        {% else %}
+            <p class="text-xs text-ink-faint">{{ 'notes.none_linked'|trans }}</p>
+        {% endfor %}
+    </section>
 {% endmacro %}

@@ -4644,6 +4644,29 @@ contacts:
     validation:
         name_required: 'Give the shipmate a name.'
 notes:
+    saving: 'Stowin…'
+    saved: 'Stowed'
+    save_failed: 'Not stowed — check yer riggin'
+    list_item: 'Task'
+    remove_item: 'Toss the task'
+    labels_placeholder: 'Markings, split by commas'
+    unlink: 'Cut the line'
+    add_link: 'Lash on'
+    show_checkboxes: 'Show the boxes'
+    hide_checkboxes: 'Hide the boxes'
+    undo: 'Belay that'
+    redo: 'Do it again'
+    close: 'Close'
+    add_note: 'Add a scrawl'
+    none_linked: 'No scrawls yet.'
+    new_note: 'New scrawl'
+    new_list: 'New task list'
+    format:
+        bold: 'Bold'
+        italic: 'Slanted'
+        underline: 'Underlined'
+        heading: 'Heading'
+        bullets: 'Bullet list'
     nav: Scrawls
     title: Scrawls
     back: Back
