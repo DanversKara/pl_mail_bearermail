@@ -18,6 +18,7 @@ use App\Entity\Mail\Account;
 use App\Entity\User\User;
 use App\Domain\Enum\Template\DateFormatPreset;
 use App\Domain\Enum\Template\TemplateVariable;
+use App\Entity\Note\Note;
 use App\Jmap\Account\CalendarAccountResolver;
 use App\Jmap\Mail\SubmissionEnvelope;
 use App\Jmap\Mapper\AppearanceMapper;
@@ -151,6 +152,13 @@ final class SessionBuilder
                 Capability::SYNC => new \stdClass(),
                 Capability::CONTACTS => $this->contactsCapabilities($base),
                 Capability::TEMPLATES => $this->templatesCapabilities(),
+                Capability::NOTES => [
+                    'colors'    => Note::COLORS,
+                    'linkTypes' => Note::LINK_TYPES,
+                    'maxBody'   => 50_000,
+                    'maxItems'  => 300,
+                    'maxLinks'  => 50,
+                ],
                 Capability::INBOX_TABS => new \stdClass(),
             ] + (true === $this->drivePolicy?->isDisabled($user) ? [] : [
                 // BearerMail: absent for a user whose Drive is switched off, so

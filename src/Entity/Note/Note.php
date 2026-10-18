@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity\Note;
+
+use App\Domain\Trait\TimestampableTrait;
+use App\Entity\User\User;
+use App\Repository\Note\NoteRepository;
+use DateTimeImmutable;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * A short note, in the manner of Google Keep: a title, free text or a checklist, a colour, pinned
+ * to the top or put away, and links to the other things the user keeps here.
+ *
+ * User-scoped, like MailTemplate: a note belongs to the person, not to a connected mail account,
+ * so it follows them to every phone and the web.
+ *
+ * PLAIN TEXT, NOT HTML. A note is typed on a phone keyboard and read in a list; there is no markup
+ * to sanitise and nothing for a client to inject into another document. The one place text from a
+ * note could reach someone else's page — a link title — is a plain string like the rest.
+ *
+ * LINKS ARE REFERENCES, NOT FOREIGN KEYS. An event, a Drive file, a contact and a mail each live
+ * in a different id space (and a calendar event's id is an opaque JMAP string), so a link stores
+ * what a client needs to open the thing — its type and its id — plus the title it had when it was
+ * linked, so a list can draw "Dentist, 3 Nov" without fetching four other objects. The title is a
+ * label, never authoritative; the client refreshes it when it has the real object. A link whose
+ * target has since been deleted simply stops opening; nothing here cascades from the other
+ * direction, because the note is the user's text and outlives the event it was written about.
+ */
+#[ORM\Entity(repositoryClass: NoteRepository::class)]
+#[ORM\HasLifecycleCallbacks]
+#[ORM\Table(name: 'user_note')]
+// Every read is "this user's notes, all of them".
+#[ORM\Index(name: 'idx_user_note_usr', columns: ['usr_id'])]
+class Note
+{
+    use TimestampableTrait;
+
+    /** The closed set of colours, by name. A client maps them to its own palette, light and dark. */
+    public const array COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'brown', 'gray'];
+
+    /** What a note may link to. Matches the other areas of the app. */
+    public const array LINK_TYPES = ['event', 'file', 'contact', 'mail'];
+
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    public private(set) ?int $id = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    public User $usr;
+
+    #[ORM\Column(length: 255)]
+    public string $title = '';
+
+    /** Plain text. Empty for a pure checklist. */
+    #[ORM\Column(type: Types::TEXT)]
+    public string $body = '';
+
+    /**
+     * The checklist, in order. Empty for a text note; a note may carry both, as Keep's may after
+     * "show checkboxes" is toggled.
+     *
+     * @var list<array{text: string, done: bool}>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
+    public array $items = [];
+
+    /** One of self::COLORS, or null for the default card. */
+    #[ORM\Column(length: 16, nullable: true)]
+    public ?string $color = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $pinned = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    public bool $archived = false;
+
+    /** Null unless the note is in the bin. Kept as an instant so a purge job can use it later. */
+    #[ORM\Column(nullable: true)]
+    public ?DateTimeImmutable $trashedAt = null;
+
+    /**
+     * @var list<array{type: string, id: string, title: string|null}>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
+    public array $links = [];
+}

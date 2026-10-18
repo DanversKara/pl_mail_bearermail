@@ -694,6 +694,7 @@ Everything registered in [`src/Jmap/Method/`](../src/Jmap/Method/):
 | `Identity/get` / `Identity/set` | |
 | `Template/get` / `Template/set` / `Template/render` | `urn:plmail:params:jmap:templates`. No `accountId` argument on get and set; per-user. See [Templates](#templates). |
 | `TemplateFolder/get` / `TemplateFolder/set` | Same capability. The folders a user made; the per-account folders of the web tree are not objects. |
+| `Note/get` / `Note/set` | `urn:plmail:params:jmap:notes`. No `accountId` argument; per-user. See [Notes](#notes). |
 
 **Not implemented today.** None of these is a deliberate exclusion — they haven't been needed yet. If
 your client wants one, **ask for it rather than engineering around it** (see [§0](#0-read-this-first-the-server-is-under-active-development)):
@@ -1082,6 +1083,37 @@ that a draft has unsaved changes — a From menu that changes nothing else must 
 - **Check the session first.** A server that knows the property says so with `"draftIdentity": true`
   in the account's `urn:ietf:params:jmap:mail` capability. One that does not refuses the whole
   update patch as `invalidPatch` for naming a property it cannot change, so leave the key out there.
+
+### Notes
+
+Keep-style notes. Declare `urn:plmail:params:jmap:notes` in `using`. Per user, like Templates: neither
+method takes an `accountId` (send one and you get `invalidArguments`). The Session's capability object
+lists the closed vocabularies: `colors`, `linkTypes`, and the size limits `maxBody`, `maxItems`,
+`maxLinks`.
+
+| `Note` | |
+|---|---|
+| `id` | |
+| `title` | String, may be empty. Single line, at most 255 characters. |
+| `body` | Plain text, line breaks kept, at most `maxBody` characters. No HTML anywhere. |
+| `items` | Checklist: list of `{text, done}`, in order, at most `maxItems`. Empty for a text note. A note may carry both. |
+| `color` | One of `colors`, or `null` for the default card. A client maps the names to its own palette. |
+| `pinned`, `archived` | Booleans. |
+| `trashed` | Boolean. The server keeps the instant it was set; nothing purges the bin yet. |
+| `links` | List of `{type, id, title}`, `type` in `linkTypes` (`event`, `file`, `contact`, `mail`), at most `maxLinks`. |
+| `createdAt`, `updatedAt` | UTCDate, read-only. |
+
+**Links are references, not foreign keys.** `id` is the id the other object has on its own surface
+(a `CalendarEvent` id, a Drive file id, a contact id, an `Email` id); the server does not check it
+exists. `title` is the label the target had when it was linked, so a list can be drawn without
+fetching four other objects; a client should refresh it when it has the real object. A repeated
+`{type, id}` collapses to one link. To show "notes on this event", filter the list you already hold
+for links whose `type`/`id` match.
+
+**`/get` with `ids: null` returns everything, pinned first. There is no `/query` and no `/changes`.**
+`state` is a hash of the list, not a counter; when it differs from the one you hold, fetch again.
+`/set` replaces whole properties (`items` and `links` are sent complete) and honours `ifInState`
+(`stateMismatch`). Oversize or malformed input is refused with `invalidProperties`, never truncated.
 
 ### Templates
 

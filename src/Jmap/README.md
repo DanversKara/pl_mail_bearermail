@@ -13,7 +13,7 @@ key fits one — and `App\Service\Calendar\Change\CalendarChangeReader` is the
 `StateManager` equivalent behind `Calendar/changes` and `CalendarEvent/changes`.
 The same log is what CalDAV's sync-collection counts in.
 
-**34 methods**, 6 HTTP endpoints. Tested against ltt.rs (Bearer) and Sterna
+**36 methods**, 6 HTTP endpoints. Tested against ltt.rs (Bearer) and Sterna
 Mail (Basic).
 
 | | |
@@ -31,6 +31,7 @@ Mail (Basic).
 | `Contact/` | `autocomplete` (plMail extension: recipient suggestions) |
 | `Template/` | `get`, `set`, `render` (plMail extension: reusable messages) |
 | `TemplateFolder/` | `get`, `set` (plMail extension: the folders they are sorted into) |
+| `Note/` | `get`, `set` (plMail extension: Keep-style notes, checklists, links to events, files, contacts, mail) |
 
 ---
 
