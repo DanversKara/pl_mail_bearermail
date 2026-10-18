@@ -41,7 +41,7 @@ class ContactRepository extends ServiceEntityRepository
             ->addSelect('e')
             ->where('c.usr = :user')
             ->andWhere('c.trashedAt IS NULL')
-            ->andWhere('(c.displayName ILIKE :like OR c.givenName ILIKE :like OR c.familyName ILIKE :like OR c.nickname ILIKE :like OR c.company ILIKE :like OR e.email ILIKE :like)')
+            ->andWhere('(LOWER(c.displayName) LIKE :like OR LOWER(c.givenName) LIKE :like OR LOWER(c.familyName) LIKE :like OR LOWER(c.nickname) LIKE :like OR LOWER(c.company) LIKE :like OR LOWER(e.email) LIKE :like)')
             ->setParameter('user', $user)
             ->setParameter('like', '%' . $q . '%')
             ->orderBy('c.displayName', 'ASC')
@@ -89,7 +89,7 @@ class ContactRepository extends ServiceEntityRepository
             ->setParameter('user', $user);
 
         if (null !== $search && '' !== trim($search)) {
-            $qb->andWhere('(c.displayName ILIKE :search OR c.givenName ILIKE :search OR c.familyName ILIKE :search OR c.nickname ILIKE :search OR c.company ILIKE :search OR e.email ILIKE :search)')
+            $qb->andWhere('(LOWER(c.displayName) LIKE :search OR LOWER(c.givenName) LIKE :search OR LOWER(c.familyName) LIKE :search OR LOWER(c.nickname) LIKE :search OR LOWER(c.company) LIKE :search OR LOWER(e.email) LIKE :search)')
                 ->setParameter('search', '%' . mb_strtolower(trim($search)) . '%');
         }
 
@@ -132,7 +132,7 @@ class ContactRepository extends ServiceEntityRepository
             ->setParameter('user', $user);
 
         if (null !== $search && '' !== trim($search)) {
-            $qb->andWhere('(c.displayName ILIKE :search OR c.givenName ILIKE :search OR c.familyName ILIKE :search OR c.nickname ILIKE :search OR c.company ILIKE :search OR e.email ILIKE :search)')
+            $qb->andWhere('(LOWER(c.displayName) LIKE :search OR LOWER(c.givenName) LIKE :search OR LOWER(c.familyName) LIKE :search OR LOWER(c.nickname) LIKE :search OR LOWER(c.company) LIKE :search OR LOWER(e.email) LIKE :search)')
                 ->setParameter('search', '%' . mb_strtolower(trim($search)) . '%');
         }
 

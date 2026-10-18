@@ -139,7 +139,20 @@ jobs:
             - name: Run PHPUnit tests
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh
+                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh --log-junit /app/junit.xml || status=$?
+                  python3 - <<'PY'
+                  import xml.etree.ElementTree as ET
+                  try:
+                      root = ET.parse('junit.xml').getroot()
+                  except Exception as e:
+                      print('::error::no junit report: %s' % e); raise SystemExit
+                  for tc in root.iter('testcase'):
+                      for kind in ('failure', 'error'):
+                          for f in tc.findall(kind):
+                              msg = (f.get('message') or f.text or '').strip().replace('\n', ' ')[:600]
+                              print('::error::%s %s::%s' % (kind, tc.get('class', '') + '::' + tc.get('name', ''), msg))
+                  PY
+                  exit ${status:-0}
 
             - name: Collect the stack's log
               if: ${{ !cancelled() }}

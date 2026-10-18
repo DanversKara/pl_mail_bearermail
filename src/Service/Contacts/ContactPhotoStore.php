@@ -67,14 +67,13 @@ final class ContactPhotoStore
         $width = imagesx($src);
         $height = imagesy($src);
         $dst = $src;
-        if ($width > 0 && $height > 0) {
-            $scale = min(1.0, self::MAX_DIMENSION / max($width, $height));
-            if ($scale < 1.0) {
-                $scaled = imagescale($src, (int) max(1, round($width * $scale)));
-                if (false !== $scaled) {
-                    imagedestroy($src);
-                    $dst = $scaled;
-                }
+        // imagesx()/imagesy() are at least 1 for any image GD could read.
+        $scale = min(1.0, self::MAX_DIMENSION / max($width, $height));
+        if ($scale < 1.0) {
+            $scaled = imagescale($src, (int) max(1, round($width * $scale)));
+            if (false !== $scaled) {
+                imagedestroy($src);
+                $dst = $scaled;
             }
         }
 
