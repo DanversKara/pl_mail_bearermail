@@ -19,6 +19,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Note\NoteShare;
 use App\Twig\NoteFormatExtension;
+use App\Service\Note\NoteMediaRefused;
+use App\Service\Note\NoteMediaResponder;
+use App\Service\Note\NoteMediaStorage;
 use App\Repository\Note\NoteShareRepository;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -51,6 +54,8 @@ final class NoteController extends AbstractController
         private readonly CalendarEventRepository $events,
         private readonly EntityManagerInterface $em,
         private readonly NoteShareRepository $shares,
+        private readonly NoteMediaStorage $media,
+        private readonly NoteMediaResponder $mediaResponder,
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -188,6 +193,59 @@ final class NoteController extends AbstractController
         }
 
         return new JsonResponse(['ok' => true, 'subject' => '', 'html' => $html]);
+    }
+
+    /**
+     * Adds a picture, a drawing or a voice recording (multipart `file`, and
+     * `kind`: image, drawing or audio). Answers the new entry and its URL.
+     */
+    #[Route('/{id<\d+>}/media', name: 'media_add', methods: ['POST'])]
+    public function addMedia(int $id, Request $request): JsonResponse
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $file = $request->files->get('file');
+        if (false === $file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile || false === $file->isValid()) {
+            return new JsonResponse(['error' => 'No file arrived.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $entry = $this->media->add(
+                $note,
+                (string) $request->request->get('kind', 'image'),
+                $file->getClientOriginalName(),
+                (string) ($file->getClientMimeType() ?: $file->getMimeType()),
+                $file->getPathname(),
+            );
+        } catch (NoteMediaRefused $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse(['ok' => true, 'media' => $entry, 'url' => $this->generateUrl('app_notes_media_show', ['id' => $note->id, 'mediaId' => $entry['id']])]);
+    }
+
+    #[Route('/{id<\d+>}/media/{mediaId<[a-f0-9]{24}>}', name: 'media_show', methods: ['GET'])]
+    public function showMedia(int $id, string $mediaId): Response
+    {
+        return $this->mediaResponder->respond($this->ownNote($id), $mediaId) ?? throw $this->createNotFoundException();
+    }
+
+    #[Route('/{id<\d+>}/media/{mediaId<[a-f0-9]{24}>}/delete', name: 'media_delete', methods: ['POST'])]
+    public function deleteMedia(int $id, string $mediaId, Request $request): JsonResponse
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        if (false === $this->media->remove($note, $mediaId)) {
+            return new JsonResponse(['error' => 'No such file.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse(['ok' => true]);
     }
 
     /** The note as a .txt file: title, then the text or the checklist. */
@@ -432,6 +490,7 @@ final class NoteController extends AbstractController
                 $note->trashedAt = null;
                 break;
             case 'destroy':
+                $this->media->removeAll($note);
                 $this->em->remove($note);
                 $this->em->flush();
 

@@ -101,6 +101,17 @@ class Note
     public array $labels = [];
 
     /**
+     * Pictures, drawings and voice recordings on the note, in the order added:
+     * `{id, kind, name, type, size, createdAt}`, `kind` one of image, drawing,
+     * audio. The bytes are files beside the note (App\Service\Note\NoteMediaStorage);
+     * this is the list of them.
+     *
+     * @var list<array{id: string, kind: string, name: string, type: string, size: int, createdAt: string}>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
+    public array $media = [];
+
+    /**
      * When to remind the user about this note, in UTC, or null for no
      * reminder. app:notes:reminders sends it (an email to themselves and a
      * notification on their devices) once it comes due.
