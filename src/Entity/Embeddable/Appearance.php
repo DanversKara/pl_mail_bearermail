@@ -393,7 +393,7 @@ final class Appearance
     /**
      * The web portal's own icon, the tab and the top bar: 'logo' (whatever
      * Logo shows) or 'envelope' (the BearerMail envelope). Web only; the
-     * Android launcher follows the logo (appIcon above), not this.
+     * choice also sets appIcon: BearerMail's Android artwork, or the logo.
      */
     #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
     public string $webIcon = self::WEB_ICON_LOGO;
@@ -657,6 +657,8 @@ final class Appearance
 
         if (true === isset($data['webIcon']) && true === \in_array($data['webIcon'], self::WEB_ICONS, true)) {
             $this->webIcon = $data['webIcon'];
+            // The App icon picks the family Logo lists, and so the launcher.
+            $this->appIcon = self::WEB_ICON_ENVELOPE === $this->webIcon ? self::APP_ICON_BEARERMAIL : self::APP_ICON_LOGO;
         }
 
         if (true === isset($data['listAvatars'])) {

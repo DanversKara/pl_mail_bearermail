@@ -21,6 +21,8 @@ final class Version20261019020000 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql("ALTER TABLE \"user\" ADD appearance_web_icon VARCHAR(16) DEFAULT 'logo' NOT NULL");
+        // Whoever already chose BearerMail chose its family: envelope on the web.
+        $this->addSql("UPDATE \"user\" SET appearance_web_icon = 'envelope' WHERE appearance_app_icon = 'bearermail'");
     }
 
     public function down(Schema $schema): void

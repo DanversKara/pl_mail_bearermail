@@ -3206,10 +3206,11 @@ settings:
             unreadEmphasis: Ungelesene Zeilen
         web_icon:
             heading: 'App-Symbol'
-            subheading: 'Das Bild für den Browser-Tab und die obere Leiste. Das Symbol der Android-App folgt dem Logo unten.'
+            subheading: 'Das Bild für den Browser-Tab und die obere Leiste. Unter Logo stehen dann die passenden Android-Symbole.'
             logo: 'Das Logo unten'
             envelope: 'BearerMail-Umschlag'
         logo:
+            android_icons: 'Android-Symbole'
             colour: 'Farbe'
             heading: Logo
             icon: 'Symbol'

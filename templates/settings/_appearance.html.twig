@@ -381,7 +381,7 @@
                aria-pressed, so it is announced as well as drawn. #}
             {% set _motif = a.logoMotif %}
             {% set _classic = _motif.value == 'pl' %}
-            {% set _bearermail = a.appIcon == 'bearermail' %}
+            {% set _bearermail = a.webIcon == 'envelope' %}
             {% set _logoMode = not _classic and a.logoOriginal ? 'original' : (a.logoLinked ? 'linked' : 'independent') %}
             {% set _iconTile = 'group flex flex-col items-center gap-2 p-2 rounded-pane cursor-pointer hover:bg-hover transition-colors' %}
             {# `rounded-[22%]` is the tile's own corner (16 of 72 units, see
@@ -407,7 +407,7 @@
                             {% if choice == 'envelope' %}
                                 <img src="/icons/bearermail-web-192.png" alt="" width="48" height="48" class="size-12 object-contain">
                             {% else %}
-                                <img data-web-icon-logo src="{{ a.appIcon == 'bearermail' ? '/icons/bearermail-192.png' : logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="{{ _iconImage }}">
+                                <img data-web-icon-logo src="{{ logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="{{ _iconImage }}">
                             {% endif %}
                             <span class="text-sm text-ink">{{ ('settings.appearance.web_icon.' ~ choice)|trans }}</span>
                         </label>
@@ -421,6 +421,23 @@
                     <p class="text-xs text-ink-faint mt-0.5">{{ 'settings.appearance.logo.subheading'|trans }}</p>
                 </div>
 
+                {# The Android icons that go with the App icon above. BearerMail
+                   has its own artwork (one finished picture, no colours); the
+                   logo has the motifs and their colourways below. Only the set
+                   for the chosen App icon shows; appIcon follows webIcon. #}
+                <div data-logo-family="bearermail" {{ _bearermail ? '' : 'hidden' }}>
+                    <span class="block text-xs font-medium text-ink-muted mb-1.5" id="logo-bearermail-label">
+                        {{ 'settings.appearance.logo.android_icons'|trans }}
+                    </span>
+                    <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3" role="group" aria-labelledby="logo-bearermail-label">
+                        <button type="button" aria-pressed="true" class="{{ _iconTile }} ring-2 ring-accent">
+                            <img src="/icons/bearermail-round-192.png" alt="" width="48" height="48" class="size-12" decoding="async">
+                            <span class="text-xs text-ink-soft text-center leading-tight">BearerMail</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div data-logo-family="logo" {{ _bearermail ? 'hidden' : '' }}>
                 {# Step one. `data-logo-icon` is the tile's own URL — the icon
                    route for this motif in its original design, versioned — and
                    the one URL the script builds every other tile URL from: a
@@ -450,20 +467,9 @@
                                 <span class="text-xs text-ink-soft text-center leading-tight">{{ ('settings.appearance.logo.motif.' ~ motif.value)|trans }}</span>
                             </button>
                         {% endfor %}
-                        {# The BearerMail artwork: a finished picture, not a motif, so
-                           it has no colours. Picking it sets appIcon, which the tab
-                           icon, the top bar and the Android launcher icon follow;
-                           picking any motif above sets it back to the logo. #}
-                        <button type="button" data-app-icon-bearermail
-                                data-action="click->settings--appearance#pickBearermail"
-                                aria-pressed="{{ _bearermail ? 'true' : 'false' }}"
-                                class="{{ _iconTile }} {{ _bearermail ? 'ring-2 ring-accent' : '' }}">
-                            <img src="/icons/bearermail-192.png" alt="" width="48" height="48" class="{{ _iconImage }}" decoding="async">
-                            <span class="text-xs text-ink-soft text-center leading-tight">BearerMail</span>
-                        </button>
                     </div>
                     <input type="hidden" data-settings--appearance-field="appIcon"
-                           data-settings--appearance-target="appIcon" value="{{ a.appIcon }}">
+                           data-settings--appearance-target="appIcon" value="{{ _bearermail ? 'bearermail' : 'logo' }}">
                     <input type="hidden" data-settings--appearance-field="logoMotif"
                            data-settings--appearance-target="logoMotif" value="{{ _motif.value }}">
                 </div>
@@ -476,7 +482,7 @@
                    always shown, so every icon offers its colours; clicking one
                    is the answer "Choose independently" (pickLogo). The whole
                    step hides while the BearerMail artwork is the icon. #}
-                <div data-settings--appearance-target="logoColour" {{ _bearermail ? 'hidden' : '' }}>
+                <div>
                 <div class="mb-4">
                     <span class="block text-xs font-medium text-ink-muted mb-1.5" id="logo-paint-label">
                         {{ 'settings.appearance.logo.colour'|trans }}
@@ -530,6 +536,7 @@
                             <span class="text-xs text-ink-soft text-center leading-tight">{{ ('settings.appearance.logo.style.' ~ style.value)|trans }}</span>
                         </button>
                     {% endfor %}
+                </div>
                 </div>
                 </div>
                 <input type="hidden" data-settings--appearance-target="logoStyle" data-settings--appearance-field="logoStyle" value="{{ a.logoStyle.value }}">

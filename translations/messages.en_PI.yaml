@@ -3060,10 +3060,11 @@ settings:
             unreadEmphasis: Unread rows
         web_icon:
             heading: 'Ship''s flag'
-            subheading: 'The colours flown on yer browser tab an'' the top bar. The Android app''s icon follows the Logo below.'
-            logo: 'The logo below'
+            subheading: 'The colours flown on yer browser tab an'' the top bar. Logo below then lists the Android icons to match.'
+            logo: 'pl logos'
             envelope: 'BearerMail envelope'
         logo:
+            android_icons: 'Android icons'
             colour: 'Colours'
             heading: 'Ship''s mark'
             icon: 'Figurehead'

@@ -12,7 +12,7 @@ export default class extends Controller {
     };
 
     static targets = ['paneAlpha', 'paneBlur', 'radius', 'scrimAlpha', 'accent', 'theme',
-        'logoMotif', 'logoOriginal', 'logoOriginalOption', 'logoStyle', 'logoLinked', 'logoGrid', 'appIcon', 'logoColour', 'importInput', 'uploadInput',
+        'logoMotif', 'logoOriginal', 'logoOriginalOption', 'logoStyle', 'logoLinked', 'logoGrid', 'appIcon', 'importInput', 'uploadInput',
         'inkColor', 'inkColorField', 'inkDefault', 'inkCustom', 'inkDerived', 'inkMuted', 'inkMutedField', 'inkFaint', 'inkFaintField',
         'mainTint', 'mainTintField', 'mainTintDefault', 'mainTintCustom', 'mainAlpha', 'mainAlphaField', 'mainAlphaMatch', 'mainAlphaCustom',
         'backgroundSolid', 'backgroundSolidSwatch',
@@ -403,7 +403,6 @@ export default class extends Controller {
 
         this.logoMotifTarget.value = motif;
         this.logoOriginalTarget.value = motif === 'pl' ? '0' : '1';
-        this.setAppIcon('logo');
 
         this.element.querySelectorAll('[data-logo-motif]').forEach((button) => {
             this.markSelected(button, button.dataset.logoMotif === motif);
@@ -460,43 +459,28 @@ export default class extends Controller {
      * The BearerMail tile: a finished picture used as the app icon (tab, top
      * bar, Android launcher). It has no colours, so step two hides.
      */
-    /** App icon (web only): the logo, or the BearerMail envelope. */
+    /**
+     * App icon: the logo, or BearerMail. It sets the top bar and the tab, and
+     * picks which Android icons Logo lists — BearerMail's own artwork, or the
+     * motifs and their colours — so the launcher (appIcon) follows it.
+     */
     pickWebIcon() {
+        const envelope = this.webEnvelope();
+
+        if (this.hasAppIconTarget) {
+            this.appIconTarget.value = envelope ? 'bearermail' : 'logo';
+        }
+
+        this.element.querySelectorAll('[data-logo-family]').forEach((family) => {
+            family.hidden = (family.dataset.logoFamily === 'bearermail') !== envelope;
+        });
+
         this.repaintLogo();
         this.queue();
     }
 
     webEnvelope() {
         return this.element.querySelector('[data-settings--appearance-field="webIcon"]:checked')?.value === 'envelope';
-    }
-
-    pickBearermail() {
-        this.setAppIcon('bearermail');
-        this.repaintLogo();
-        this.queue();
-    }
-
-    setAppIcon(value) {
-        if (!this.hasAppIconTarget) {
-            return;
-        }
-
-        const bearermail = value === 'bearermail';
-        this.appIconTarget.value = value;
-
-        if (this.hasLogoColourTarget) {
-            this.logoColourTarget.hidden = bearermail;
-        }
-
-        this.element.querySelectorAll('[data-app-icon-bearermail]').forEach((button) => {
-            this.markSelected(button, bearermail);
-        });
-
-        if (bearermail) {
-            this.element.querySelectorAll('[data-logo-motif]').forEach((button) => {
-                this.markSelected(button, false);
-            });
-        }
     }
 
     /**
@@ -592,29 +576,26 @@ export default class extends Controller {
         const motif = this.logoMotifTarget.value;
         const paint = this.logoPaint();
         const envelope = this.webEnvelope();
-        const bearermail = !envelope && this.hasAppIconTarget && this.appIconTarget.value === 'bearermail';
 
         // The App icon choice's "logo" tile previews whatever Logo shows.
         this.element.querySelectorAll('[data-web-icon-logo]').forEach((image) => {
-            this.setIfChanged(image, 'src', this.hasAppIconTarget && this.appIconTarget.value === 'bearermail'
-                ? '/icons/bearermail-192.png'
-                : this.iconUrl(motif, paint));
+            this.setIfChanged(image, 'src', this.iconUrl(motif, paint));
         });
 
         document.querySelectorAll('[data-logo-live-envelope]').forEach((image) => {
             image.hidden = !envelope;
         });
         document.querySelectorAll('[data-logo-live-bearermail]').forEach((image) => {
-            image.hidden = !bearermail;
+            image.hidden = true;
         });
 
-        if (envelope || bearermail) {
+        if (envelope) {
             document.querySelectorAll('[data-logo-live-mark], [data-logo-live-icon]').forEach((el) => {
                 el.hidden = true;
             });
             document.querySelectorAll('link[rel="icon"]').forEach((link) => {
                 link.setAttribute('type', 'image/png');
-                this.setIfChanged(link, 'href', envelope ? '/icons/bearermail-web-192.png' : '/icons/bearermail-192.png');
+                this.setIfChanged(link, 'href', '/icons/bearermail-web-192.png');
             });
 
             return;

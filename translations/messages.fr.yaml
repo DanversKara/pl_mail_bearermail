@@ -3377,10 +3377,11 @@ settings:
             unreadEmphasis: Lignes non lues
         web_icon:
             heading: 'Icône de l''app'
-            subheading: 'L''image de l''onglet du navigateur et de la barre du haut. L''icône de l''app Android suit le logo ci-dessous.'
+            subheading: 'L''image de l''onglet du navigateur et de la barre du haut. Logo ci-dessous liste ensuite les icônes Android assorties.'
             logo: 'Le logo ci-dessous'
             envelope: 'Enveloppe BearerMail'
         logo:
+            android_icons: 'Icônes Android'
             colour: 'Couleur'
             heading: Logo
             icon: 'Icône'
