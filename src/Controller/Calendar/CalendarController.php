@@ -93,6 +93,7 @@ final class CalendarController extends AbstractController
     private const string SCOPE_INSTANCE = 'instance';
 
     public function __construct(
+        private readonly \App\Repository\Note\NoteRepository $noteRepository,
         private readonly CalendarRepository     $calendars,
         private readonly CalendarRangeReader    $rangeReader,
         private readonly CalendarEventWriter    $writer,
@@ -312,6 +313,7 @@ final class CalendarController extends AbstractController
             'recurrenceId' => $this->instances->identify($instance),
             'source'       => $source,
             'returnTo'     => $this->returnTo($request),
+            'notes'        => $this->noteRepository->findLinkedTo($this->currentUser(), 'event', (string) $event->id),
         ]);
     }
 

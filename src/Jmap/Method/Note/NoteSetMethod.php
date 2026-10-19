@@ -34,12 +34,13 @@ final class NoteSetMethod implements JmapMethod
 {
     use TemplateMethodSupport;
 
-    private const array SETTABLE = ['title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links'];
+    private const array SETTABLE = ['title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links', 'labels'];
 
     private const int MAX_BODY  = 50_000;
     private const int MAX_ITEMS = 300;
     private const int MAX_ITEM  = 1_000;
     private const int MAX_LINKS = 50;
+    private const int MAX_LABELS = 20;
 
     public function __construct(
         private readonly NoteRepository         $notes,
@@ -202,6 +203,10 @@ final class NoteSetMethod implements JmapMethod
         if (true === array_key_exists('links', $properties)) {
             $note->links = $this->links($properties['links']);
         }
+
+        if (true === array_key_exists('labels', $properties)) {
+            $note->labels = $this->labels($properties['labels']);
+        }
     }
 
     private function bool(mixed $value, string $property): bool
@@ -298,6 +303,22 @@ final class NoteSetMethod implements JmapMethod
         }
 
         return array_values($links);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function labels(mixed $value): array
+    {
+        if (null === $value) {
+            return [];
+        }
+
+        if (false === is_array($value) || count($value) > self::MAX_LABELS) {
+            throw new MethodException('invalidProperties', sprintf('"labels" must be a list of at most %d names.', self::MAX_LABELS));
+        }
+
+        return Note::cleanLabels($value);
     }
 
     private function owned(string $id, JmapContext $context): ?Note

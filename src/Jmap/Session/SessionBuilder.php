@@ -158,6 +158,7 @@ final class SessionBuilder
                     'maxBody'   => 50_000,
                     'maxItems'  => 300,
                     'maxLinks'  => 50,
+                    'maxLabels' => 20,
                 ],
                 Capability::INBOX_TABS => new \stdClass(),
             ] + (true === $this->drivePolicy?->isDisabled($user) ? [] : [

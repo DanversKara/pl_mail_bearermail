@@ -7,10 +7,13 @@ namespace App\Controller\Notes;
 use App\Controller\ChecksCsrf;
 use App\Entity\Note\Note;
 use App\Entity\User\User;
+use App\Repository\Calendar\CalendarEventRepository;
+use App\Repository\Contacts\ContactRepository;
 use App\Repository\Note\NoteRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,10 +23,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * Keep-style notes in the browser: the same notes the Android app keeps
  * through Note/get and Note/set, on the same `user_note` rows.
  *
- * Plain forms and redirects, no script: a wall of cards (pinned first), a
- * "take a note" form on top, and a page per note to edit its text or
- * checklist, colour, pin, archive and bin. The limits are Note/set's, so a
- * note saved here always reads back in the app and the other way round.
+ * The wall is server-rendered; the editor saves itself as you type
+ * (notes--editor posts the whole note to autosave, debounced), the way Keep
+ * does, so there is no Save button to forget. The limits are Note/set's, so a
+ * note written here always reads back in the app and the other way round.
  */
 #[Route('/notes', name: 'app_notes_')]
 #[IsGranted('ROLE_USER')]
@@ -36,37 +39,54 @@ final class NoteController extends AbstractController
     private const int MAX_BODY  = 50_000;
     private const int MAX_ITEMS = 300;
     private const int MAX_ITEM  = 1_000;
+    private const int MAX_LINKS = 50;
 
     public function __construct(
         private readonly NoteRepository $notes,
+        private readonly ContactRepository $contacts,
+        private readonly CalendarEventRepository $events,
         private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(Request $request): Response
     {
-        $view = (string) $request->query->get('view', 'notes');
-        $view = \in_array($view, self::VIEWS, true) ? $view : 'notes';
-        $q    = trim((string) $request->query->get('q', ''));
+        $view  = (string) $request->query->get('view', 'notes');
+        $view  = \in_array($view, self::VIEWS, true) ? $view : 'notes';
+        $q     = trim((string) $request->query->get('q', ''));
+        $label = trim((string) $request->query->get('label', ''));
+
+        $all    = $this->notes->findForUser($this->user());
+        $labels = [];
+        foreach ($all as $note) {
+            foreach ($note->labels as $name) {
+                $labels[mb_strtolower($name)] ??= $name;
+            }
+        }
+        natcasesort($labels);
 
         $shown = array_values(array_filter(
-            $this->notes->findForUser($this->user()),
+            $all,
             static fn (Note $note): bool => match ($view) {
                 'trash'   => null !== $note->trashedAt,
                 'archive' => null === $note->trashedAt && $note->archived,
                 default   => null === $note->trashedAt && false === $note->archived,
-            } && ('' === $q || self::matches($note, $q)),
+            } && ('' === $q || self::matches($note, $q))
+              && ('' === $label || \in_array(mb_strtolower($label), array_map('mb_strtolower', $note->labels), true)),
         ));
 
         return $this->render('notes/list.html.twig', [
             'view'   => $view,
             'q'      => $q,
+            'label'  => $label,
+            'labels' => array_values($labels),
             'pinned' => array_values(array_filter($shown, static fn (Note $n): bool => 'notes' === $view && $n->pinned)),
             'others' => array_values(array_filter($shown, static fn (Note $n): bool => 'notes' !== $view || false === $n->pinned)),
             'colors' => Note::COLORS,
         ]);
     }
 
+    /** The quick "take a note" form on the wall. */
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request): Response
     {
@@ -76,8 +96,7 @@ final class NoteController extends AbstractController
         $note->usr = $this->user();
         $this->applyForm($note, $request);
 
-        if ('' === $note->title && '' === $note->body && [] === $note->items) {
-            // An empty "take a note" box closed without typing: nothing to keep.
+        if (true === self::isEmpty($note)) {
             return $this->redirectToRoute('app_notes_list', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -87,15 +106,60 @@ final class NoteController extends AbstractController
         return $this->redirectToRoute('app_notes_list', [], Response::HTTP_SEE_OTHER);
     }
 
-    #[Route('/{id<\d+>}', name: 'edit', methods: ['GET'])]
-    public function edit(int $id): Response
+    /**
+     * A new note straight into the editor, optionally already linked — "Add
+     * note" on a contact or an event, or "New list". The editor deletes it
+     * again on Close if nothing was typed.
+     */
+    #[Route('/new', name: 'new', methods: ['POST'])]
+    public function new(Request $request): Response
     {
+        $this->assertCsrf($request, 'notes_new');
+
+        $note      = new Note();
+        $note->usr = $this->user();
+
+        if ($request->request->getBoolean('checklist')) {
+            $note->items = [['text' => '', 'done' => false]];
+        }
+
+        $link = self::link(
+            (string) $request->request->get('link_type', ''),
+            (string) $request->request->get('link_id', ''),
+            (string) $request->request->get('link_title', ''),
+        );
+        if (null !== $link) {
+            $note->links = [$link];
+        }
+
+        $this->em->persist($note);
+        $this->em->flush();
+
+        $params = ['id' => $note->id];
+        $back   = (string) $request->request->get('return', '');
+        if (str_starts_with($back, '/') && false === str_starts_with($back, '//')) {
+            $params['return'] = $back;
+        }
+
+        return $this->redirectToRoute('app_notes_edit', $params, Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/{id<\d+>}', name: 'edit', methods: ['GET'])]
+    public function edit(int $id, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $back = (string) $request->query->get('return', '');
+
         return $this->render('notes/edit.html.twig', [
-            'note'   => $this->ownNote($id),
-            'colors' => Note::COLORS,
+            'note'     => $note,
+            'colors'   => Note::COLORS,
+            'contacts' => $this->contacts->findForUser($this->user(), null, null, 'name', 500, 0),
+            'events'   => $this->events->findForNoteLinks($this->user()),
+            'returnTo' => str_starts_with($back, '/') && false === str_starts_with($back, '//') ? $back : null,
         ]);
     }
 
+    /** Fallback for the editor without script: the whole form, posted. */
     #[Route('/{id<\d+>}', name: 'update', methods: ['POST'])]
     public function update(int $id, Request $request): Response
     {
@@ -104,7 +168,114 @@ final class NoteController extends AbstractController
         $this->applyForm($note, $request);
         $this->em->flush();
 
-        return $this->back($note);
+        return $this->redirectToRoute('app_notes_edit', ['id' => $note->id], Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * The editor's autosave: the whole note as JSON — title, body or items,
+     * colour, labels — replacing what is stored, as Note/set does.
+     */
+    #[Route('/{id<\d+>}/autosave', name: 'autosave', methods: ['POST'])]
+    public function autosave(int $id, Request $request): JsonResponse
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $data = json_decode($request->getContent(), true);
+        if (false === \is_array($data)) {
+            return new JsonResponse(['error' => 'Malformed note.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $note->title = self::line($data['title'] ?? '');
+        $note->color = \in_array($data['color'] ?? null, Note::COLORS, true) ? $data['color'] : null;
+        $note->labels = Note::cleanLabels(\is_array($data['labels'] ?? null) ? $data['labels'] : []);
+
+        if (true === ($data['checklist'] ?? false)) {
+            $items = [];
+            foreach (\is_array($data['items'] ?? null) ? $data['items'] : [] as $item) {
+                if (false === \is_array($item)) {
+                    continue;
+                }
+                $items[] = [
+                    'text' => mb_substr(self::line($item['text'] ?? ''), 0, self::MAX_ITEM),
+                    'done' => true === ($item['done'] ?? false),
+                ];
+            }
+            $note->items = \array_slice($items, 0, self::MAX_ITEMS);
+            // Keep keeps an emptied checklist a checklist: one blank line.
+            if ([] === $note->items) {
+                $note->items = [['text' => '', 'done' => false]];
+            }
+            $note->body = '';
+        } else {
+            $note->body  = self::text($data['body'] ?? '');
+            $note->items = [];
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse(['ok' => true, 'updatedAt' => $note->updatedAt->format(\DATE_ATOM)]);
+    }
+
+    /** Close in the editor: an untouched new note is not kept. */
+    #[Route('/{id<\d+>}/close', name: 'close', methods: ['POST'])]
+    public function close(int $id, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $back = (string) $request->request->get('return', '');
+        $view = null !== $note->trashedAt ? 'trash' : ($note->archived ? 'archive' : 'notes');
+
+        if (true === self::isEmpty($note)) {
+            $this->em->remove($note);
+            $this->em->flush();
+        }
+
+        if (str_starts_with($back, '/') && false === str_starts_with($back, '//')) {
+            return $this->redirect($back, Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->redirectToRoute('app_notes_list', 'notes' === $view ? [] : ['view' => $view], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/{id<\d+>}/link', name: 'link', methods: ['POST'])]
+    public function linkTo(int $id, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        // The picker sends "type|id|title" in one select value.
+        $parts = explode('|', (string) $request->request->get('target', ''), 3);
+        $link  = self::link($parts[0], $parts[1] ?? '', $parts[2] ?? '');
+
+        if (null !== $link && \count($note->links) < self::MAX_LINKS) {
+            $links = [];
+            foreach ([...$note->links, $link] as $l) {
+                $links[$l['type'] . '|' . $l['id']] = $l;
+            }
+            $note->links = array_values($links);
+            $this->em->flush();
+        }
+
+        return $this->redirectToRoute('app_notes_edit', ['id' => $note->id], Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/{id<\d+>}/unlink', name: 'unlink', methods: ['POST'])]
+    public function unlinkFrom(int $id, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $type = (string) $request->request->get('type', '');
+        $lid  = (string) $request->request->get('link_id', '');
+        $note->links = array_values(array_filter(
+            $note->links,
+            static fn (array $l): bool => !(($l['type'] ?? '') === $type && ($l['id'] ?? '') === $lid),
+        ));
+        $this->em->flush();
+
+        return $this->redirectToRoute('app_notes_edit', ['id' => $note->id], Response::HTTP_SEE_OTHER);
     }
 
     /** One-click actions from a card or the editor: pin, archive, bin, restore, delete, tick an item. */
@@ -151,24 +322,33 @@ final class NoteController extends AbstractController
 
         $this->em->flush();
 
-        return $this->back($note, (string) $request->request->get('return', ''));
+        if ('edit' === (string) $request->request->get('return', '')) {
+            return $this->redirectToRoute('app_notes_edit', ['id' => $note->id], Response::HTTP_SEE_OTHER);
+        }
+
+        $view = null !== $note->trashedAt ? 'trash' : ($note->archived ? 'archive' : 'notes');
+
+        return $this->redirectToRoute('app_notes_list', 'notes' === $view ? [] : ['view' => $view], Response::HTTP_SEE_OTHER);
     }
 
     // ── Private ───────────────────────────────────────────────────────────
 
     /**
-     * Title, colour, and either the text or the checklist, from the form.
-     * A checklist arrives as one item per line; a line starting "[x]" is done.
+     * Title, colour, labels, and either the text or the checklist, from the
+     * plain form. A checklist arrives as one item per line; "[x]" marks done.
      */
     private function applyForm(Note $note, Request $request): void
     {
-        $note->title = mb_substr(trim((string) preg_replace('/\s+/u', ' ', (string) $request->request->get('title', ''))), 0, 255);
+        $note->title = self::line($request->request->get('title', ''));
 
         $color       = (string) $request->request->get('color', '');
         $note->color = \in_array($color, Note::COLORS, true) ? $color : null;
 
-        $text = str_replace(["\r\n", "\r"], "\n", (string) $request->request->get('body', ''));
-        $text = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
+        if ($request->request->has('labels')) {
+            $note->labels = Note::cleanLabels(explode(',', (string) $request->request->get('labels', '')));
+        }
+
+        $text = self::text($request->request->get('body', ''));
 
         if ($request->request->getBoolean('checklist')) {
             $items = [];
@@ -183,30 +363,65 @@ final class NoteController extends AbstractController
             $note->items = \array_slice($items, 0, self::MAX_ITEMS);
             $note->body  = '';
         } else {
-            $note->body  = mb_substr(trim($text), 0, self::MAX_BODY);
+            $note->body  = $text;
             $note->items = [];
         }
     }
 
+    /**
+     * @return array{type: string, id: string, title: ?string}|null
+     */
+    private static function link(string $type, string $id, string $title): ?array
+    {
+        if (false === \in_array($type, Note::LINK_TYPES, true) || '' === $id || mb_strlen($id) > 191) {
+            return null;
+        }
+
+        $title = self::line($title);
+
+        return ['type' => $type, 'id' => $id, 'title' => '' === $title ? null : $title];
+    }
+
+    private static function line(mixed $value): string
+    {
+        $text = \is_scalar($value) ? (string) $value : '';
+
+        return mb_substr(trim((string) preg_replace('/\s+/u', ' ', strip_tags($text))), 0, 255);
+    }
+
+    private static function text(mixed $value): string
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", \is_scalar($value) ? (string) $value : '');
+        $text = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
+
+        return mb_substr(rtrim($text), 0, self::MAX_BODY);
+    }
+
+    private static function isEmpty(Note $note): bool
+    {
+        // Links do not count: "Add note" on a contact starts with one, and
+        // closing it untouched should not leave a blank card behind.
+        if ('' !== $note->title || '' !== trim($note->body)) {
+            return false;
+        }
+
+        foreach ($note->items as $item) {
+            if ('' !== trim((string) ($item['text'] ?? ''))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static function matches(Note $note, string $q): bool
     {
-        $haystack = $note->title . "\n" . $note->body;
+        $haystack = $note->title . "\n" . $note->body . "\n" . implode("\n", $note->labels);
         foreach ($note->items as $item) {
             $haystack .= "\n" . ($item['text'] ?? '');
         }
 
         return false !== mb_stripos($haystack, $q);
-    }
-
-    private function back(Note $note, string $return = ''): Response
-    {
-        if ('edit' === $return) {
-            return $this->redirectToRoute('app_notes_edit', ['id' => $note->id], Response::HTTP_SEE_OTHER);
-        }
-
-        $view = null !== $note->trashedAt ? 'trash' : ($note->archived ? 'archive' : 'notes');
-
-        return $this->redirectToRoute('app_notes_list', 'notes' === $view ? [] : ['view' => $view], Response::HTTP_SEE_OTHER);
     }
 
     private function ownNote(int $id): Note

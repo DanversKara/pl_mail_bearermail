@@ -4873,6 +4873,29 @@ contacts:
     validation:
         name_required: 'Gib dem Kontakt einen Namen.'
 notes:
+    saving: 'Wird gespeichert…'
+    saved: 'Gespeichert'
+    save_failed: 'Nicht gespeichert — Verbindung prüfen'
+    list_item: 'Listeneintrag'
+    remove_item: 'Eintrag entfernen'
+    labels_placeholder: 'Labels, durch Kommas getrennt'
+    unlink: 'Verknüpfung entfernen'
+    add_link: 'Verknüpfen'
+    show_checkboxes: 'Kästchen anzeigen'
+    hide_checkboxes: 'Kästchen ausblenden'
+    undo: 'Rückgängig'
+    redo: 'Wiederholen'
+    close: 'Schließen'
+    add_note: 'Notiz hinzufügen'
+    none_linked: 'Noch keine Notizen.'
+    new_note: 'Neue Notiz'
+    new_list: 'Neue Liste'
+    format:
+        bold: 'Fett'
+        italic: 'Kursiv'
+        underline: 'Unterstrichen'
+        heading: 'Überschrift'
+        bullets: 'Aufzählung'
     nav: Notizen
     title: Notizen
     back: Zurück

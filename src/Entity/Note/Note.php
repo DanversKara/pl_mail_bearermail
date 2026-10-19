@@ -89,4 +89,40 @@ class Note
      */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
     public array $links = [];
+
+    /**
+     * Keep-style labels: short names the user groups notes by, case kept as
+     * typed, each at most once.
+     *
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
+    public array $labels = [];
+
+    /**
+     * Labels as stored: trimmed, one line, at most 50 characters, empty ones
+     * dropped, each name once (compared without case), at most 20.
+     *
+     * @param array<mixed> $names
+     *
+     * @return list<string>
+     */
+    public static function cleanLabels(array $names): array
+    {
+        $out = [];
+
+        foreach ($names as $name) {
+            if (false === is_string($name)) {
+                continue;
+            }
+
+            $name = mb_substr(trim((string) preg_replace('/\s+/u', ' ', strip_tags($name))), 0, 50);
+
+            if ('' !== $name) {
+                $out[mb_strtolower($name)] ??= $name;
+            }
+        }
+
+        return \array_slice(array_values($out), 0, 20);
+    }
 }

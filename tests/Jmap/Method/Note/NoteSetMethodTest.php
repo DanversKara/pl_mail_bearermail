@@ -106,6 +106,17 @@ final class NoteSetMethodTest extends JmapTestCase
         self::assertSame([['type' => 'file', 'id' => 'f1', 'title' => 'New']], $note['links']);
     }
 
+    public function testLabelsAreTrimmedAndEachKeptOnce(): void
+    {
+        $id = $this->set->handle(['create' => ['n' => [
+            'title'  => 'x',
+            'labels' => [' Work ', 'work', 'Shopping', '', 42],
+        ]]], $this->context())['created']['n']['id'];
+
+        $note = $this->get->handle(['ids' => [$id]], $this->context())['list'][0];
+        self::assertSame(['Work', 'Shopping'], $note['labels']);
+    }
+
     public function testAStaleStateIsRefusedAndDestroyRemovesTheNote(): void
     {
         $id = $this->set->handle(['create' => ['n' => ['title' => 'x']]], $this->context())['created']['n']['id'];

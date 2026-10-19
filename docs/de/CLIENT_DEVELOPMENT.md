@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:737c62ba5cff4ab3acb6d710723b47eb44487a9d -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:907f933d8bf775fdc6e6de4e01f94580326e10d4 -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -1209,6 +1209,8 @@ Größenlimits `maxBody`, `maxItems`, `maxLinks`.
 | `pinned`, `archived` | Booleans. |
 | `trashed` | Boolean. Der Server merkt sich den Zeitpunkt; der Papierkorb wird noch von nichts geleert. |
 | `links` | Liste von `{type, id, title}`, `type` aus `linkTypes` (`event`, `file`, `contact`, `mail`), höchstens `maxLinks`. |
+| `labels` | Liste von Label-Namen, getrimmt und jeder nur einmal (ohne Groß-/Kleinschreibung), höchstens `maxLabels`. |
+| Formatierung von `body` | Klartext mit einer kleinen Markdown-Teilmenge, die beide Clients darstellen: `**fett**`, `*kursiv*`, `__unterstrichen__`, eine Zeile mit `# ` am Anfang ist eine Überschrift, eine mit `- ` ein Aufzählungspunkt. |
 | `createdAt`, `updatedAt` | UTCDate, nur lesbar. |
 
 **Verknüpfungen sind Verweise, keine Fremdschlüssel.** `id` ist die Id, die das andere Objekt auf seiner
