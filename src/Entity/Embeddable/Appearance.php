@@ -378,6 +378,19 @@ final class Appearance
     public bool $listAvatars = true;
 
     /**
+     * Which picture is the app's icon: 'logo' (the logo chosen above, in its
+     * paint) or 'bearermail' (the BearerMail artwork, a fixed picture that is
+     * not repainted). Applies to the tab icon, the top bar and — through the
+     * Appearance object over JMAP — the Android launcher icon.
+     */
+    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
+    public string $appIcon = self::APP_ICON_LOGO;
+
+    public const string APP_ICON_LOGO = 'logo';
+    public const string APP_ICON_BEARERMAIL = 'bearermail';
+    public const array APP_ICONS = [self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL];
+
+    /**
      * The unread count beside each inbox tab's name.
      *
      * ON by default, because it answers a question nothing else on the strip
@@ -507,6 +520,7 @@ final class Appearance
             'mainAlpha' => $this->mainAlpha,
             'accountCorner' => $this->accountCorner,
             'listAvatars' => $this->listAvatars,
+            'appIcon' => $this->appIcon,
             'tabUnreadCount' => $this->tabUnreadCount,
             'previewLines' => $this->previewLines,
             'unreadEmphasis' => $this->unreadEmphasis->value,
@@ -622,6 +636,10 @@ final class Appearance
 
         if (true === isset($data['accountCorner'])) {
             $this->accountCorner = self::boolean($data['accountCorner']);
+        }
+
+        if (true === isset($data['appIcon']) && true === \in_array($data['appIcon'], self::APP_ICONS, true)) {
+            $this->appIcon = $data['appIcon'];
         }
 
         if (true === isset($data['listAvatars'])) {

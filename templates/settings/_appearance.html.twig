@@ -386,6 +386,33 @@
             {# `rounded-[22%]` is the tile's own corner (16 of 72 units, see
                branding/icon.svg.twig), so the hairline follows the picture's
                edge — a pale icon on a pale card has no other edge to read. #}
+            {# App icon: the logo below (in its paint), or the BearerMail artwork —
+               a fixed picture. Used for the tab icon, the top bar and the Android
+               launcher icon, which follows this setting. A radio pair carrying the
+               field itself, so save() sends the checked one. #}
+            <section>
+                <div class="mb-3">
+                    <h3 class="text-sm font-semibold text-ink">{{ 'settings.appearance.app_icon.heading'|trans }}</h3>
+                    <p class="text-xs text-ink-faint mt-0.5">{{ 'settings.appearance.app_icon.subheading'|trans }}</p>
+                </div>
+                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label="{{ 'settings.appearance.app_icon.heading'|trans }}">
+                    {% for choice in ['logo', 'bearermail'] %}
+                        <label class="relative flex items-center gap-3 rounded-xl border border-line px-3 py-2 cursor-pointer hover:bg-hover has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                            <input type="radio" name="appIcon" value="{{ choice }}" class="sr-only"
+                                   data-settings--appearance-field="appIcon"
+                                   data-action="change->settings--appearance#queue"
+                                   {{ a.appIcon == choice ? 'checked' }}>
+                            {% if choice == 'bearermail' %}
+                                <img src="/icons/bearermail-192.png" alt="" width="48" height="48" class="size-12 rounded-[22%] ring-1 ring-line">
+                            {% else %}
+                                <img src="{{ logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="size-12 rounded-[22%] ring-1 ring-line">
+                            {% endif %}
+                            <span class="text-sm text-ink">{{ ('settings.appearance.app_icon.' ~ choice)|trans }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </section>
+
             {% set _iconImage = 'size-12 rounded-[22%] ring-1 ring-line' %}
             <section>
                 <div class="mb-4">
