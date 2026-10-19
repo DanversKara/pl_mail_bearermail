@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Service\Mail;
 
+use App\Domain\Enum\Mail\SyncTrigger;
 use App\Entity\Mail\Account;
 use App\Entity\User\User;
+use App\Infrastructure\Messaging\Message\SyncAccountMessage;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Gives a person a working mailbox on the built-in mail server: creates it in
@@ -19,6 +22,7 @@ final readonly class MailboxProvisioner
     public function __construct(
         private MailServerMailboxes $mailboxes,
         private AccountCreator $accountCreator,
+        private ?MessageBusInterface $bus = null,
     ) {}
 
     /**
@@ -50,6 +54,17 @@ final readonly class MailboxProvisioner
         $account->smtpEncryption = 'none';
 
         $this->accountCreator->create($account, $user);
+
+        // Its first sync now, not at the next quarter-hour poll: that sync is
+        // what finds INBOX, and only then does the IMAP supervisor start
+        // IDLE on it — until then new mail sat unseen for up to 15 minutes.
+        if (null !== $this->bus && null !== $account->id) {
+            try {
+                $this->bus->dispatch(new SyncAccountMessage((int) $account->id, SyncTrigger::Manual));
+            } catch (\Throwable) {
+                // The scheduled sync picks it up anyway.
+            }
+        }
 
         return $account;
     }
