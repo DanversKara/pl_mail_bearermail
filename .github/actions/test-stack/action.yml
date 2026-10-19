@@ -150,7 +150,8 @@ runs:
             --volume "$HOME/.cache/composer:/composer-cache" \
             --env COMPOSER_CACHE_DIR=/composer-cache \
             --entrypoint docker-php-entrypoint \
-            app composer install --prefer-dist --no-progress --no-interaction && break
+            app composer install --prefer-dist --no-progress --no-interaction > /tmp/composer.log 2>&1 && break
+          tail -40 /tmp/composer.log | sed 's/^/::error::DIAG /'
 
           if [ "$attempt" = 3 ]; then
             exit 1
