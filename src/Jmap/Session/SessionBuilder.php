@@ -159,6 +159,10 @@ final class SessionBuilder
                     'maxItems'  => 300,
                     'maxLinks'  => 50,
                     'maxLabels' => 20,
+                    // Pictures, drawings and voice notes: {noteId} filled in by
+                    // the client (see NoteMediaApiController).
+                    'mediaUrl'  => $base.'/jmap/notes/{noteId}/media',
+                    'maxMedia'  => \App\Service\Note\NoteMediaStorage::MAX_ITEMS,
                 ],
                 Capability::INBOX_TABS => new \stdClass(),
             ] + (true === $this->drivePolicy?->isDisabled($user) ? [] : [
