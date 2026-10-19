@@ -68,7 +68,13 @@ test("an event of a day or more is one bar, and any piece of it lights all of it
     await expect(shading.nth(1)).not.toHaveClass(/\bis-lit\b/);
 
     // From the middle day's shading, near its top, where no other block can be
-    // in the way: the bar lights, and so does the day after.
+    // in the way: the bar lights, and so does the day after. The grid opens
+    // scrolled to the current hour, and from about 04:00 on that puts the top
+    // of the day under the sticky day headers, which then take the pointer —
+    // so scroll to midnight first.
+    await page
+        .locator('[data-calendar--time-grid-target="scroller"]')
+        .evaluate((el) => el.scrollTo({ top: 0 }));
     await shading.nth(1).hover({ position: { x: 12, y: 12 } });
     await expect(bar).toHaveClass(/\bis-lit\b/);
     await expect(shading.nth(2)).toHaveClass(/\bis-lit\b/);

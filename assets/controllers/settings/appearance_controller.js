@@ -468,7 +468,10 @@ export default class extends Controller {
         const envelope = this.webEnvelope();
 
         if (this.hasAppIconTarget) {
-            this.appIconTarget.value = envelope ? 'bearermail' : 'logo';
+            const current = this.appIconTarget.value;
+            this.appIconTarget.value = envelope
+                ? (current.startsWith('bearermail') ? current : 'bearermail')
+                : 'logo';
         }
 
         this.element.querySelectorAll('[data-logo-family]').forEach((family) => {
@@ -476,6 +479,21 @@ export default class extends Controller {
         });
 
         this.repaintLogo();
+        this.queue();
+    }
+
+    /** One of BearerMail's Android icons (navy or white): the launcher follows it. */
+    pickBearermailIcon(event) {
+        const choice = event.currentTarget.dataset.bearermailIcon;
+
+        if (this.hasAppIconTarget) {
+            this.appIconTarget.value = choice;
+        }
+
+        this.element.querySelectorAll('[data-bearermail-icon]').forEach((button) => {
+            this.markSelected(button, button.dataset.bearermailIcon === choice);
+        });
+
         this.queue();
     }
 

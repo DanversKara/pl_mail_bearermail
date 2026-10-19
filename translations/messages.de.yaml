@@ -3210,6 +3210,8 @@ settings:
             logo: 'Das Logo unten'
             envelope: 'BearerMail-Umschlag'
         logo:
+            bearermail_navy: 'Marineblau'
+            bearermail_white: 'Weiß'
             android_icons: 'Android-Symbole'
             colour: 'Farbe'
             heading: Logo

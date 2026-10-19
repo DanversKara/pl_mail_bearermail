@@ -388,7 +388,8 @@ final class Appearance
 
     public const string APP_ICON_LOGO = 'logo';
     public const string APP_ICON_BEARERMAIL = 'bearermail';
-    public const array APP_ICONS = [self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL];
+    public const string APP_ICON_BEARERMAIL_WHITE = 'bearermail-white';
+    public const array APP_ICONS = [self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL, self::APP_ICON_BEARERMAIL_WHITE];
 
     /**
      * The web portal's own icon, the tab and the top bar: 'logo' (whatever
@@ -658,7 +659,12 @@ final class Appearance
         if (true === isset($data['webIcon']) && true === \in_array($data['webIcon'], self::WEB_ICONS, true)) {
             $this->webIcon = $data['webIcon'];
             // The App icon picks the family Logo lists, and so the launcher.
-            $this->appIcon = self::WEB_ICON_ENVELOPE === $this->webIcon ? self::APP_ICON_BEARERMAIL : self::APP_ICON_LOGO;
+            // BearerMail keeps whichever of its Android icons was chosen.
+            if (self::WEB_ICON_ENVELOPE !== $this->webIcon) {
+                $this->appIcon = self::APP_ICON_LOGO;
+            } elseif (false === str_starts_with($this->appIcon, self::APP_ICON_BEARERMAIL)) {
+                $this->appIcon = self::APP_ICON_BEARERMAIL;
+            }
         }
 
         if (true === isset($data['listAvatars'])) {
