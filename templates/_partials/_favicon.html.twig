@@ -37,7 +37,9 @@
    reload, so a new choice has to be a new URL, and the appearance page swaps
    it live on every pick (see repaintLogo) — before the save has landed, which
    is why the drawing cannot come from the session. See BrandingController. #}
-{% if appearance().appIcon == 'bearermail' %}
+{% if appearance().webIcon == 'envelope' %}
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/bearermail-web-192.png">
+{% elseif appearance().appIcon == 'bearermail' %}
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/bearermail-192.png">
 {% else %}
 <link rel="icon" type="image/svg+xml" href="{{ logo_favicon_url(appearance().effectiveLogoMotif, appearance().effectiveLogoPaint) }}">

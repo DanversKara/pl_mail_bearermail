@@ -460,6 +460,16 @@ export default class extends Controller {
      * The BearerMail tile: a finished picture used as the app icon (tab, top
      * bar, Android launcher). It has no colours, so step two hides.
      */
+    /** App icon (web only): the logo, or the BearerMail envelope. */
+    pickWebIcon() {
+        this.repaintLogo();
+        this.queue();
+    }
+
+    webEnvelope() {
+        return this.element.querySelector('[data-settings--appearance-field="webIcon"]:checked')?.value === 'envelope';
+    }
+
     pickBearermail() {
         this.setAppIcon('bearermail');
         this.repaintLogo();
@@ -581,19 +591,30 @@ export default class extends Controller {
     repaintLogo() {
         const motif = this.logoMotifTarget.value;
         const paint = this.logoPaint();
-        const bearermail = this.hasAppIconTarget && this.appIconTarget.value === 'bearermail';
+        const envelope = this.webEnvelope();
+        const bearermail = !envelope && this.hasAppIconTarget && this.appIconTarget.value === 'bearermail';
 
+        // The App icon choice's "logo" tile previews whatever Logo shows.
+        this.element.querySelectorAll('[data-web-icon-logo]').forEach((image) => {
+            this.setIfChanged(image, 'src', this.hasAppIconTarget && this.appIconTarget.value === 'bearermail'
+                ? '/icons/bearermail-192.png'
+                : this.iconUrl(motif, paint));
+        });
+
+        document.querySelectorAll('[data-logo-live-envelope]').forEach((image) => {
+            image.hidden = !envelope;
+        });
         document.querySelectorAll('[data-logo-live-bearermail]').forEach((image) => {
             image.hidden = !bearermail;
         });
 
-        if (bearermail) {
+        if (envelope || bearermail) {
             document.querySelectorAll('[data-logo-live-mark], [data-logo-live-icon]').forEach((el) => {
                 el.hidden = true;
             });
             document.querySelectorAll('link[rel="icon"]').forEach((link) => {
-                link.removeAttribute('type');
-                this.setIfChanged(link, 'href', '/icons/bearermail-192.png');
+                link.setAttribute('type', 'image/png');
+                this.setIfChanged(link, 'href', envelope ? '/icons/bearermail-web-192.png' : '/icons/bearermail-192.png');
             });
 
             return;

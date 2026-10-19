@@ -3058,6 +3058,11 @@ settings:
                 strong: Loud as a cannon
                 subtle: A whisper
             unreadEmphasis: Unread rows
+        web_icon:
+            heading: 'Ship''s flag'
+            subheading: 'The colours flown on yer browser tab an'' the top bar. The Android app''s icon follows the Logo below.'
+            logo: 'The logo below'
+            envelope: 'BearerMail envelope'
         logo:
             colour: 'Colours'
             heading: 'Ship''s mark'

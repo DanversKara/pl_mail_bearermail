@@ -388,6 +388,33 @@
                branding/icon.svg.twig), so the hairline follows the picture's
                edge — a pale icon on a pale card has no other edge to read. #}
             {% set _iconImage = 'size-12 rounded-[22%] ring-1 ring-line' %}
+            {# App icon: the web portal's own picture, for the browser tab and the
+               top bar — the logo as set below, or the BearerMail envelope. Web
+               only: the Android launcher follows Logo. A radio pair carrying
+               the field, so save() sends the checked one. #}
+            <section>
+                <div class="mb-3">
+                    <h3 class="text-sm font-semibold text-ink">{{ 'settings.appearance.web_icon.heading'|trans }}</h3>
+                    <p class="text-xs text-ink-faint mt-0.5">{{ 'settings.appearance.web_icon.subheading'|trans }}</p>
+                </div>
+                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label="{{ 'settings.appearance.web_icon.heading'|trans }}">
+                    {% for choice in ['logo', 'envelope'] %}
+                        <label class="relative flex items-center gap-3 rounded-xl border border-line px-3 py-2 cursor-pointer hover:bg-hover has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                            <input type="radio" name="webIcon" value="{{ choice }}" class="sr-only"
+                                   data-settings--appearance-field="webIcon"
+                                   data-action="change->settings--appearance#pickWebIcon"
+                                   {{ a.webIcon == choice ? 'checked' }}>
+                            {% if choice == 'envelope' %}
+                                <img src="/icons/bearermail-web-192.png" alt="" width="48" height="48" class="size-12 object-contain">
+                            {% else %}
+                                <img data-web-icon-logo src="{{ a.appIcon == 'bearermail' ? '/icons/bearermail-192.png' : logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="{{ _iconImage }}">
+                            {% endif %}
+                            <span class="text-sm text-ink">{{ ('settings.appearance.web_icon.' ~ choice)|trans }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </section>
+
             <section>
                 <div class="mb-4">
                     <h3 class="text-sm font-semibold text-ink">{{ 'settings.appearance.logo.heading'|trans }}</h3>

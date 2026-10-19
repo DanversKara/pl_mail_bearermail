@@ -3227,6 +3227,11 @@ settings:
                 strong: Strong
                 subtle: Subtle
             unreadEmphasis: Unread rows
+        web_icon:
+            heading: 'App icon'
+            subheading: 'The picture for the browser tab and the top bar. The Android app''s icon follows Logo below.'
+            logo: 'The logo below'
+            envelope: 'BearerMail envelope'
         logo:
             colour: 'Colour'
             heading: Logo
