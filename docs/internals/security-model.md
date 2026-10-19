@@ -226,6 +226,7 @@ entry is a decision:
 | `/device/pair` | a device that could authenticate would not need to pair | the pairing code itself |
 | `/share/…` | the recipient has no account by definition | the token in the path |
 | `/book/…` | same | the token in the path, plus a rate limiter on the POST |
+| `/n/…` | a shared note: same as `/share/` | the token in the path, plus an optional password; both the password and a collaborator's saves are rate-limited |
 | `/install` | it creates the first administrator, so it cannot require one | `InstallGuard` |
 | `/2fa` | the password is in and the second factor is not | `IS_AUTHENTICATED_2FA_IN_PROGRESS` |
 

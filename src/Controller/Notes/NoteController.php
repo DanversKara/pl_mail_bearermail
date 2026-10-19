@@ -17,6 +17,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use App\Entity\Note\NoteShare;
+use App\Repository\Note\NoteShareRepository;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
@@ -46,6 +49,7 @@ final class NoteController extends AbstractController
         private readonly ContactRepository $contacts,
         private readonly CalendarEventRepository $events,
         private readonly EntityManagerInterface $em,
+        private readonly NoteShareRepository $shares,
     ) {}
 
     #[Route('', name: 'list', methods: ['GET'])]
@@ -156,7 +160,74 @@ final class NoteController extends AbstractController
             'contacts' => $this->contacts->findForUser($this->user(), null, null, 'name', 500, 0),
             'events'   => $this->events->findForNoteLinks($this->user()),
             'returnTo' => str_starts_with($back, '/') && false === str_starts_with($back, '//') ? $back : null,
+            'shares'   => $this->shares->forNote($note),
         ]);
+    }
+
+    /** The note as a .txt file: title, then the text or the checklist. */
+    #[Route('/{id<\d+>}/download.txt', name: 'download_txt', methods: ['GET'])]
+    public function downloadTxt(int $id): Response
+    {
+        $note  = $this->ownNote($id);
+        $lines = [];
+
+        if ('' !== $note->title) {
+            $lines[] = $note->title;
+            $lines[] = '';
+        }
+
+        if ([] !== $note->items) {
+            foreach ($note->items as $item) {
+                $lines[] = (true === ($item['done'] ?? false) ? '[x] ' : '[ ] ') . ($item['text'] ?? '');
+            }
+        } else {
+            $lines[] = $note->body;
+        }
+
+        $name     = '' !== $note->title ? $note->title : 'note-' . $note->id;
+        $response = new Response(implode("\n", $lines) . "\n", Response::HTTP_OK, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        $response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            str_replace(['/', '\\'], '_', $name) . '.txt',
+            (preg_replace('/[^\x20-\x7e]|[\/\\\\%]/', '_', $name) ?? 'note') . '.txt',
+        ));
+
+        return $response;
+    }
+
+    /**
+     * A share link: anyone holding it can read the note (/n/<token>); with
+     * "can edit" they can change it too. Optional password and expiry.
+     */
+    #[Route('/{id<\d+>}/shares', name: 'share_create', methods: ['POST'])]
+    public function createShare(int $id, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $days    = (int) $request->request->get('expires', 0);
+        $expires = \in_array($days, [1, 7, 30, 365], true) ? new \DateTimeImmutable(sprintf('+%d days', $days)) : null;
+        $password = mb_substr((string) $request->request->get('password', ''), 0, 200);
+
+        $this->em->persist(NoteShare::create($note, '' === $password ? null : $password, $expires, $request->request->getBoolean('can_edit')));
+        $this->em->flush();
+
+        return $this->redirect($this->generateUrl('app_notes_edit', ['id' => $note->id]) . '#share', Response::HTTP_SEE_OTHER);
+    }
+
+    #[Route('/{id<\d+>}/shares/{shareId<\d+>}/delete', name: 'share_delete', methods: ['POST'])]
+    public function deleteShare(int $id, int $shareId, Request $request): Response
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $share = $this->shares->find($shareId);
+        if (null !== $share && $share->note === $note) {
+            $this->em->remove($share);
+            $this->em->flush();
+        }
+
+        return $this->redirect($this->generateUrl('app_notes_edit', ['id' => $note->id]) . '#share', Response::HTTP_SEE_OTHER);
     }
 
     /** Fallback for the editor without script: the whole form, posted. */

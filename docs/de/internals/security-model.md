@@ -1,4 +1,4 @@
-<!-- translated-from: internals/security-model.md sha1:ec9aeaf511daaa02fb59138c5e65e3b6a0c5e7f1 -->
+<!-- translated-from: internals/security-model.md sha1:d7fc1ae5b82f000d2834653ee17c71683f7efbac -->
 # Sicherheitsmodell
 
 Verschlüsselung ruhender Daten und die Prüfung, die den Start ohne brauchbaren Schlüssel
@@ -248,6 +248,7 @@ Die `access_control`-Liste in `security.yaml` ist regelweise kommentiert, denn j
 | `/webhook/google/calendar` | Google ist der Aufrufer | Kanal-Token in `X-Goog-Channel-Token` |
 | `/device/pair` | ein Gerät, das sich authentifizieren könnte, bräuchte keine Kopplung | der Kopplungscode selbst |
 | `/share/…` | die Empfängerin hat per Definition kein Konto | das Token im Pfad |
+| `/n/…` | eine geteilte Notiz: wie `/share/` | das Token im Pfad, dazu ein optionales Passwort; Passwort und Speichern durch Mitbearbeitende sind ratenbegrenzt |
 | `/book/…` | ebenso | das Token im Pfad, plus ein Rate Limiter auf dem POST |
 | `/install` | es legt die erste Administratorin an, kann also keine voraussetzen | `InstallGuard` |
 | `/2fa` | das Passwort ist da, der zweite Faktor nicht | `IS_AUTHENTICATED_2FA_IN_PROGRESS` |
