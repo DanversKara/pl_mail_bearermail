@@ -63,6 +63,21 @@ class MessageRepository extends ServiceEntityRepository
         SQL;
 
     /**
+     * Every Message-ID a row points at, In-Reply-To and References as one
+     * jsonb array.
+     *
+     * Spelled once because an index is built on exactly this expression
+     * (idx_message_referenced_ids, Version20261016130000) and the planner only
+     * uses it for a query that states the same one. A change here without a
+     * migration that rebuilds the index leaves the lookup correct and slow,
+     * which on a large mailbox is the quadratic import the index exists to
+     * prevent.
+     */
+    private const string REFERENCED_IDS = <<<'SQL'
+        (COALESCE(in_reply_to::jsonb, '[]'::jsonb) || COALESCE(thread_references::jsonb, '[]'::jsonb))
+        SQL;
+
+    /**
      * Raw DBAL for the reasons EXTRACTION_CANDIDATE_WHERE gives above.
      *
      * @param DateTimeImmutable|null $since only mail received at or after this; null for all of it
@@ -1264,6 +1279,50 @@ class MessageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Messages whose sanitized body shows an Outlook conditional-comment
+     * marker as text — the set the conditional-comment repair has to walk.
+     *
+     * Unlike the charset and table-link damage, this one SQL can recognise in
+     * bodyHtmlSafe itself: a marker that reached the sanitizer as text comes
+     * out escaped, `[endif]--&gt;` or `[if mso]&gt;`, and the sanitizer never
+     * writes a comment, so a body that was rendered right holds neither. Folded
+     * because Outlook writes `[ENDIF]` as often as `[endif]`. Narrowed on the
+     * damage rather than on the cause, because the cause — a conditional
+     * comment in bodyHtml — is in a large part of all commercial mail, nearly
+     * none of which was affected (#175).
+     *
+     * @return list<Message>
+     */
+    public function findWithConditionalCommentText(int $afterId, int $limit): array
+    {
+        return $this->conditionalCommentTextQueryBuilder($afterId)
+            ->orderBy('m.id', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Counted through the same builder, so the total and the walk agree. */
+    public function countWithConditionalCommentText(): int
+    {
+        return (int) $this->conditionalCommentTextQueryBuilder(0)
+            ->select('COUNT(m.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** Shared so the count and the walk can never disagree about the set. */
+    private function conditionalCommentTextQueryBuilder(int $afterId): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.id > :afterId')
+            ->andWhere('m.bodyHtml IS NOT NULL')
+            ->andWhere('m.bodyHtmlSafe IS NOT NULL')
+            ->andWhere("(LOWER(m.bodyHtmlSafe) LIKE '%[endif]%' OR LOWER(m.bodyHtmlSafe) LIKE '%[if %]&gt;%')")
+            ->setParameter('afterId', $afterId);
+    }
+
+    /**
      * Messages whose body webklex filed as an attachment, oldest id first.
      *
      * The set MisfiledBodyDetector now keeps out of the database, found after
@@ -1352,6 +1411,44 @@ class MessageRepository extends ServiceEntityRepository
             ->select('COUNT(m.id)')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * IMAP messages after $afterId whose original bytes are on disk, in id
+     * order: the set RepeatedHeaderBackfillTask reads.
+     *
+     * Every one of them, not the ones whose body looks wrong. A repeated
+     * header block is only visible in body_html for a single-part message; a
+     * multipart one renders correctly and carries the doubled block in its
+     * .eml all the same, and only reading the file finds it.
+     *
+     * @return list<Message>
+     */
+    public function findImapWithStoredRaw(int $afterId, int $limit): array
+    {
+        return $this->imapWithStoredRawQueryBuilder($afterId)
+            ->orderBy('m.id', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countImapWithStoredRaw(): int
+    {
+        return (int) $this->imapWithStoredRawQueryBuilder(0)
+            ->select('COUNT(m.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** Shared so the count and the walk can never disagree about the set. */
+    private function imapWithStoredRawQueryBuilder(int $afterId): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.id > :afterId')
+            ->andWhere('m.imapUid IS NOT NULL')
+            ->andWhere('m.rawPath IS NOT NULL')
+            ->setParameter('afterId', $afterId);
     }
 
     /** Shared so the count and the walk can never disagree about the set. */
@@ -1940,6 +2037,49 @@ class MessageRepository extends ServiceEntityRepository
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * The messages of an account that name this Message-ID in In-Reply-To or
+     * References — its replies, and their replies, wherever they were threaded.
+     *
+     * The other direction from findOneByMessageIdsForAccount(), for the message
+     * that arrives after the mail answering it (#172). Raw SQL for the ids,
+     * because containment in a json array has no DQL spelling; entities for
+     * the result, through findBy(), so a row this unit of work already holds
+     * comes back as the instance it holds. That matters to the caller: a reply
+     * threaded earlier in the same batch has its thread only in memory until
+     * the batch is flushed, and the database still says NULL.
+     *
+     * Both spellings of the id are asked for. Rows synced before Message-IDs
+     * were normalised still hold "<x@host>" in their arrays until the rethread
+     * backfill has run over them, and `@>` compares exactly.
+     *
+     * @return list<Message>
+     */
+    public function findRepliesToForAccount(string $messageId, Account $account): array
+    {
+        $sql = sprintf(
+            <<<'SQL'
+                SELECT id
+                  FROM message
+                 WHERE account_id = :accountId
+                   AND %s @> ANY (ARRAY[jsonb_build_array(CAST(:bare AS text)), jsonb_build_array(CAST(:bracketed AS text))])
+                SQL,
+            self::REFERENCED_IDS,
+        );
+
+        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            $sql,
+            [
+                'accountId' => $account->id,
+                'bare'      => $messageId,
+                'bracketed' => sprintf('<%s>', $messageId),
+            ],
+            ['accountId' => ParameterType::INTEGER],
+        );
+
+        return array_values($this->findByIds(array_map(intval(...), $ids)));
     }
 
     /**

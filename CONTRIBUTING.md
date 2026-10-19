@@ -35,8 +35,10 @@ it closes. A release is a milestone with nothing left open, closed when it is ta
 one or more `area: …` (mail, calendar, gmail, outlook, imap, mobile, settings, install).
 Pull requests get their area labels from the files they touch
 (`.github/labeler.yml`), and a required check refuses a pull request that closes no issue —
-unless it is labelled `bug`, `chore` or `dependencies`. Contributors cannot label their own pull
-requests, so a bug fix without an issue waits for a maintainer to label it `bug`.
+unless it is labelled `bug`, `chore`, `dependencies` or `deployment`. `deployment` is for a milestone
+or release branch going to `main` (`milestone/v0.4.0`), whose pieces each closed their own issue on
+the way in. Contributors cannot label their own pull requests, so a bug fix without an issue waits
+for a maintainer to label it `bug`.
 
 **`main` is protected.** Everything reaches it through a pull request with green checks, the
 maintainers' own changes included, and is squash-merged. The production image follows `main`, so
@@ -314,7 +316,9 @@ That makes the tag the only gate there is, and two things have to be true before
 Then, and in this order: rename `## Unreleased` in `CHANGELOG.md` to `## vX.Y.Z — date` in a pull
 request titled `Release vX.Y.Z` — `main` is protected, so the release commit goes through one like
 everything else — merge it, tag the commit it made on `main` and push the tag. The release commit
-changes the changelog and nothing else, so what was tested is what is tagged. Then close the
+changes the changelog and nothing else, so what was tested is what is tagged — except for the
+highlight pictures that release pushes past their ten releases, which it deletes (see
+[Release notes](#release-notes)). Then close the
 milestone of that name, moving anything still open in it to the next one (see
 [How work gets in](#how-work-gets-in)).
 
@@ -352,6 +356,42 @@ It seeds the demo mailbox onto two users of its own, `e2e-demo-w0@plmail.test` a
 already owns a mailbox.
 
 Never point it at a stack holding real mail.
+
+## Release notes
+
+`CHANGELOG.md` is not only for people reading GitHub: every installation reads it from its own image
+and shows it in **What's new** after an update (see
+[What everyone sees after an update](docs/install/upgrading.md#what-everyone-sees-after-an-update)).
+So an entry is written for the person using plMail, and three conventions decide how it is shown:
+
+- **An entry is a paragraph that opens with a bold sentence.** The bold part is its headline in the
+  dialog; the rest, until the next bold paragraph, is what opens under it.
+- **`**Migration:**` and `### Before you upgrade` are for administrators.** They are shown in a box
+  only administrators see, so say there what the server needs and leave it out of the rest.
+- **A highlight is marked by a comment on the line above the entry**, which GitHub does not render:
+
+  ```markdown
+  <!-- highlight screenshot=pull-to-sync -->
+  **Pull the mail list down to sync it, on a phone.** …
+  ```
+
+  `<!-- highlight -->` alone makes a highlight without a picture. With `screenshot=`, the dialog
+  shows `public/whats-new/pull-to-sync.png` beside it, and `ChangelogReaderTest` fails until that
+  file exists. Take it with a test of the same name in `tests/e2e/whats-new-screenshots.spec.ts`,
+  run like the README's pictures:
+
+  ```bash
+  npm run test:e2e:screenshots -- --project=chromium --workers=1
+  ```
+
+  Named by feature, not by release, because the pull request that adds a feature does not know which
+  release it will ship in. Mark a handful per release; a dialog where everything is a highlight has
+  none.
+- **A picture is kept for its release and the ten after it.** Every file in `public/whats-new/` ships
+  in every image, so they do not stay for good: the `Release vX.Y.Z` pull request that pushes a
+  release more than ten back deletes its pictures and turns their markers into plain
+  `<!-- highlight -->`, so the entries stay highlights without the picture. `ChangelogReaderTest`
+  fails until that is done, and also fails on a file in `public/whats-new/` that no highlight names.
 
 ## Secrets and the encryption key
 
@@ -879,7 +919,7 @@ php bin/mirror-wiki.php --check
 | `app:mail:wake-snoozed` | Return snoozed conversations whose time has come. Runs every minute |
 | `app:mail:release-held` | Show mail that has been held for the assistant longer than **Wait at most** allows. Runs every minute and finds nothing on an ordinary day — the live worker releases held mail itself. It is the backstop for that worker being down, and it warns when it has to act |
 | `app:calendar:materialise [--dry-run]` | Redraw the occurrences of recurring events whose horizon no longer reaches far enough. Runs nightly; without it a long-untouched series eventually runs out of dates |
-| `app:backfill [task]` | Run a one-off backfill over stored data; with no argument it lists the tasks and asks. The tasks that re-read mail (`events`, `insights`) cover the last 24 hours unless `--since` says otherwise (`7d`, `2026-09-01`, `all`). `events` re-runs calendar extraction, `proposals` re-reads mail for dates written in prose, `safe-html-table-links` restores links that were wrapped around a table and came out empty |
+| `app:backfill [task]` | Run a one-off backfill over stored data; with no argument it lists the tasks and asks. The tasks that re-read mail (`events`, `insights`) cover the last 24 hours unless `--since` says otherwise (`7d`, `2026-09-01`, `all`). `events` re-runs calendar extraction, `proposals` re-reads mail for dates written in prose, `safe-html-table-links` restores links that were wrapped around a table and came out empty, `safe-html-conditional-comments` removes Outlook's `<![endif]-->` from messages that show it as text, `repeated-headers` takes out the header block some IMAP servers repeated at the top of a message body |
 | `app:imap:idle <mailbox-id>` | Hold an IMAP IDLE connection for a single mailbox |
 | `app:imap:supervise` | Spawn and watch one `app:imap:idle` process per IDLE-enabled mailbox |
 | `app:imap:test [--account=ID]` | Test an IMAP connection and folder listing |
