@@ -1097,7 +1097,7 @@ admin:
             drive_disabled: "Close the hold"
             drive_disabled_help: "Blocks uploads an' stops every link this hand has shared."
             mailbox: Post barrel
-            mailbox_help: 'Optional. Builds a post barrel on %domain% in the ship''s own mail server with the first secret word, and rigs it as this hand''s mail account. Leave it empty for one who brings their own.'
+            mailbox_help: 'Optional. Write only the name afore the @ — <b>anna</b> makes <b>anna@%domain%</b> (the whole address works too). No secret word here: the post barrel takes the Password above, the same one this hand signs in with. Leave it empty for one who brings their own.'
         flash:
             deactivated: 'Clapped in irons. No boardin'' until ye strike them.'
             demote_last_refused: 'That be th'' last quartermaster, so th'' mark stayed as it were — raise another first.'
