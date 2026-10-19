@@ -1300,7 +1300,7 @@ admin:
             drive_disabled: 'Désactiver le Drive'
             drive_disabled_help: 'Bloque les envois et coupe tous les liens que cette personne a partagés.'
             mailbox: Boîte mail
-            mailbox_help: 'Facultatif. Crée une boîte sur %domain% sur le serveur mail intégré avec le mot de passe initial et l’ajoute comme compte mail de cette personne. Laissez vide pour quelqu’un qui apporte sa propre messagerie.'
+            mailbox_help: 'Facultatif. Tapez seulement le nom avant le @ — par exemple <b>anna</b> crée <b>anna@%domain%</b> (l’adresse complète marche aussi). Pas de mot de passe ici : la boîte reçoit le mot de passe ci-dessus, celui avec lequel la personne se connecte. Elle est ajoutée comme son compte mail, pour envoyer et recevoir tout de suite. Laissez vide pour quelqu’un qui apporte sa propre messagerie.'
             drive_quota: 'Stockage Drive (Mo)'
             drive_quota_default: 'par défaut'
             drive_quota_help: 'Vide = la valeur par défaut d’Admin → Drive. 0 = aucune limite.'

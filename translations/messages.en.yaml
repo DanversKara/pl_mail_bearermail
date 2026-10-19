@@ -1306,7 +1306,7 @@ admin:
             drive_disabled: Switch off Drive
             drive_disabled_help: Blocks uploads and stops every link this person has shared.
             mailbox: Mailbox
-            mailbox_help: 'Optional. Creates a mailbox on %domain% on the built-in mail server with the initial password, and adds it as this person''s mail account. Leave empty for someone who brings their own mail.'
+            mailbox_help: 'Optional. Type only the name before the @ — for example <b>anna</b> makes <b>anna@%domain%</b> (the full address works too). No password here: the mailbox gets the Password above, the same one this person signs in with. It is added as their mail account, so they can send and receive straight away. Leave empty for someone who brings their own mail.'
             email: Email address
             is_admin: Administrator
             is_admin_help: 'Can reach this panel, manage users and configure providers. Cannot read anyone else''s mail.'

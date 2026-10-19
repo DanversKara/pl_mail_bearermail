@@ -1253,7 +1253,7 @@ admin:
             drive_disabled: Drive abschalten
             drive_disabled_help: Sperrt Uploads und stoppt alle Links, die diese Person geteilt hat.
             mailbox: Postfach
-            mailbox_help: 'Optional. Legt ein Postfach auf %domain% am eingebauten Mailserver mit dem Startpasswort an und richtet es als Mailkonto dieser Person ein. Leer lassen, wenn die Person ein eigenes Postfach mitbringt.'
+            mailbox_help: 'Optional. Nur den Namen vor dem @ eintragen — zum Beispiel ergibt <b>anna</b> das Postfach <b>anna@%domain%</b> (die volle Adresse geht auch). Kein Passwort hier: Das Postfach bekommt das Passwort von oben, dasselbe, mit dem sich die Person anmeldet. Es wird als ihr Mailkonto eingerichtet, sie kann also sofort senden und empfangen. Leer lassen, wenn die Person ein eigenes Postfach mitbringt.'
             email: E-Mail-Adresse
             is_admin: Administrator
             is_admin_help: 'Erreicht diesen Bereich, verwaltet Benutzer und konfiguriert Anbieter. Kann keine fremden Mails lesen.'

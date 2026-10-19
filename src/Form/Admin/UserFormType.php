@@ -103,14 +103,22 @@ final class UserFormType extends AbstractType
             $builder->add('mailbox', TextType::class, [
                 'label'       => 'admin.users.field.mailbox',
                 'help'        => 'admin.users.field.mailbox_help',
+                'help_html'   => true,
                 'help_translation_parameters' => ['%domain%' => $domain],
                 'mapped'      => false,
                 'required'    => false,
-                'attr'        => ['autocomplete' => 'off', 'placeholder' => 'name'] + PasswordManagerIgnore::ATTR,
+                'attr'        => ['autocomplete' => 'off', 'placeholder' => 'e.g. anna  →  anna@' . $domain] + PasswordManagerIgnore::ATTR,
                 'constraints' => [
                     new Callback(function (mixed $value, ExecutionContextInterface $context): void {
                         $value = trim((string) $value);
                         if ('' === $value) {
+                            return;
+                        }
+                        // The old MAIL_ACCOUNTS habit, `name:password`: the
+                        // password goes in the Password field, not here.
+                        if (str_contains($value, ':')) {
+                            $context->buildViolation('admin.users.mailbox_no_password')->addViolation();
+
                             return;
                         }
                         $address = $this->mailboxes->addressFor($value);
