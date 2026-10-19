@@ -35,6 +35,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'user_note')]
 // Every read is "this user's notes, all of them".
 #[ORM\Index(name: 'idx_user_note_usr', columns: ['usr_id'])]
+#[ORM\Index(name: 'idx_user_note_reminder', columns: ['reminder_at'])]
 class Note
 {
     use TimestampableTrait;
@@ -98,6 +99,28 @@ class Note
      */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true, 'default' => '[]'])]
     public array $labels = [];
+
+    /**
+     * When to remind the user about this note, in UTC, or null for no
+     * reminder. app:notes:reminders sends it (an email to themselves and a
+     * notification on their devices) once it comes due.
+     */
+    #[ORM\Column(nullable: true)]
+    public private(set) ?DateTimeImmutable $reminderAt = null;
+
+    /** When the current reminder was sent; null while it is still to come. */
+    #[ORM\Column(nullable: true)]
+    public ?DateTimeImmutable $reminderSentAt = null;
+
+    /** Set or clear the reminder. A new time is a new reminder, still to send. */
+    public function remindAt(?DateTimeImmutable $at): void
+    {
+        if ($at?->getTimestamp() !== $this->reminderAt?->getTimestamp()) {
+            $this->reminderSentAt = null;
+        }
+
+        $this->reminderAt = $at;
+    }
 
     /**
      * Labels as stored: trimmed, one line, at most 50 characters, empty ones

@@ -32,7 +32,11 @@ with small forms of their own, because they change what the page lists.
 
     <div class="flex-1 overflow-y-auto p-4 md:p-6">
         <div class="max-w-2xl mx-auto rounded-xl border shadow-sm {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }}"
-             data-controller="notes--editor"
+             data-controller="notes--editor notes--reminder"
+             data-notes--reminder-url-value="{{ path('app_notes_reminder', { id: note.id }) }}"
+             data-notes--reminder-token-value="{{ token }}"
+             data-notes--reminder-at-value="{{ note.reminderAt ? note.reminderAt|date('Y-m-d\\TH:i:s\\Z', 'UTC') }}"
+             data-notes--reminder-failed-value="{{ 'notes.reminder.failed'|trans }}"
              data-notes--editor-url-value="{{ path('app_notes_autosave', { id: note.id }) }}"
              data-notes--editor-token-value="{{ token }}"
              data-notes--editor-palette-value="{{ palette|json_encode }}"
@@ -90,6 +94,18 @@ with small forms of their own, because they change what the page lists.
 
             {# Labels and links #}
             <div class="px-4 pb-2 space-y-2">
+                {# The reminder, when there is one (notes--reminder fills the time in). #}
+                <span data-notes--reminder-target="chip" hidden
+                      class="inline-flex items-center gap-1.5 h-7 pl-2.5 pr-1 rounded-full text-xs bg-black/5">
+                    <i class="fa-regular fa-bell text-[11px] opacity-70" aria-hidden="true"></i>
+                    <span data-notes--reminder-target="chipText"></span>
+                    {% if not trashed %}
+                        <button type="button" data-action="notes--reminder#clear" class="w-5 h-5 rounded-full hover:bg-black/10 cursor-pointer"
+                                title="{{ 'notes.reminder.remove'|trans }}" aria-label="{{ 'notes.reminder.remove'|trans }}">
+                            <i class="fa-solid fa-xmark text-[10px]" aria-hidden="true"></i>
+                        </button>
+                    {% endif %}
+                </span>
                 <input type="text" value="{{ note.labels|join(', ') }}" placeholder="{{ 'notes.labels_placeholder'|trans }}"
                        data-notes--editor-target="labels" data-action="input->notes--editor#changed"
                        {{ trashed ? 'disabled' }}
@@ -125,6 +141,24 @@ with small forms of their own, because they change what the page lists.
                 {# Colour row, shown by the palette button #}
                 <div class="hidden px-4 pb-2" data-notes--editor-target="colorRow">
                     {{ nm.colorPicker(colors, note.color, 'change->notes--editor#colorChanged') }}
+                </div>
+
+                {# Reminder row, shown by the bell button #}
+                <div hidden class="px-4 pb-2 space-y-2" data-notes--reminder-target="row">
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for when in ['later', 'tomorrow', 'week'] %}
+                            <button type="button" data-action="notes--reminder#preset" data-notes--reminder-when-param="{{ when }}"
+                                    class="h-8 px-3 rounded-full text-xs font-medium bg-black/5 hover:bg-black/10 cursor-pointer">
+                                {{ ('notes.reminder.' ~ when)|trans }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="datetime-local" data-notes--reminder-target="input" aria-label="{{ 'notes.reminder.pick'|trans }}"
+                               class="flex-1 min-w-0 h-8 rounded-lg border border-black/15 bg-white/60 text-sm px-2 text-[#202124]">
+                        <button type="button" data-action="notes--reminder#pick"
+                                class="h-8 px-3 rounded-lg text-sm font-medium bg-black/10 hover:bg-black/15 cursor-pointer">{{ 'notes.reminder.save'|trans }}</button>
+                    </div>
                 </div>
 
                 {# Link picker, shown by the link button #}
@@ -176,6 +210,10 @@ with small forms of their own, because they change what the page lists.
                             title="{{ checklist ? 'notes.hide_checkboxes'|trans : 'notes.show_checkboxes'|trans }}"
                             aria-label="{{ checklist ? 'notes.hide_checkboxes'|trans : 'notes.show_checkboxes'|trans }}">
                         <i class="fa-regular fa-square-check text-sm" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" data-action="notes--reminder#toggle" class="w-9 h-9 rounded-full hover:bg-black/10 cursor-pointer"
+                            title="{{ 'notes.reminder.title'|trans }}" aria-label="{{ 'notes.reminder.title'|trans }}">
+                        <i class="fa-regular fa-bell text-sm" aria-hidden="true"></i>
                     </button>
                     <button type="button" data-action="notes--editor#toggleLinks" class="w-9 h-9 rounded-full hover:bg-black/10 cursor-pointer"
                             title="{{ 'notes.add_link'|trans }}" aria-label="{{ 'notes.add_link'|trans }}">

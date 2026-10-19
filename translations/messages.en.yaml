@@ -4905,6 +4905,15 @@ contacts:
     validation:
         name_required: 'Give the contact a name.'
 notes:
+    reminder:
+        title: 'Remind me'
+        later: 'Later today'
+        tomorrow: 'Tomorrow morning'
+        week: 'Next week'
+        pick: 'Date and time'
+        save: 'Set'
+        remove: 'Remove reminder'
+        failed: 'The reminder could not be saved. Try again.'
     saving: 'Saving…'
     saved: 'Saved'
     save_failed: 'Not saved — check your connection'

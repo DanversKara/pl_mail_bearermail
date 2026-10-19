@@ -101,6 +101,7 @@ one container consuming `scheduler_default`. **Without that container, none of t
 |---|---|
 | every minute | `app:mail:wake-snoozed` |
 | every minute | `app:calendar:alerts` |
+| every minute | `app:notes:reminders` |
 | `*/15` | `app:mail:sync` |
 | `7-59/15` | `app:calendar:sync --stale` |
 | hourly at :20 | `app:calendar:push` |

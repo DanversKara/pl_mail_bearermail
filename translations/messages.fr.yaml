@@ -4909,6 +4909,15 @@ contacts:
     validation:
         name_required: 'Donnez un nom au contact.'
 notes:
+    reminder:
+        title: 'Me le rappeler'
+        later: 'Plus tard aujourd''hui'
+        tomorrow: 'Demain matin'
+        week: 'La semaine prochaine'
+        pick: 'Date et heure'
+        save: 'Définir'
+        remove: 'Supprimer le rappel'
+        failed: 'Le rappel n''a pas pu être enregistré. Réessayez.'
     saving: 'Enregistrement…'
     saved: 'Enregistrée'
     save_failed: 'Non enregistrée — vérifiez la connexion'

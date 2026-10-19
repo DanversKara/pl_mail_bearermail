@@ -239,6 +239,35 @@ final class NoteController extends AbstractController
         return $this->redirectToRoute('app_notes_list', 'notes' === $view ? [] : ['view' => $view], Response::HTTP_SEE_OTHER);
     }
 
+    /**
+     * Set or clear the reminder: JSON `{"at": "<ISO 8601 with offset>"}` or
+     * `{"at": null}`. Answers the stored instant, so the page can show it.
+     */
+    #[Route('/{id<\d+>}/reminder', name: 'reminder', methods: ['POST'])]
+    public function reminder(int $id, Request $request): JsonResponse
+    {
+        $note = $this->ownNote($id);
+        $this->assertCsrf($request, 'notes_' . $id);
+
+        $data = json_decode($request->getContent(), true);
+        $at   = \is_array($data) ? ($data['at'] ?? null) : false;
+
+        if (null === $at) {
+            $note->remindAt(null);
+        } elseif (\is_string($at) && 1 === preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/', $at)) {
+            $note->remindAt(new \DateTimeImmutable($at)->setTimezone(new \DateTimeZone('UTC')));
+        } else {
+            return new JsonResponse(['error' => 'Malformed reminder.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse([
+            'ok' => true,
+            'at' => $note->reminderAt?->format('Y-m-d\TH:i:s\Z'),
+        ]);
+    }
+
     #[Route('/{id<\d+>}/link', name: 'link', methods: ['POST'])]
     public function linkTo(int $id, Request $request): Response
     {

@@ -88,8 +88,15 @@ through notes--confirm).
             </ul>
         {% endif %}
 
-        {% if note.labels is not empty or note.links is not empty %}
+        {% if note.labels is not empty or note.links is not empty or note.reminderAt %}
             <div class="px-4 pb-2 flex flex-wrap gap-1.5">
+                {% if note.reminderAt %}
+                    <span class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5 {{ note.reminderSentAt ? 'line-through opacity-70' }}"
+                          title="{{ 'notes.reminder.title'|trans }}">
+                        <i class="fa-regular fa-bell text-[10px] opacity-70" aria-hidden="true"></i>
+                        {{ note.reminderAt|intl_date('EEEdMMM', clock.timezone) }}, {{ note.reminderAt|date(clock.time, clock.timezone) }}
+                    </span>
+                {% endif %}
                 {% for name in note.labels %}
                     <a href="{{ path('app_notes_list', { label: name }) }}" class="inline-flex items-center h-6 px-2 rounded-full text-xs bg-black/5 hover:bg-black/10 max-w-full truncate">{{ name }}</a>
                 {% endfor %}

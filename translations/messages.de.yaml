@@ -4873,6 +4873,15 @@ contacts:
     validation:
         name_required: 'Gib dem Kontakt einen Namen.'
 notes:
+    reminder:
+        title: 'Erinnern'
+        later: 'Später heute'
+        tomorrow: 'Morgen früh'
+        week: 'Nächste Woche'
+        pick: 'Datum und Uhrzeit'
+        save: 'Setzen'
+        remove: 'Erinnerung entfernen'
+        failed: 'Die Erinnerung konnte nicht gespeichert werden. Bitte erneut versuchen.'
     saving: 'Wird gespeichert…'
     saved: 'Gespeichert'
     save_failed: 'Nicht gespeichert — Verbindung prüfen'
