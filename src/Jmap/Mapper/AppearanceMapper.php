@@ -79,6 +79,7 @@ final class AppearanceMapper
         'sidebarDensity',
         'listDensity',
         'readingDensity',
+        'appIcon',
     ];
 
     /**
@@ -197,6 +198,7 @@ final class AppearanceMapper
             'sidebarDensity' => $appearance->sidebarDensity?->value,
             'listDensity' => $appearance->listDensity?->value,
             'readingDensity' => $appearance->readingDensity?->value,
+            'appIcon' => $appearance->appIcon,
         ];
     }
 
