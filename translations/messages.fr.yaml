@@ -3375,12 +3375,13 @@ settings:
                 strong: Marqué
                 subtle: Discret
             unreadEmphasis: Lignes non lues
-        app_icon:
-            heading: 'Icône de l’app'
-            subheading: 'L’image de l’onglet du navigateur, de la barre du haut et de l’icône de l’app Android sur l’écran d’accueil.'
+        web_icon:
+            heading: 'Icône de l''app'
+            subheading: 'L''image de l''onglet du navigateur et de la barre du haut. Logo ci-dessous liste ensuite les icônes Android assorties.'
             logo: 'Le logo ci-dessous'
-            bearermail: 'BearerMail'
+            envelope: 'Enveloppe BearerMail'
         logo:
+            android_icons: 'Icônes Android'
             colour: 'Couleur'
             heading: Logo
             icon: 'Icône'

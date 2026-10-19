@@ -80,6 +80,7 @@ final class AppearanceMapper
         'listDensity',
         'readingDensity',
         'appIcon',
+        'webIcon',
     ];
 
     /**
@@ -199,6 +200,7 @@ final class AppearanceMapper
             'listDensity' => $appearance->listDensity?->value,
             'readingDensity' => $appearance->readingDensity?->value,
             'appIcon' => $appearance->appIcon,
+            'webIcon' => $appearance->webIcon,
         ];
     }
 

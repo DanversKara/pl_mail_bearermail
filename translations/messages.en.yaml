@@ -3227,12 +3227,13 @@ settings:
                 strong: Strong
                 subtle: Subtle
             unreadEmphasis: Unread rows
-        app_icon:
+        web_icon:
             heading: 'App icon'
-            subheading: 'The picture for the browser tab, the top bar and the Android app''s home-screen icon.'
-            logo: 'The logo below'
-            bearermail: 'BearerMail'
+            subheading: 'The picture for the browser tab and the top bar. Logo below then lists the Android icons that go with it.'
+            logo: 'pl logos'
+            envelope: 'BearerMail envelope'
         logo:
+            android_icons: 'Android icons'
             colour: 'Colour'
             heading: Logo
             icon: 'Icon'

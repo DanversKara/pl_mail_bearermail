@@ -380,7 +380,7 @@ final class Appearance
     /**
      * Which picture is the app's icon: 'logo' (the logo chosen above, in its
      * paint) or 'bearermail' (the BearerMail artwork, a fixed picture that is
-     * not repainted). Applies to the tab icon, the top bar and — through the
+     * not repainted; its tile sits in the Logo row). Applies to the logo and — through the
      * Appearance object over JMAP — the Android launcher icon.
      */
     #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
@@ -389,6 +389,18 @@ final class Appearance
     public const string APP_ICON_LOGO = 'logo';
     public const string APP_ICON_BEARERMAIL = 'bearermail';
     public const array APP_ICONS = [self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL];
+
+    /**
+     * The web portal's own icon, the tab and the top bar: 'logo' (whatever
+     * Logo shows) or 'envelope' (the BearerMail envelope). Web only; the
+     * choice also sets appIcon: BearerMail's Android artwork, or the logo.
+     */
+    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
+    public string $webIcon = self::WEB_ICON_LOGO;
+
+    public const string WEB_ICON_LOGO = 'logo';
+    public const string WEB_ICON_ENVELOPE = 'envelope';
+    public const array WEB_ICONS = [self::WEB_ICON_LOGO, self::WEB_ICON_ENVELOPE];
 
     /**
      * The unread count beside each inbox tab's name.
@@ -521,6 +533,7 @@ final class Appearance
             'accountCorner' => $this->accountCorner,
             'listAvatars' => $this->listAvatars,
             'appIcon' => $this->appIcon,
+            'webIcon' => $this->webIcon,
             'tabUnreadCount' => $this->tabUnreadCount,
             'previewLines' => $this->previewLines,
             'unreadEmphasis' => $this->unreadEmphasis->value,
@@ -640,6 +653,12 @@ final class Appearance
 
         if (true === isset($data['appIcon']) && true === \in_array($data['appIcon'], self::APP_ICONS, true)) {
             $this->appIcon = $data['appIcon'];
+        }
+
+        if (true === isset($data['webIcon']) && true === \in_array($data['webIcon'], self::WEB_ICONS, true)) {
+            $this->webIcon = $data['webIcon'];
+            // The App icon picks the family Logo lists, and so the launcher.
+            $this->appIcon = self::WEB_ICON_ENVELOPE === $this->webIcon ? self::APP_ICON_BEARERMAIL : self::APP_ICON_LOGO;
         }
 
         if (true === isset($data['listAvatars'])) {
