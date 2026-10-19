@@ -65,14 +65,17 @@ final class NoteShareTest extends WebTestCase
 
         // Someone with no account.
         $client->restart();
-        $client->request('GET', '/n/' . $share->token);
+        $crawler = $client->request('GET', '/n/' . $share->token);
         self::assertResponseIsSuccessful();
-        self::assertStringNotContainsString('before', (string) $client->getInternalResponse()->getContent());
+        // Locked: the password form, and not the note.
+        self::assertCount(1, $crawler->filter('input[name="password"]'));
+        self::assertCount(0, $crawler->filter('[data-notes--shared-grant-value]'));
 
         $client->request('POST', '/n/' . $share->token, ['password' => 'wrong']);
         self::assertResponseStatusCodeSame(422);
 
         $crawler = $client->request('POST', '/n/' . $share->token, ['password' => 'hunter2']);
+        self::assertCount(1, $crawler->filter('textarea'));
         self::assertResponseIsSuccessful();
         $grant = (string) $crawler->filter('[data-notes--shared-grant-value]')->attr('data-notes--shared-grant-value');
         self::assertNotSame('', $grant);
