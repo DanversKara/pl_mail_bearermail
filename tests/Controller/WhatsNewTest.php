@@ -194,7 +194,7 @@ final class WhatsNewTest extends WebTestCase
 
         $mail = $this->sent()[0];
 
-        self::assertSame('feedback@pluetzner.de', $mail->getTo()[0]->getAddress());
+        self::assertSame('feedback@example.test', $mail->getTo()[0]->getAddress());
         self::assertSame('me@example.test', $mail->getFrom()[0]->getAddress());
         self::assertSame('plMail v0.3.5 feedback: Better', $mail->getSubject());
         self::assertStringContainsString('Pull to sync is lovely.', (string) $mail->getTextBody());
