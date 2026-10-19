@@ -234,6 +234,11 @@ security:
         # (32 bytes of CSPRNG) is the gate, an optional password is a second
         # one and is rate-limited — see App\Controller\Drive\ShareController.
         - { path: '^/s/[a-f0-9]{64}(/download|/report)?$', roles: PUBLIC_ACCESS }
+        # A note share link (/n/<token>, and /n/<token>/save for a collaborator
+        # link). Same reasoning as /s/: the 32-byte token is the gate, an
+        # optional password a second one, rate-limited — see
+        # App\Controller\Notes\NoteShareController.
+        - { path: '^/n/[a-f0-9]{64}(/save)?$', roles: PUBLIC_ACCESS }
         # The code form sits between the two factors: the password is in, the
         # second factor is not, and ROLE_USER has not been granted yet. It must
         # be reachable in exactly that state and in no other, which is what

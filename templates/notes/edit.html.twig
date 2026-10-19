@@ -244,6 +244,79 @@ with small forms of their own, because they change what the page lists.
                 </div>
             {% endif %}
 
+            {% if not trashed %}
+                {# Share and download. Plain <details>, no script: open while the
+                   note has links, so a link just made is in view. #}
+                <details id="share" class="mx-4 mb-3 rounded-lg bg-black/5" {{ shares is not empty ? 'open' }}>
+                    <summary class="px-3 py-2 text-sm font-medium cursor-pointer select-none">
+                        <i class="fa-solid fa-share-nodes text-xs mr-1.5 opacity-70" aria-hidden="true"></i>{{ 'notes.share.heading'|trans }}
+                    </summary>
+                    <div class="px-3 pb-3 space-y-3">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ path('app_notes_download_txt', { id: note.id }) }}" download data-turbo="false"
+                               class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-black/10 hover:bg-black/15">
+                                <i class="fa-solid fa-file-lines text-[11px]" aria-hidden="true"></i>{{ 'notes.share.download_txt'|trans }}
+                            </a>
+                            <button type="button" data-controller="notes--export" data-action="notes--export#png"
+                                    data-notes--export-title-value="{{ note.title }}"
+                                    data-notes--export-body-value="{{ note.body }}"
+                                    data-notes--export-items-value="{{ note.items|json_encode }}"
+                                    data-notes--export-color-value="{{ bg ?: '#ffffff' }}"
+                                    data-notes--export-name-value="{{ note.title ?: 'note-' ~ note.id }}"
+                                    class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium bg-black/10 hover:bg-black/15 cursor-pointer">
+                                <i class="fa-solid fa-image text-[11px]" aria-hidden="true"></i>{{ 'notes.share.download_png'|trans }}
+                            </button>
+                        </div>
+
+                        {% for share in shares %}
+                            {% set url = url('app_note_share', { token: share.token }) %}
+                            <div class="rounded-lg bg-white/60 border border-black/10 px-3 py-2 text-xs space-y-1.5 text-[#202124]"
+                                 data-controller="ui--clipboard"
+                                 data-ui--clipboard-confirm-text-value="{{ 'notes.share.copied'|trans }}"
+                                 data-ui--clipboard-failed-text-value="{{ 'notes.share.copy_failed'|trans }}">
+                                <div class="flex items-center gap-2">
+                                    <code class="flex-1 min-w-0 truncate" data-ui--clipboard-target="source">{{ url }}</code>
+                                    <button type="button" data-action="click->ui--clipboard#copy" class="inline-flex items-center gap-1 h-7 px-2 rounded-md bg-black/10 hover:bg-black/15 cursor-pointer">
+                                        <i class="fa-solid fa-copy text-[10px]" aria-hidden="true"></i><span data-ui--clipboard-target="label">{{ 'notes.share.copy'|trans }}</span>
+                                    </button>
+                                    <form method="post" action="{{ path('app_notes_share_delete', { id: note.id, shareId: share.id }) }}">
+                                        <input type="hidden" name="_token" value="{{ token }}">
+                                        <button type="submit" class="w-7 h-7 rounded-md hover:bg-black/10 cursor-pointer" title="{{ 'notes.share.delete'|trans }}" aria-label="{{ 'notes.share.delete'|trans }}">
+                                            <i class="fa-solid fa-trash text-[10px]" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="flex flex-wrap gap-x-3 gap-y-1 opacity-70">
+                                    <span><i class="fa-solid {{ share.canEdit ? 'fa-pen' : 'fa-eye' }} text-[10px] mr-1" aria-hidden="true"></i>{{ (share.canEdit ? 'notes.share.can_edit' : 'notes.share.view_only')|trans }}</span>
+                                    {% if share.passwordHash %}<span><i class="fa-solid fa-lock text-[10px] mr-1" aria-hidden="true"></i>{{ 'notes.share.has_password'|trans }}</span>{% endif %}
+                                    <span>{{ share.expiresAt ? (share.isExpired ? 'notes.share.expired' : 'notes.share.expires')|trans({'%date%': share.expiresAt|date('d M Y')}) : 'notes.share.never_expires'|trans }}</span>
+                                    <span>{{ 'notes.share.views'|trans({'%count%': share.viewCount}) }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+
+                        <form method="post" action="{{ path('app_notes_share_create', { id: note.id }) }}" class="space-y-2">
+                            <input type="hidden" name="_token" value="{{ token }}">
+                            <div class="flex flex-wrap gap-2">
+                                <input type="password" name="password" autocomplete="new-password" placeholder="{{ 'notes.share.password_optional'|trans }}"
+                                       class="flex-1 min-w-[10rem] h-8 rounded-lg border border-black/15 bg-white/60 text-sm px-2 text-[#202124]">
+                                <select name="expires" aria-label="{{ 'notes.share.expiry'|trans }}" class="h-8 rounded-lg border border-black/15 bg-white/60 text-sm px-2 text-[#202124]">
+                                    <option value="0">{{ 'notes.share.never_expires'|trans }}</option>
+                                    {% for d in [1, 7, 30, 365] %}<option value="{{ d }}">{{ ('notes.share.expires_in.' ~ d)|trans }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs">
+                                <input type="checkbox" name="can_edit" value="1" class="w-4 h-4">
+                                {{ 'notes.share.allow_edit'|trans }}
+                            </label>
+                            <button type="submit" class="h-8 px-3 rounded-lg text-sm font-medium bg-black/10 hover:bg-black/15 cursor-pointer">
+                                <i class="fa-solid fa-link text-[11px] mr-1" aria-hidden="true"></i>{{ 'notes.share.create'|trans }}
+                            </button>
+                        </form>
+                    </div>
+                </details>
+            {% endif %}
+
             <p class="px-4 pb-3 text-xs opacity-50">{{ 'notes.edited'|trans({'%when%': note.updatedAt|date('Y-m-d H:i')}) }}</p>
 
             <template data-notes--editor-target="itemTemplate">

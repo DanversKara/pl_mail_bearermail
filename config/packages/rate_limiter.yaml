@@ -69,6 +69,17 @@ framework:
         # Password guesses on one Drive share link, per caller address. The
         # token already has 256 bits; this stops the password being the weak
         # half. See App\Controller\Drive\ShareController.
+        # Note share links (/n/<token>): password guesses, and saves from a
+        # collaborator link. See App\Controller\Notes\NoteShareController.
+        note_share_password:
+            policy: 'fixed_window'
+            limit: 10
+            interval: '15 minutes'
+        note_share_save:
+            policy: 'sliding_window'
+            limit: 120
+            interval: '1 minute'
+
         drive_share_password:
             policy: 'fixed_window'
             limit: 10
