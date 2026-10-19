@@ -78,6 +78,35 @@ final class NoteControllerTest extends WebTestCase
         self::assertSame('blue', $note->color);
         self::assertSame(['Home', 'Errands'], $note->labels);
 
+        // A reminder: set with an offset, stored as the instant in UTC.
+        $client->request('POST', '/notes/' . $note->id . '/reminder', [], [], [
+            'CONTENT_TYPE'      => 'application/json',
+            'HTTP_X-CSRF-Token' => $toggle,
+        ], json_encode(['at' => '2020-01-02T10:30:00+02:00']));
+        self::assertResponseIsSuccessful();
+        self::assertSame('2020-01-02T08:30:00Z', json_decode((string) $client->getResponse()->getContent(), true)['at']);
+
+        $em->clear();
+        $note = $em->find(Note::class, $note->id);
+        self::assertSame('2020-01-02 08:30', $note->reminderAt?->format('Y-m-d H:i'));
+        self::assertNull($note->reminderSentAt);
+
+        // Due long ago: the sweep claims nothing older than an hour. Due a
+        // minute ago: it claims it, once.
+        $repo = static::getContainer()->get(NoteRepository::class);
+        $now  = new \DateTimeImmutable('2020-01-02 08:31', new \DateTimeZone('UTC'));
+        self::assertContains($note->id, array_map(static fn (Note $n) => $n->id, $repo->findDueReminders($now, $now->modify('-1 hour'))));
+        self::assertTrue($repo->claimReminder($note, $now));
+        self::assertFalse($repo->claimReminder($note, $now));
+
+        $client->request('POST', '/notes/' . $note->id . '/reminder', [], [], [
+            'CONTENT_TYPE'      => 'application/json',
+            'HTTP_X-CSRF-Token' => $toggle,
+        ], json_encode(['at' => null]));
+        $em->clear();
+        $note = $em->find(Note::class, $note->id);
+        self::assertNull($note->reminderAt);
+
         $client->request('POST', '/notes/' . $note->id . '/destroy', ['_token' => $toggle]);
         self::assertResponseRedirects('/notes?view=trash');
     }

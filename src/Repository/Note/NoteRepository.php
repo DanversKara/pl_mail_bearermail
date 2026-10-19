@@ -56,4 +56,44 @@ class NoteRepository extends ServiceEntityRepository
             },
         ));
     }
+
+    /**
+     * Notes whose reminder has come due and not been sent, newest due last,
+     * not older than $since (a reminder missed by more than that is dropped
+     * rather than delivered hours late), and not in the bin.
+     *
+     * @return list<Note>
+     */
+    public function findDueReminders(\DateTimeImmutable $now, \DateTimeImmutable $since): array
+    {
+        /** @var list<Note> */
+        return $this->createQueryBuilder('n')
+            ->where('n.reminderAt IS NOT NULL')
+            ->andWhere('n.reminderSentAt IS NULL')
+            ->andWhere('n.reminderAt <= :now')
+            ->andWhere('n.reminderAt > :since')
+            ->andWhere('n.trashedAt IS NULL')
+            ->setParameter('now', $now)
+            ->setParameter('since', $since)
+            ->orderBy('n.reminderAt', 'ASC')
+            ->setMaxResults(500)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Mark one reminder sent, unless another run already has. True when this
+     * call won the claim — the only run that then sends it.
+     */
+    public function claimReminder(Note $note, \DateTimeImmutable $now): bool
+    {
+        return 1 === $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE user_note SET reminder_sent_at = :now WHERE id = :id AND reminder_sent_at IS NULL AND reminder_at = :at',
+            [
+                'now' => $now->format('Y-m-d H:i:s'),
+                'id'  => $note->id,
+                'at'  => $note->reminderAt?->format('Y-m-d H:i:s'),
+            ],
+        );
+    }
 }

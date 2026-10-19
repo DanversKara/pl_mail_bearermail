@@ -4650,6 +4650,15 @@ contacts:
     validation:
         name_required: 'Give the shipmate a name.'
 notes:
+    reminder:
+        title: 'Ring the ship''s bell'
+        later: 'Later this watch'
+        tomorrow: 'On the morrow'
+        week: 'Next week'
+        pick: 'Date an'' hour'
+        save: 'Set'
+        remove: 'Strike the bell'
+        failed: 'The bell would not ring. Try again, matey.'
     saving: 'Stowin…'
     saved: 'Stowed'
     save_failed: 'Not stowed — check yer riggin'

@@ -1102,6 +1102,8 @@ lists the closed vocabularies: `colors`, `linkTypes`, and the size limits `maxBo
 | `trashed` | Boolean. The server keeps the instant it was set; nothing purges the bin yet. |
 | `links` | List of `{type, id, title}`, `type` in `linkTypes` (`event`, `file`, `contact`, `mail`), at most `maxLinks`. |
 | `labels` | List of label names, trimmed and each kept once (case-insensitive), at most `maxLabels`. |
+| `reminderAt` | UTCDate or null. When it comes due the server mails the user and pushes a `NoteReminder` (`noteId`, `title`, `body`, `url`) to their devices, once; a new time is a new reminder. |
+| `reminderSent` | Boolean, read-only: the current reminder has gone out. |
 | `body` formatting | Plain text with a small markdown subset both clients render: `**bold**`, `*italic*`, `__underline__`, a line starting `# ` is a heading, a line starting `- ` is a bullet. |
 | `createdAt`, `updatedAt` | UTCDate, read-only. |
 

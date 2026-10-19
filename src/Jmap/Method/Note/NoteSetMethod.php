@@ -27,6 +27,9 @@ use Doctrine\ORM\EntityManagerInterface;
  * stripped, and sizes, which are refused rather than truncated — a note that silently loses its
  * tail is worse than one that is told it is too long.
  *
+ * `reminderAt` is a UTCDate or null; a new time is a new reminder, sent once when it comes due
+ * (app:notes:reminders), by email to the user and as a notification on their devices.
+ *
  * `trashed` is a boolean on the wire and an instant in the table: sending true stamps the moment,
  * so a later purge can honour a retention period without a second column.
  */
@@ -34,7 +37,7 @@ final class NoteSetMethod implements JmapMethod
 {
     use TemplateMethodSupport;
 
-    private const array SETTABLE = ['title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links', 'labels'];
+    private const array SETTABLE = ['title', 'body', 'items', 'color', 'pinned', 'archived', 'trashed', 'links', 'labels', 'reminderAt'];
 
     private const int MAX_BODY  = 50_000;
     private const int MAX_ITEMS = 300;
@@ -207,6 +210,27 @@ final class NoteSetMethod implements JmapMethod
         if (true === array_key_exists('labels', $properties)) {
             $note->labels = $this->labels($properties['labels']);
         }
+
+        if (true === array_key_exists('reminderAt', $properties)) {
+            $note->remindAt($this->instant($properties['reminderAt']));
+        }
+    }
+
+    /** A UTCDate (or any ISO 8601 instant with an offset), or null. */
+    private function instant(mixed $value): ?DateTimeImmutable
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        if (true === is_string($value) && 1 === preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/', $value)) {
+            try {
+                return new DateTimeImmutable($value)->setTimezone(new \DateTimeZone('UTC'));
+            } catch (\Exception) {
+            }
+        }
+
+        throw new MethodException('invalidProperties', '"reminderAt" must be null or a UTCDate such as 2026-10-19T09:00:00Z.');
     }
 
     private function bool(mixed $value, string $property): bool
