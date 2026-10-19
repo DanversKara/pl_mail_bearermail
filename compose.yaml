@@ -17,6 +17,10 @@ x-app-image: &app-image
     dockerfile: Dockerfile
     args:
       APP_IMAGE: ghcr.io/danverskara/pl_mail_bearermail
+      # Stamped by update.sh from the checkout it builds, so Admin → Updates
+      # knows which commit is running and can compare it with the channel's.
+      APP_COMMIT: ${APP_COMMIT:-}
+      APP_VERSION: ${APP_VERSION:-}
   image: ghcr.io/danverskara/pl_mail_bearermail:${BEARERMAIL_TAG:-latest}
 
 x-app-env: &app-env
