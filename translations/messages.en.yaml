@@ -4921,6 +4921,7 @@ notes:
         cancel: 'Cancel'
         save_drawing: 'Save drawing'
     share:
+        done_items: '{1}Done (1)|]1,Inf[Done (%count%)'
         heading: 'Share & download'
         page_title: 'Shared note'
         locked: 'This note is protected'
