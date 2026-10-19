@@ -136,16 +136,18 @@ through notes--confirm).
     <section class="space-y-2">
         <div class="flex items-center gap-2">
             <h2 class="text-xs font-semibold text-ink-faint uppercase tracking-wider flex-1">{{ 'notes.title'|trans }}</h2>
-            <form method="post" action="{{ path('app_notes_new') }}" data-turbo-frame="_top">
-                <input type="hidden" name="_token" value="{{ csrf_token('notes_new') }}">
-                <input type="hidden" name="link_type" value="{{ type }}">
-                <input type="hidden" name="link_id" value="{{ id }}">
-                <input type="hidden" name="link_title" value="{{ title }}">
-                <input type="hidden" name="return" value="{{ returnTo }}">
-                <button type="submit" class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium text-ink-muted hover:bg-hover border border-line cursor-pointer">
-                    <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>{{ 'notes.add_note'|trans }}
-                </button>
-            </form>
+            {# A button, not a form: the contact and event views it sits in are
+               read-only and hold no form (notes--create posts it). #}
+            <button type="button" data-controller="notes--create" data-action="notes--create#create"
+                    data-notes--create-url-value="{{ path('app_notes_new') }}"
+                    data-notes--create-token-value="{{ csrf_token('notes_new') }}"
+                    data-notes--create-type-value="{{ type }}"
+                    data-notes--create-id-value="{{ id }}"
+                    data-notes--create-title-value="{{ title }}"
+                    data-notes--create-return-value="{{ returnTo }}"
+                    class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium text-ink-muted hover:bg-hover border border-line cursor-pointer">
+                <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>{{ 'notes.add_note'|trans }}
+            </button>
         </div>
         {% for note in notes %}
             {% set bg = '' ~ nm.fill(note.color) %}

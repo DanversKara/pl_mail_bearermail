@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:737c62ba5cff4ab3acb6d710723b47eb44487a9d -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:907f933d8bf775fdc6e6de4e01f94580326e10d4 -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
