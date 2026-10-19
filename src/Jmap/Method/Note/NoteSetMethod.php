@@ -30,6 +30,9 @@ use Doctrine\ORM\EntityManagerInterface;
  * `reminderAt` is a UTCDate or null; a new time is a new reminder, sent once when it comes due
  * (app:notes:reminders), by email to the user and as a notification on their devices.
  *
+ * `media` (pictures, drawings, recordings) is read-only here: files are added and removed through
+ * /jmap/notes/{id}/media (App\Controller\Notes\NoteMediaApiController).
+ *
  * `trashed` is a boolean on the wire and an instant in the table: sending true stamps the moment,
  * so a later purge can honour a retention period without a second column.
  */
@@ -49,6 +52,7 @@ final class NoteSetMethod implements JmapMethod
         private readonly NoteRepository         $notes,
         private readonly NoteMapper             $mapper,
         private readonly EntityManagerInterface $em,
+        private readonly \App\Service\Note\NoteMediaStorage $media,
     ) {
     }
 
@@ -136,6 +140,7 @@ final class NoteSetMethod implements JmapMethod
                 continue;
             }
 
+            $this->media->removeAll($note);
             $this->em->remove($note);
             $destroyed[] = $real;
         }

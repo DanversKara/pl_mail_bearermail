@@ -42,6 +42,7 @@ final class NoteShareController extends AbstractController
         private readonly PublicAppearanceResolver    $appearance,
         private readonly RateLimiterFactoryInterface $noteSharePasswordLimiter,
         private readonly RateLimiterFactoryInterface $noteShareSaveLimiter,
+        private readonly \App\Service\Note\NoteMediaResponder $mediaResponder,
         #[Autowire('%kernel.secret%')]
         private readonly string                      $secret,
     ) {
@@ -134,6 +135,28 @@ final class NoteShareController extends AbstractController
         $this->em->flush();
 
         return new JsonResponse(['ok' => true]);
+    }
+
+    /**
+     * One of the note's pictures or recordings. Behind a password, the page
+     * puts the grant in the URL (`?g=`), since an <img> cannot send a header.
+     */
+    #[Route('/n/{token<[a-f0-9]{64}>}/media/{mediaId<[a-f0-9]{24}>}', name: 'app_note_share_media', methods: ['GET'])]
+    public function media(Request $request, string $token, string $mediaId): Response
+    {
+        $share = $this->liveShare($token);
+
+        if (null !== $share->passwordHash && false === hash_equals($this->grant($share), (string) $request->query->get('g', ''))) {
+            return new Response('', Response::HTTP_FORBIDDEN);
+        }
+
+        $response = $this->mediaResponder->respond($share->note, $mediaId);
+        if (null === $response) {
+            throw $this->createNotFoundException();
+        }
+        $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+
+        return $response;
     }
 
     private function liveShare(string $token): NoteShare
