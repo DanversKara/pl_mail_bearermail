@@ -45,6 +45,12 @@ final class NoteShareTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString("before", (string) $client->getInternalResponse()->getContent());
 
+        $client->request('GET', '/notes/' . $note->id . '/as-message');
+        self::assertResponseIsSuccessful();
+        $message = json_decode((string) $client->getInternalResponse()->getContent(), true);
+        self::assertTrue($message['ok']);
+        self::assertStringContainsString('before', $message['html']);
+
         $client->request('POST', '/notes/' . $note->id . '/shares', [
             '_token' => $token, 'password' => 'hunter2', 'expires' => '7', 'can_edit' => '1',
         ]);

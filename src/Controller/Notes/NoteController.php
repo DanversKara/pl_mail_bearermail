@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Note\NoteShare;
+use App\Twig\NoteFormatExtension;
 use App\Repository\Note\NoteShareRepository;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -162,6 +163,31 @@ final class NoteController extends AbstractController
             'returnTo' => str_starts_with($back, '/') && false === str_starts_with($back, '//') ? $back : null,
             'shares'   => $this->shares->forNote($note),
         ]);
+    }
+
+    /**
+     * The note as message HTML, for compose's "Insert" picker (the Notes group
+     * of compose/_template_panel): the same JSON shape a template renders to,
+     * so compose--compose#insertTemplate puts it in. No subject: a note dropped
+     * into a mail is part of the message, not its name.
+     */
+    #[Route('/{id<\d+>}/as-message', name: 'as_message', methods: ['GET'])]
+    public function asMessage(int $id): JsonResponse
+    {
+        $note = $this->ownNote($id);
+        $html = '' !== $note->title ? '<p><strong>' . htmlspecialchars($note->title, ENT_QUOTES, 'UTF-8') . '</strong></p>' : '';
+
+        if ([] !== $note->items) {
+            $html .= '<ul>';
+            foreach ($note->items as $item) {
+                $html .= '<li>' . (true === ($item['done'] ?? false) ? '☑ ' : '☐ ') . htmlspecialchars((string) ($item['text'] ?? ''), ENT_QUOTES, 'UTF-8') . '</li>';
+            }
+            $html .= '</ul>';
+        } else {
+            $html .= (string) preg_replace(['/<div class="[^"]*">/', '/<div>/', '/<\/div>/', '/ class="[^"]*"/'], ['<p>', '<p>', '</p>', ''], NoteFormatExtension::format($note->body));
+        }
+
+        return new JsonResponse(['ok' => true, 'subject' => '', 'html' => $html]);
     }
 
     /** The note as a .txt file: title, then the text or the checklist. */
