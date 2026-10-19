@@ -4925,6 +4925,7 @@ notes:
         cancel: 'Annuler'
         save_drawing: 'Enregistrer le dessin'
     share:
+        done_items: '{1}Terminé (1)|]1,Inf[Terminés (%count%)'
         heading: 'Partager et télécharger'
         page_title: 'Note partagée'
         locked: 'Cette note est protégée'

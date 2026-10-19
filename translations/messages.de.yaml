@@ -4889,6 +4889,7 @@ notes:
         cancel: 'Abbrechen'
         save_drawing: 'Zeichnung speichern'
     share:
+        done_items: '{1}Erledigt (1)|]1,Inf[Erledigt (%count%)'
         heading: 'Teilen & herunterladen'
         page_title: 'Geteilte Notiz'
         locked: 'Diese Notiz ist geschützt'
