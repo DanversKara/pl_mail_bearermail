@@ -27,7 +27,7 @@ Variables: share, file, error (translation key|null), appearance
         </p>
 
         {% if share.passwordHash %}
-            <form method="post" class="mt-6 space-y-3 text-left">
+            <form method="post" class="mt-6 space-y-3 text-left" data-turbo="false">
                 <label for="share-password" class="block text-[13px] font-medium text-ink-soft">
                     <i class="fa-solid fa-lock text-[11px] mr-1 text-ink-faint" aria-hidden="true"></i>{{ 'drive.protected_hint'|trans }}
                 </label>

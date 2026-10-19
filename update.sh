@@ -19,6 +19,11 @@ git reset --hard "origin/$branch"
 git log -1 --oneline
 
 echo "==> Rebuilding and restarting"
+# Stamp the build with the commit (and the nearest release tag), so Admin →
+# Updates can say whether this installation is behind its channel.
+APP_COMMIT="$(git rev-parse HEAD)"
+APP_VERSION="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+export APP_COMMIT APP_VERSION
 docker compose --profile mail up -d --build
 
 echo "==> Done. Running: $(git log -1 --format='%h %s')"
