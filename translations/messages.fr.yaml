@@ -3381,6 +3381,8 @@ settings:
             logo: 'Le logo ci-dessous'
             envelope: 'Enveloppe BearerMail'
         logo:
+            bearermail_navy: 'Marine'
+            bearermail_white: 'Blanc'
             android_icons: 'Icônes Android'
             colour: 'Couleur'
             heading: Logo

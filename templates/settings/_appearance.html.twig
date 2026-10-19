@@ -430,10 +430,17 @@
                         {{ 'settings.appearance.logo.android_icons'|trans }}
                     </span>
                     <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3" role="group" aria-labelledby="logo-bearermail-label">
-                        <button type="button" aria-pressed="true" class="{{ _iconTile }} ring-2 ring-accent">
-                            <img src="/icons/bearermail-round-192.png" alt="" width="48" height="48" class="size-12" decoding="async">
-                            <span class="text-xs text-ink-soft text-center leading-tight">BearerMail</span>
-                        </button>
+                        {# appIcon: `bearermail` is the navy artwork, `bearermail-white` the same on white. #}
+                        {% for choice, variant in { 'bearermail': 'navy', 'bearermail-white': 'white' } %}
+                            {% set _on = a.appIcon == choice or (choice == 'bearermail' and a.appIcon not in ['bearermail', 'bearermail-white']) %}
+                            <button type="button" data-bearermail-icon="{{ choice }}"
+                                    data-action="click->settings--appearance#pickBearermailIcon"
+                                    aria-pressed="{{ _on ? 'true' : 'false' }}"
+                                    class="{{ _iconTile }} {{ _on ? 'ring-2 ring-accent' : '' }}">
+                                <img src="/icons/bearermail-android-{{ variant }}.png" alt="" width="48" height="48" class="{{ _iconImage }}" decoding="async">
+                                <span class="text-xs text-ink-soft text-center leading-tight">{{ ('settings.appearance.logo.bearermail_' ~ variant)|trans }}</span>
+                            </button>
+                        {% endfor %}
                     </div>
                 </div>
 
@@ -469,7 +476,7 @@
                         {% endfor %}
                     </div>
                     <input type="hidden" data-settings--appearance-field="appIcon"
-                           data-settings--appearance-target="appIcon" value="{{ _bearermail ? 'bearermail' : 'logo' }}">
+                           data-settings--appearance-target="appIcon" value="{{ _bearermail ? (a.appIcon starts with 'bearermail' ? a.appIcon : 'bearermail') : 'logo' }}">
                     <input type="hidden" data-settings--appearance-field="logoMotif"
                            data-settings--appearance-target="logoMotif" value="{{ _motif.value }}">
                 </div>

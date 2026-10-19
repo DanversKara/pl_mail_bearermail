@@ -3233,6 +3233,8 @@ settings:
             logo: 'pl logos'
             envelope: 'BearerMail envelope'
         logo:
+            bearermail_navy: 'Navy'
+            bearermail_white: 'White'
             android_icons: 'Android icons'
             colour: 'Colour'
             heading: Logo
