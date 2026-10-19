@@ -240,7 +240,7 @@ final class NoteController extends AbstractController
     }
 
     #[Route('/{id<\d+>}/link', name: 'link', methods: ['POST'])]
-    public function addLink(int $id, Request $request): Response
+    public function linkTo(int $id, Request $request): Response
     {
         $note = $this->ownNote($id);
         $this->assertCsrf($request, 'notes_' . $id);
@@ -262,7 +262,7 @@ final class NoteController extends AbstractController
     }
 
     #[Route('/{id<\d+>}/unlink', name: 'unlink', methods: ['POST'])]
-    public function removeLink(int $id, Request $request): Response
+    public function unlinkFrom(int $id, Request $request): Response
     {
         $note = $this->ownNote($id);
         $this->assertCsrf($request, 'notes_' . $id);

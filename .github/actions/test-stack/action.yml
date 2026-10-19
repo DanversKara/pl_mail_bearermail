@@ -150,8 +150,7 @@ runs:
             --volume "$HOME/.cache/composer:/composer-cache" \
             --env COMPOSER_CACHE_DIR=/composer-cache \
             --entrypoint docker-php-entrypoint \
-            app composer install --prefer-dist --no-progress --no-interaction > /tmp/composer.log 2>&1 && break
-          grep -iE 'error|exception|fatal|failed|line [0-9]|not found|undefined' /tmp/composer.log | grep -v Extracting | tail -9 | sed 's/^/::error::DIAG /'
+            app composer install --prefer-dist --no-progress --no-interaction && break
 
           if [ "$attempt" = 3 ]; then
             exit 1
