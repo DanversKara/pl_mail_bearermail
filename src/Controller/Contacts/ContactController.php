@@ -236,6 +236,42 @@ final class ContactController extends AbstractController
         return $this->redirectToRoute('app_contacts_list', [], Response::HTTP_SEE_OTHER);
     }
 
+    /**
+     * The contact's photo for the web pages, on the session the page already
+     * has. The pages used to load it from the JMAP route, whose firewall is
+     * stateless and answers a browser with a Basic challenge — so every page
+     * showing a photo popped up a "Sign in" box nothing typed into could pass.
+     * The Android app keeps using the JMAP route with its own token.
+     */
+    #[Route('/{id<\d+>}/photo', name: 'photo_show', methods: ['GET'])]
+    public function photoShow(int $id): Response
+    {
+        $contact = $this->ownContact($id);
+
+        if (null === $contact->photoPath || '' === $contact->photoPath) {
+            throw $this->createNotFoundException();
+        }
+
+        $absolute = $this->projectDir . '/var/' . ltrim($contact->photoPath, '/');
+
+        if (false === is_file($absolute)) {
+            throw $this->createNotFoundException();
+        }
+
+        $mime = match (strtolower((string) pathinfo($contact->photoPath, \PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'         => 'image/png',
+            'webp'        => 'image/webp',
+            default       => 'application/octet-stream',
+        };
+
+        $response = new \Symfony\Component\HttpFoundation\BinaryFileResponse($absolute);
+        $response->headers->set('Content-Type', $mime);
+        $response->setPrivate();
+
+        return $response;
+    }
+
     #[Route('/{id<\d+>}/photo', name: 'photo', methods: ['POST'])]
     public function photo(int $id, Request $request): Response
     {

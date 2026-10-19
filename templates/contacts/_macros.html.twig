@@ -2,12 +2,12 @@
 contacts/_macros.html.twig — shared contact bits.
 
 avatar(contact, cls): the photo, or a single-initial fallback tile. The photo
-is served by the owner-only JMAP photo route (session-cookie authed), the
-same one the Android app uses.
+comes from app_contacts_photo_show, on the page's own session — not the JMAP
+route, whose stateless firewall answers a browser with a Basic "Sign in" box.
 #}
 {% macro avatar(contact, cls) %}
     {% if contact.photoPath %}
-        <img src="{{ path('jmap_contacts_photo_serve', { contactId: contact.id }) }}"
+        <img src="{{ path('app_contacts_photo_show', { id: contact.id }) }}"
              alt="" loading="lazy"
              class="{{ cls }} rounded-full object-cover shrink-0">
     {% else %}

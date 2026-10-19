@@ -58,7 +58,7 @@ final class ContactController extends AbstractController
                 'frequency'     => null,
                 'isAddressBook' => true,
                 'photoUrl'      => null !== $contact->photoPath && '' !== $contact->photoPath
-                    ? $this->generateUrl('jmap_contacts_photo_serve', ['contactId' => $contact->id])
+                    ? $this->generateUrl('app_contacts_photo_show', ['id' => $contact->id])
                     : null,
             ];
         }
