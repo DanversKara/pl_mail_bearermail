@@ -3204,11 +3204,6 @@ settings:
                 strong: Stark
                 subtle: Dezent
             unreadEmphasis: Ungelesene Zeilen
-        app_icon:
-            heading: 'App-Symbol'
-            subheading: 'Das Bild für den Browser-Tab, die obere Leiste und das Symbol der Android-App auf dem Startbildschirm.'
-            logo: 'Das Logo unten'
-            bearermail: 'BearerMail'
         logo:
             colour: 'Farbe'
             heading: Logo

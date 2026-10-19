@@ -60,9 +60,8 @@
         {% set _logoClassic = not _appIcon and _logoMotif.value == 'pl' %}
         {# BearerMail artwork as the app icon (Settings → Appearance → App icon):
            one fixed picture, in place of the logo marks below. #}
-        {% if _appIcon %}
-            <img src="/icons/bearermail-192.png" alt="" width="36" height="36" decoding="async" class="size-9 flex-shrink-0 rounded-lg">
-        {% endif %}
+        <img src="/icons/bearermail-192.png" alt="" width="36" height="36" decoding="async" class="size-9 flex-shrink-0 rounded-lg"
+             data-logo-live-bearermail {{ _appIcon ? '' : 'hidden' }}>
         <span class="flex flex-shrink-0" data-logo-live-mark {{ _logoClassic and not _appIcon ? '' : 'hidden' }}>
             {{- logo.mark(appearance().effectiveLogoStyle, 36, appearance().theme.isDark, true) -}}
         </span>

@@ -3058,11 +3058,6 @@ settings:
                 strong: Loud as a cannon
                 subtle: A whisper
             unreadEmphasis: Unread rows
-        app_icon:
-            heading: 'Ship''s flag'
-            subheading: 'The picture flown on the browser tab, the top bar an'' the Android app''s home-screen icon.'
-            logo: 'The mark below'
-            bearermail: 'BearerMail'
         logo:
             colour: 'Colours'
             heading: 'Ship''s mark'

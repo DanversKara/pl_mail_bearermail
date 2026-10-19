@@ -3227,11 +3227,6 @@ settings:
                 strong: Strong
                 subtle: Subtle
             unreadEmphasis: Unread rows
-        app_icon:
-            heading: 'App icon'
-            subheading: 'The picture for the browser tab, the top bar and the Android app''s home-screen icon.'
-            logo: 'The logo below'
-            bearermail: 'BearerMail'
         logo:
             colour: 'Colour'
             heading: Logo

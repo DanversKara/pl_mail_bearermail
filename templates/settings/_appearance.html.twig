@@ -381,38 +381,12 @@
                aria-pressed, so it is announced as well as drawn. #}
             {% set _motif = a.logoMotif %}
             {% set _classic = _motif.value == 'pl' %}
+            {% set _bearermail = a.appIcon == 'bearermail' %}
             {% set _logoMode = not _classic and a.logoOriginal ? 'original' : (a.logoLinked ? 'linked' : 'independent') %}
             {% set _iconTile = 'group flex flex-col items-center gap-2 p-2 rounded-pane cursor-pointer hover:bg-hover transition-colors' %}
             {# `rounded-[22%]` is the tile's own corner (16 of 72 units, see
                branding/icon.svg.twig), so the hairline follows the picture's
                edge — a pale icon on a pale card has no other edge to read. #}
-            {# App icon: the logo below (in its paint), or the BearerMail artwork —
-               a fixed picture. Used for the tab icon, the top bar and the Android
-               launcher icon, which follows this setting. A radio pair carrying the
-               field itself, so save() sends the checked one. #}
-            <section>
-                <div class="mb-3">
-                    <h3 class="text-sm font-semibold text-ink">{{ 'settings.appearance.app_icon.heading'|trans }}</h3>
-                    <p class="text-xs text-ink-faint mt-0.5">{{ 'settings.appearance.app_icon.subheading'|trans }}</p>
-                </div>
-                <div class="flex flex-wrap gap-3" role="radiogroup" aria-label="{{ 'settings.appearance.app_icon.heading'|trans }}">
-                    {% for choice in ['logo', 'bearermail'] %}
-                        <label class="relative flex items-center gap-3 rounded-xl border border-line px-3 py-2 cursor-pointer hover:bg-hover has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
-                            <input type="radio" name="appIcon" value="{{ choice }}" class="sr-only"
-                                   data-settings--appearance-field="appIcon"
-                                   data-action="change->settings--appearance#queue"
-                                   {{ a.appIcon == choice ? 'checked' }}>
-                            {% if choice == 'bearermail' %}
-                                <img src="/icons/bearermail-192.png" alt="" width="48" height="48" class="size-12 rounded-[22%] ring-1 ring-line">
-                            {% else %}
-                                <img src="{{ logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="size-12 rounded-[22%] ring-1 ring-line">
-                            {% endif %}
-                            <span class="text-sm text-ink">{{ ('settings.appearance.app_icon.' ~ choice)|trans }}</span>
-                        </label>
-                    {% endfor %}
-                </div>
-            </section>
-
             {% set _iconImage = 'size-12 rounded-[22%] ring-1 ring-line' %}
             <section>
                 <div class="mb-4">
@@ -443,13 +417,26 @@
                                     data-logo-bar="{{ logo_url(motif) }}"
                                     data-logo-bar-dark="{{ logo_url(motif, null, true) }}"
                                     data-action="click->settings--appearance#pickMotif"
-                                    aria-pressed="{{ motif == _motif ? 'true' : 'false' }}"
-                                    class="{{ _iconTile }} {{ motif == _motif ? 'ring-2 ring-accent' : '' }}">
+                                    aria-pressed="{{ not _bearermail and motif == _motif ? 'true' : 'false' }}"
+                                    class="{{ _iconTile }} {{ not _bearermail and motif == _motif ? 'ring-2 ring-accent' : '' }}">
                                 <img src="{{ _url }}" alt="" width="48" height="48" class="{{ _iconImage }}" decoding="async">
                                 <span class="text-xs text-ink-soft text-center leading-tight">{{ ('settings.appearance.logo.motif.' ~ motif.value)|trans }}</span>
                             </button>
                         {% endfor %}
+                        {# The BearerMail artwork: a finished picture, not a motif, so
+                           it has no colours. Picking it sets appIcon, which the tab
+                           icon, the top bar and the Android launcher icon follow;
+                           picking any motif above sets it back to the logo. #}
+                        <button type="button" data-app-icon-bearermail
+                                data-action="click->settings--appearance#pickBearermail"
+                                aria-pressed="{{ _bearermail ? 'true' : 'false' }}"
+                                class="{{ _iconTile }} {{ _bearermail ? 'ring-2 ring-accent' : '' }}">
+                            <img src="/icons/bearermail-192.png" alt="" width="48" height="48" class="{{ _iconImage }}" decoding="async">
+                            <span class="text-xs text-ink-soft text-center leading-tight">BearerMail</span>
+                        </button>
                     </div>
+                    <input type="hidden" data-settings--appearance-field="appIcon"
+                           data-settings--appearance-target="appIcon" value="{{ a.appIcon }}">
                     <input type="hidden" data-settings--appearance-field="logoMotif"
                            data-settings--appearance-target="logoMotif" value="{{ _motif.value }}">
                 </div>
@@ -459,9 +446,10 @@
                    the group is two segments then and three otherwise. While
                    linked the colour is the theme's: picking a theme above
                    repaints it live (see pickTheme). The colourway grid is
-                   hidden rather than removed outside Independent: repaintLogo
-                   still reads the strokes off its tiles, and choosing
-                   Independent reveals it exactly as it was left. #}
+                   always shown, so every icon offers its colours; clicking one
+                   is the answer "Choose independently" (pickLogo). The whole
+                   step hides while the BearerMail artwork is the icon. #}
+                <div data-settings--appearance-target="logoColour" {{ _bearermail ? 'hidden' : '' }}>
                 <div class="mb-4">
                     <span class="block text-xs font-medium text-ink-muted mb-1.5" id="logo-paint-label">
                         {{ 'settings.appearance.logo.colour'|trans }}
@@ -501,20 +489,21 @@
                    somebody opens them. #}
                 <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3"
                      role="group" aria-labelledby="logo-paint-label"
-                     data-settings--appearance-target="logoGrid" {{ _logoMode != 'independent' ? 'hidden' : '' }}>
+                     data-settings--appearance-target="logoGrid">
                     {% for style in enum('App\\Domain\\Enum\\Theme\\LogoStyle').cases %}
                         <button type="button"
                                 data-logo-name="{{ style.value }}"
                                 data-logo-strokes="{{ style.strokes(false)|json_encode }}"
                                 data-logo-strokes-dark="{{ style.strokes(true)|json_encode }}"
                                 data-action="click->settings--appearance#pickLogo"
-                                aria-pressed="{{ a.logoStyle == style ? 'true' : 'false' }}"
-                                class="{{ _iconTile }} {{ a.logoStyle == style ? 'ring-2 ring-accent' : '' }}">
+                                aria-pressed="{{ _logoMode == 'independent' and a.logoStyle == style ? 'true' : 'false' }}"
+                                class="{{ _iconTile }} {{ _logoMode == 'independent' and a.logoStyle == style ? 'ring-2 ring-accent' : '' }}">
                             <img data-logo-paint="{{ style.value }}" src="{{ logo_icon_url(_motif, style) }}" alt=""
-                                 width="48" height="48" class="{{ _iconImage }}" loading="lazy" decoding="async">
+                                 width="48" height="48" class="{{ _iconImage }}" decoding="async">
                             <span class="text-xs text-ink-soft text-center leading-tight">{{ ('settings.appearance.logo.style.' ~ style.value)|trans }}</span>
                         </button>
                     {% endfor %}
+                </div>
                 </div>
                 <input type="hidden" data-settings--appearance-target="logoStyle" data-settings--appearance-field="logoStyle" value="{{ a.logoStyle.value }}">
             </section>
