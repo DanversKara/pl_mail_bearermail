@@ -1,4 +1,4 @@
-<!-- translated-from: install/configuration.md sha1:36fbde6417fb06182490da96905fdce7da065fae -->
+<!-- translated-from: install/configuration.md sha1:2511c455a3353b93964915410a7a1e632816adee -->
 # Konfigurationsreferenz
 
 Jede Umgebungsvariable, die plMail liest, was sie bewirkt, welchen Vorgabewert sie hat und was
@@ -90,6 +90,7 @@ Das sind die Variablen aus `.env`, in der Reihenfolge, in der sie dort stehen.
 | `PUSH_ALLOWED_HOSTS` | Kommagetrennte Hosts, auf die ein Push-Endpunkt zeigen darf, obwohl sie auf eine private Adresse auflösen. | leer | Nur für ein ntfy im LAN | Jeder andere private, Loopback- oder Link-Local-Endpunkt wird bei der Registrierung und beim Senden abgewiesen. Läuft das mitgelieferte ntfy auf einer LAN- oder Tailscale-Adresse, setz hier deinen `SERVER_NAME`, sonst bekommen die Telefone keine Pushes mehr. Siehe [den SSRF-Schutz](#der-ssrf-schutz) weiter unten. |
 | `INTEGRATIONS_ALLOW_HTTP` | Ob jemand für eine selbst gehostete Integration einen `http://`-Server angeben darf. | `false` | Nein | Siehe [den SSRF-Schutz](#der-ssrf-schutz) weiter unten. |
 | `INTEGRATIONS_ALLOWED_HOSTS` | Kommagetrennte Hosts, die von der Sperre privater Adressbereiche ausgenommen sind. | leer | Nein | Siehe [den SSRF-Schutz](#der-ssrf-schutz) weiter unten. |
+| `APP_FEEDBACK_TO` | Wohin **Feedback senden** in „Was ist neu“ mailt. Die Mail geht über das eigene Konto der Person; das hier ist nur der Empfänger. | leer — BearerMail schickt es an `postmaster@` auf `MAIL_DOMAIN` (auch der Parameter `app.fallback_feedback_to` ist leer) | Nein | Das Feedback der Leute auf dieser Installation kommt bei dir an. Trag eine andere Adresse ein, um es dort zu lesen; ein Tippfehler schickt es ins Leere, und wer es geschrieben hat, bekommt einen Bounce ins eigene Postfach. |
 
 **Der typische Fehlerfall bei dieser Tabelle ist, ein Leerfeld für einen fehlenden Wert zu halten.**
 Vier der obigen Leerfelder sind tragend: Sie sind leer, damit die Erzeugung beim ersten Start
