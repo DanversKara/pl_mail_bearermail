@@ -4876,6 +4876,18 @@ contacts:
     validation:
         name_required: 'Gib dem Kontakt einen Namen.'
 notes:
+    media:
+        add_image: 'Bild hinzufügen'
+        draw: 'Zeichnen'
+        record: 'Sprachnotiz aufnehmen'
+        delete: 'Entfernen'
+        failed: 'Das wurde nicht gespeichert. Bitte erneut versuchen.'
+        mic_denied: 'Das Mikrofon ist gesperrt. Erlaube es dieser Seite im Browser und versuche es erneut.'
+        eraser: 'Radierer'
+        pen_size: 'Stiftbreite'
+        clear: 'Leeren'
+        cancel: 'Abbrechen'
+        save_drawing: 'Zeichnung speichern'
     share:
         heading: 'Teilen & herunterladen'
         page_title: 'Geteilte Notiz'

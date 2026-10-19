@@ -4912,6 +4912,18 @@ contacts:
     validation:
         name_required: 'Donnez un nom au contact.'
 notes:
+    media:
+        add_image: 'Ajouter une image'
+        draw: 'Dessiner'
+        record: 'Enregistrer une note vocale'
+        delete: 'Retirer'
+        failed: 'Cela n''a pas été enregistré. Réessayez.'
+        mic_denied: 'Le micro est bloqué. Autorisez-le pour ce site dans le navigateur, puis réessayez.'
+        eraser: 'Gomme'
+        pen_size: 'Taille du crayon'
+        clear: 'Effacer'
+        cancel: 'Annuler'
+        save_drawing: 'Enregistrer le dessin'
     share:
         heading: 'Partager et télécharger'
         page_title: 'Note partagée'

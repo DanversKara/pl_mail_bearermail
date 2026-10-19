@@ -57,6 +57,13 @@ through notes--confirm).
     {% set token = csrf_token('notes_' ~ note.id) %}
     <article class="group break-inside-avoid mb-4 rounded-xl border {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }} flex flex-col"
              {% if bg %}style="background: {{ bg }}"{% endif %}>
+        {% set picture = note.media|filter(m => m.kind != 'audio')|first %}
+        {% if picture %}
+            <a href="{{ path('app_notes_edit', { id: note.id }) }}" class="block">
+                <img src="{{ path('app_notes_media_show', { id: note.id, mediaId: picture.id }) }}" alt="" loading="lazy"
+                     class="w-full max-h-56 object-cover rounded-t-xl bg-white">
+            </a>
+        {% endif %}
         <a href="{{ path('app_notes_edit', { id: note.id }) }}" class="block px-4 pt-3 pb-2 rounded-t-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             {% if note.title %}<h2 class="font-semibold text-[15px] leading-snug mb-1 break-words">{{ note.title }}</h2>{% endif %}
             {% if note.body %}
@@ -88,8 +95,14 @@ through notes--confirm).
             </ul>
         {% endif %}
 
-        {% if note.labels is not empty or note.links is not empty or note.reminderAt %}
+        {% if note.labels is not empty or note.links is not empty or note.reminderAt or note.media|filter(m => m.kind == 'audio') is not empty %}
             <div class="px-4 pb-2 flex flex-wrap gap-1.5">
+                {% set voices = note.media|filter(m => m.kind == 'audio')|length %}
+                {% if voices > 0 %}
+                    <span class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5">
+                        <i class="fa-solid fa-microphone text-[10px] opacity-70" aria-hidden="true"></i>{{ voices }}
+                    </span>
+                {% endif %}
                 {% if note.reminderAt %}
                     <span class="inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs bg-black/5 {{ note.reminderSentAt ? 'line-through opacity-70' }}"
                           title="{{ 'notes.reminder.title'|trans }}">
@@ -172,3 +185,38 @@ through notes--confirm).
         {% endfor %}
     </section>
 {% endmacro %}
+
+{# One picture or drawing in the editor: opens full size; ✕ deletes it. #}
+{% macro mediaTile(note, m, token, trashed = false) %}
+    {% set src = path('app_notes_media_show', { id: note.id, mediaId: m.id }) %}
+    <div class="relative group" data-media-id="{{ m.id }}">
+        <a href="{{ src }}" target="_blank" rel="noopener" data-turbo="false">
+            <img src="{{ src }}" alt="{{ m.name }}" loading="lazy" class="w-full h-32 sm:h-40 object-cover rounded-lg bg-white">
+        </a>
+        {% if m.kind == 'drawing' %}
+            <span class="absolute left-1.5 bottom-1.5 px-1.5 rounded text-[10px] bg-black/50 text-white"><i class="fa-solid fa-paintbrush" aria-hidden="true"></i></span>
+        {% endif %}
+        {% if not trashed %}
+            <button type="button" data-action="notes--media#remove" data-notes--media-id-param="{{ m.id }}"
+                    class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/55 text-white opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                    title="{{ 'notes.media.delete'|trans }}" aria-label="{{ 'notes.media.delete'|trans }}">
+                <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+            </button>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{# One voice recording in the editor. #}
+{% macro mediaAudio(note, m, token, trashed = false) %}
+    <div class="flex items-center gap-2" data-media-id="{{ m.id }}">
+        <i class="fa-solid fa-microphone text-xs opacity-60" aria-hidden="true"></i>
+        <audio controls preload="metadata" src="{{ path('app_notes_media_show', { id: note.id, mediaId: m.id }) }}" class="flex-1 min-w-0 h-9"></audio>
+        {% if not trashed %}
+            <button type="button" data-action="notes--media#remove" data-notes--media-id-param="{{ m.id }}"
+                    class="w-7 h-7 rounded-full hover:bg-black/10 cursor-pointer" title="{{ 'notes.media.delete'|trans }}" aria-label="{{ 'notes.media.delete'|trans }}">
+                <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+            </button>
+        {% endif %}
+    </div>
+{% endmacro %}
+

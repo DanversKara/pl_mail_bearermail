@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:56d1afd57fed5728fe94a613b1293951d8337748 -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:5511183dd9159254fa991d901486faa09d0f5d41 -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -1212,6 +1212,7 @@ Größenlimits `maxBody`, `maxItems`, `maxLinks`.
 | `labels` | Liste von Label-Namen, getrimmt und jeder nur einmal (ohne Groß-/Kleinschreibung), höchstens `maxLabels`. |
 | `reminderAt` | UTCDate oder null. Wird sie fällig, mailt der Server dem Nutzer und schickt ein `NoteReminder` (`noteId`, `title`, `body`, `url`) per Push an seine Geräte, einmal; eine neue Zeit ist eine neue Erinnerung. |
 | `reminderSent` | Boolean, nur lesbar: die aktuelle Erinnerung ist verschickt. |
+| `media` | Nur lesbare Liste von `{id, kind, name, type, size, createdAt}`, `kind` eines von `image`, `drawing`, `audio`. Hinzufügen mit `POST /jmap/notes/{noteId}/media?kind=…&name=…` (die Datei roh als Body, ihr Typ als Content-Type; höchstens 30 pro Notiz, 15 MB ein Bild, 10 MB eine Zeichnung, 25 MB eine Aufnahme), lesen mit `GET /jmap/notes/{noteId}/media/{id}`, entfernen mit `DELETE` auf derselben URL. |
 | Formatierung von `body` | Klartext mit einer kleinen Markdown-Teilmenge, die beide Clients darstellen: `**fett**`, `*kursiv*`, `__unterstrichen__`, eine Zeile mit `# ` am Anfang ist eine Überschrift, eine mit `- ` ein Aufzählungspunkt. |
 | `createdAt`, `updatedAt` | UTCDate, nur lesbar. |
 

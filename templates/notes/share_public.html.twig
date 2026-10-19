@@ -30,7 +30,10 @@ Variables: share, note, unlocked, grant, error, appearance
         </div>
     {% else %}
         {% set bg = '' ~ nm.fill(note.color) %}
-        <article class="rounded-xl border shadow-sm {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }}"
+        {% set pictures = note.media|filter(m => m.kind != 'audio') %}
+        {% set recordings = note.media|filter(m => m.kind == 'audio') %}
+        {% set mediaQuery = share.passwordHash ? { g: grant } : {} %}
+        <article class="rounded-xl border shadow-sm overflow-hidden {{ bg ? 'border-black/10 text-[#202124]' : 'border-line bg-surface text-ink' }}"
                  {% if bg %}style="background: {{ bg }}"{% endif %}
                  {% if share.canEdit %}
                      data-controller="notes--shared"
@@ -39,6 +42,24 @@ Variables: share, note, unlocked, grant, error, appearance
                      data-notes--shared-saved-value="{{ 'notes.saved'|trans }}"
                      data-notes--shared-failed-value="{{ 'notes.save_failed'|trans }}"
                  {% endif %}>
+            {% if pictures is not empty %}
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 p-1">
+                    {% for m in pictures %}
+                        {% set src = path('app_note_share_media', { token: share.token, mediaId: m.id }|merge(mediaQuery)) %}
+                        <a href="{{ src }}" target="_blank" rel="noopener" data-turbo="false">
+                            <img src="{{ src }}" alt="{{ m.name }}" loading="lazy" class="w-full h-40 object-cover rounded-lg bg-white">
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if recordings is not empty %}
+                <div class="px-3 pt-2 space-y-1.5">
+                    {% for m in recordings %}
+                        <audio controls preload="metadata" class="w-full h-9"
+                               src="{{ path('app_note_share_media', { token: share.token, mediaId: m.id }|merge(mediaQuery)) }}"></audio>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% if share.canEdit %}
                 <div class="px-4 pt-3">
                     <input type="text" maxlength="255" value="{{ note.title }}" placeholder="{{ 'notes.title_placeholder'|trans }}"

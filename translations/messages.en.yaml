@@ -4908,6 +4908,18 @@ contacts:
     validation:
         name_required: 'Give the contact a name.'
 notes:
+    media:
+        add_image: 'Add picture'
+        draw: 'Draw'
+        record: 'Record a voice note'
+        delete: 'Remove'
+        failed: 'That did not save. Try again.'
+        mic_denied: 'The microphone is blocked. Allow it for this site in your browser, then try again.'
+        eraser: 'Eraser'
+        pen_size: 'Pen size'
+        clear: 'Clear'
+        cancel: 'Cancel'
+        save_drawing: 'Save drawing'
     share:
         heading: 'Share & download'
         page_title: 'Shared note'

@@ -1104,6 +1104,7 @@ lists the closed vocabularies: `colors`, `linkTypes`, and the size limits `maxBo
 | `labels` | List of label names, trimmed and each kept once (case-insensitive), at most `maxLabels`. |
 | `reminderAt` | UTCDate or null. When it comes due the server mails the user and pushes a `NoteReminder` (`noteId`, `title`, `body`, `url`) to their devices, once; a new time is a new reminder. |
 | `reminderSent` | Boolean, read-only: the current reminder has gone out. |
+| `media` | Read-only list of `{id, kind, name, type, size, createdAt}`, `kind` one of `image`, `drawing`, `audio`. Added with `POST /jmap/notes/{noteId}/media?kind=…&name=…` (the raw file as the body, its type as Content-Type; at most 30 per note, 15 MB a picture, 10 MB a drawing, 25 MB a recording), read with `GET /jmap/notes/{noteId}/media/{id}`, removed with `DELETE` on the same URL. |
 | `body` formatting | Plain text with a small markdown subset both clients render: `**bold**`, `*italic*`, `__underline__`, a line starting `# ` is a heading, a line starting `- ` is a bullet. |
 | `createdAt`, `updatedAt` | UTCDate, read-only. |
 
