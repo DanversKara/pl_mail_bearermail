@@ -31,7 +31,7 @@ final readonly class ObjectChangeNudgeListener
         foreach ([$uow->getScheduledEntityInsertions(), $uow->getScheduledEntityUpdates(), $uow->getScheduledEntityDeletions()] as $entities) {
             foreach ($entities as $entity) {
                 if ($entity instanceof CalendarEvent) {
-                    $userId = $entity->usr?->id ?? $entity->calendar?->usr?->id;
+                    $userId = $entity->usr->id ?? $entity->calendar->usr->id ?? null;
                     if (null !== $userId) {
                         $this->nudges->record((int) $userId, ObjectChangeNudges::CALENDAR);
                     }
