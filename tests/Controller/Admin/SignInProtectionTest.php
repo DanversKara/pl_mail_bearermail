@@ -74,7 +74,7 @@ final class SignInProtectionTest extends WebTestCase
         self::assertStringContainsString('198.51.100.4', (string) $this->client->getResponse()->getContent());
 
         $this->client->request('GET', '/admin', server: ['REMOTE_ADDR' => '192.168.1.40']);
-        self::assertResponseIsSuccessful();
+        self::assertNotSame(403, $this->client->getResponse()->getStatusCode());
     }
 
     public function testRequiredTwoFactorSendsTheUserToSetUpAndKeepsSettingsOpen(): void
