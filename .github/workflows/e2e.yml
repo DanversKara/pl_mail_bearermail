@@ -129,7 +129,7 @@ jobs:
             - name: Run PHPStan
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app composer stan
+                    --entrypoint docker-php-entrypoint app composer stan -- --error-format=github
 
             # `npm run test:unit:docker` minus the `up`, which has already
             # happened. PHPUnit used to run bare on the runner while every
