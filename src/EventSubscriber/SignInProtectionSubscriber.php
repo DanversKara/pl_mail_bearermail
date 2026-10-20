@@ -105,7 +105,8 @@ final readonly class SignInProtectionSubscriber implements EventSubscriberInterf
         // Background fetches, frames and form posts: refuse plainly. A redirect
         // inside a Turbo frame would leave it spinning (see DemoGuardSubscriber).
         $frame = (string) $request->headers->get('Turbo-Frame', '');
-        if (false === $request->isMethod('GET') || '' !== $frame || false === \in_array('text/html', $request->getAcceptableContentTypes(), true)) {
+        $wantsData = $request->isXmlHttpRequest() || \in_array('application/json', $request->getAcceptableContentTypes(), true);
+        if (false === $request->isMethod('GET') || '' !== $frame || $wantsData) {
             $event->setResponse(new Response($message, Response::HTTP_FORBIDDEN, ['Content-Type' => 'text/plain; charset=UTF-8']));
 
             return;

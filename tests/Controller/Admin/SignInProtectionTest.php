@@ -95,6 +95,6 @@ final class SignInProtectionTest extends WebTestCase
         $this->client->request('GET', '/admin/security/sign-in');
         $token = (string) $this->client->getCrawler()->filter('input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/admin/security/sign-in', ['_token' => $token, 'twoFactor' => 'off'] + $fields);
+        $this->client->request('POST', '/admin/security/sign-in', $fields + ['_token' => $token, 'twoFactor' => 'off']);
     }
 }
