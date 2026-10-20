@@ -1,0 +1,12 @@
+{#
+    BearerMail: what /admin answers from an address outside Admin → Security →
+    Sign-in protection's list. Names the address the server saw, so the owner
+    knows what to add. _network_refused_frame.html.twig is the same inside an
+    admin pane's Turbo frame.
+#}
+{% extends 'bundles/TwigBundle/Exception/error.html.twig' %}
+
+{% set error_code    = 403 %}
+{% set error_title   = 'sign_in_protection.refused.heading'|trans %}
+{% set error_heading = 'sign_in_protection.refused.heading'|trans %}
+{% set error_body    = 'sign_in_protection.refused.body'|trans({'%ip%': ip}) %}

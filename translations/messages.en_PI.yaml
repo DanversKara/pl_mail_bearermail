@@ -4840,3 +4840,31 @@ whats_new:
     screenshot_close: 'Stow the likeness'
     screenshot_open: 'Open the likeness full size'
     title: 'What''s new aboard'
+sign_in_protection:
+    heading: Boardin' protection
+    saved: Stowed.
+    save: Stow it
+    two_factor_needed: 'This ship demands two-factor boardin''. Rig it up below to keep sailin'' the web app.'
+    cannot_disable: 'Two-factor boardin'' be required on this ship, so it cannot be struck.'
+    two_factor:
+        label: Demand two-factor boardin'
+        help: 'Whoever it applies to must rig it up next time they board the web app, an'' cannot strike it. Phones an'' mail apps keep sailin'' with their app passwords.'
+        'off': 'Off'
+        admins: Officers
+        everyone: All hands
+    admin_lock:
+        label: Only open the captain's quarters from these ports
+        help: 'From anywhere else the captain''s quarters be shut. Mail, calendar an'' the rest keep sailin'' from everywhere.'
+        networks: Allowed ports
+        networks_help: 'One per line: an address (203.0.113.7) or a range (192.168.1.0/24). Locked out after yer home port changed? On the server run: docker compose exec php bin/console app:security:admin-unlock'
+        you_are: 'Ye be hailin'' from'
+        included: on the list
+        not_included: not on the list
+        overridden: 'ADMIN_NETWORK_LOCK=off be set on the server, so this lock be ignored.'
+    refused:
+        heading: The captain's quarters be shut from here
+        body: 'This ship only opens the captain''s quarters from its owner''s waters. Ye be hailin'' from %ip%.'
+    error:
+        bad_network: 'One o'' them entries be no address nor range.'
+        no_networks: 'Add at least one address afore ye drop the lock.'
+        would_lock_out: 'That list leaves out yer own address (%ip%), so stowin'' it would lock ye out. Add it an'' try again.'

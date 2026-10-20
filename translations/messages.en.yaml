@@ -5095,3 +5095,31 @@ whats_new:
     screenshot_close: 'Close the screenshot'
     screenshot_open: 'Open the screenshot full size'
     title: 'What''s new'
+sign_in_protection:
+    heading: Sign-in protection
+    saved: Saved.
+    save: Save
+    two_factor_needed: 'Two-factor sign-in is required on this server. Set it up below to keep using the web app.'
+    cannot_disable: 'Two-factor sign-in is required on this server, so it cannot be switched off.'
+    two_factor:
+        label: Require two-factor sign-in
+        help: 'Whoever it applies to is asked to set it up the next time they use the web app, and cannot switch it off. Phones and mail apps keep working with their app passwords.'
+        'off': 'Off'
+        admins: Administrators
+        everyone: Everyone
+    admin_lock:
+        label: Only open Admin from these addresses
+        help: 'From anywhere else Admin answers "not available". Mail, calendar and everything else keep working from everywhere.'
+        networks: Allowed addresses
+        networks_help: 'One per line: an address (203.0.113.7) or a range (192.168.1.0/24). Locked out after your home address changed? On the server run: docker compose exec php bin/console app:security:admin-unlock'
+        you_are: 'You are connecting from'
+        included: in the list
+        not_included: not in the list
+        overridden: 'ADMIN_NETWORK_LOCK=off is set on the server, so this lock is not applied.'
+    refused:
+        heading: Admin is not available from here
+        body: 'This server only opens Admin from its owner''s network. You are connecting from %ip%.'
+    error:
+        bad_network: 'One of the entries is not an address or a range.'
+        no_networks: 'Add at least one address before turning the lock on.'
+        would_lock_out: 'That list leaves out your own address (%ip%), so saving it would lock you out. Add it and save again.'

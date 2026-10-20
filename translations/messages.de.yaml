@@ -5064,3 +5064,31 @@ whats_new:
     screenshot_close: 'Screenshot schließen'
     screenshot_open: 'Screenshot in voller Größe öffnen'
     title: 'Was ist neu'
+sign_in_protection:
+    heading: Anmeldeschutz
+    saved: Gespeichert.
+    save: Speichern
+    two_factor_needed: 'Auf diesem Server ist die Zwei-Faktor-Anmeldung Pflicht. Richte sie unten ein, um die Web-App weiter zu nutzen.'
+    cannot_disable: 'Die Zwei-Faktor-Anmeldung ist auf diesem Server Pflicht und lässt sich nicht ausschalten.'
+    two_factor:
+        label: Zwei-Faktor-Anmeldung verlangen
+        help: 'Wen es betrifft, wird beim nächsten Besuch der Web-App gebeten, sie einzurichten, und kann sie nicht ausschalten. Handys und Mail-Apps arbeiten mit ihren App-Passwörtern weiter.'
+        'off': Aus
+        admins: Administratoren
+        everyone: Alle
+    admin_lock:
+        label: Admin nur von diesen Adressen öffnen
+        help: 'Von überall sonst antwortet Admin „nicht verfügbar“. Mail, Kalender und alles andere funktionieren weiterhin überall.'
+        networks: Erlaubte Adressen
+        networks_help: 'Eine pro Zeile: eine Adresse (203.0.113.7) oder ein Bereich (192.168.1.0/24). Ausgesperrt, weil sich deine Adresse zu Hause geändert hat? Auf dem Server: docker compose exec php bin/console app:security:admin-unlock'
+        you_are: 'Du verbindest dich von'
+        included: in der Liste
+        not_included: nicht in der Liste
+        overridden: 'Auf dem Server ist ADMIN_NETWORK_LOCK=off gesetzt, die Sperre wird daher nicht angewendet.'
+    refused:
+        heading: Admin ist von hier nicht erreichbar
+        body: 'Dieser Server öffnet Admin nur aus dem Netz seines Besitzers. Du verbindest dich von %ip%.'
+    error:
+        bad_network: 'Einer der Einträge ist keine Adresse und kein Bereich.'
+        no_networks: 'Füge mindestens eine Adresse hinzu, bevor du die Sperre einschaltest.'
+        would_lock_out: 'In der Liste fehlt deine eigene Adresse (%ip%) – Speichern würde dich aussperren. Füge sie hinzu und speichere erneut.'

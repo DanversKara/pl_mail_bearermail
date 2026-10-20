@@ -5099,3 +5099,31 @@ whats_new:
     screenshot_close: 'Fermer la capture'
     screenshot_open: 'Ouvrir la capture en taille réelle'
     title: 'Nouveautés'
+sign_in_protection:
+    heading: Protection de la connexion
+    saved: Enregistré.
+    save: Enregistrer
+    two_factor_needed: 'La connexion à deux facteurs est obligatoire sur ce serveur. Configurez-la ci-dessous pour continuer à utiliser l’application web.'
+    cannot_disable: 'La connexion à deux facteurs est obligatoire sur ce serveur et ne peut pas être désactivée.'
+    two_factor:
+        label: Exiger la connexion à deux facteurs
+        help: 'Les personnes concernées devront la configurer lors de leur prochaine visite de l’application web, sans pouvoir la désactiver. Les téléphones et les applications mail continuent de fonctionner avec leurs mots de passe d’application.'
+        'off': Désactivée
+        admins: Administrateurs
+        everyone: Tout le monde
+    admin_lock:
+        label: N’ouvrir l’administration que depuis ces adresses
+        help: 'Depuis toute autre adresse, l’administration répond « indisponible ». Le courrier, l’agenda et tout le reste fonctionnent toujours partout.'
+        networks: Adresses autorisées
+        networks_help: 'Une par ligne : une adresse (203.0.113.7) ou une plage (192.168.1.0/24). Bloqué après un changement de votre adresse à domicile ? Sur le serveur : docker compose exec php bin/console app:security:admin-unlock'
+        you_are: 'Vous vous connectez depuis'
+        included: dans la liste
+        not_included: absente de la liste
+        overridden: 'ADMIN_NETWORK_LOCK=off est défini sur le serveur : ce verrou n’est pas appliqué.'
+    refused:
+        heading: L’administration n’est pas accessible d’ici
+        body: 'Ce serveur n’ouvre l’administration que depuis le réseau de son propriétaire. Vous vous connectez depuis %ip%.'
+    error:
+        bad_network: 'L’une des entrées n’est ni une adresse ni une plage.'
+        no_networks: 'Ajoutez au moins une adresse avant d’activer le verrou.'
+        would_lock_out: 'Cette liste n’inclut pas votre propre adresse (%ip%) : l’enregistrer vous bloquerait. Ajoutez-la et réessayez.'
