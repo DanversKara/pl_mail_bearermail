@@ -46,6 +46,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	file \
 	gettext \
 	git \
+	# BearerMail: pdftoppm, for the first-page previews in Drive. See
+	# App\Service\Drive\DrivePreviewer, which shows the icon without it.
+	poppler-utils \
 	&& rm -rf /var/lib/apt/lists/*
 
 # pg_dump, for `app:backup`.
