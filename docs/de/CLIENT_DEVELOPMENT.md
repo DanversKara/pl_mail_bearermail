@@ -1,4 +1,4 @@
-<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:106ff8faa675541b37b42cda5025004b3ae227f0 -->
+<!-- translated-from: CLIENT_DEVELOPMENT.md sha1:3934c95ec03ed48a3d17424e5f5a4946cc8ddb79 -->
 # Einen Client für plMail bauen
 
 Alles, was eine Entwicklerin (oder ein Agent) braucht, um einen *neuen* plMail-Client zu schreiben
@@ -756,7 +756,7 @@ Alles, was in [`src/Jmap/Method/`](../src/Jmap/Method/) registriert ist:
 | `InboxTab/get` / `InboxTab/changes` | `urn:plmail:params:jmap:inboxtabs`. Die Tabs der Nutzerin, an jedem Konto dieselben. Siehe [Posteingangs-Tabs](#posteingangs-tabs-urnplmailparamsjmapinboxtabs). |
 | `SearchSnippet/get` | |
 | `Calendar/get` | `urn:plmail:params:jmap:calendars`. Kalender liefert genau ein Konto. |
-| `CalendarEvent/get` / `CalendarEvent/query` / `CalendarEvent/set` | Eine ID ist die Serie, nicht eine Termininstanz; `/query` verlangt einen Zeitraum, und `expandRecurrences: true` lässt sie je Termininstanz antworten. |
+| `CalendarEvent/get` / `CalendarEvent/query` / `CalendarEvent/set` | Eine ID ist die Serie, nicht eine Termininstanz; `/query` verlangt einen Zeitraum, und `expandRecurrences: true` lässt sie je Termininstanz antworten. `alerts` ist setzbar: Offset-Trigger (`"-PT30M"`, `"-P1D"`, relativ zu Beginn oder Ende), `display` oder `email`, höchstens zehn; der Server stellt sie zu (Push und Mail). |
 | `EmailSubmission/get` / `EmailSubmission/set` / `EmailSubmission/changes` | |
 | `Identity/get` / `Identity/set` | |
 | `Template/get` / `Template/set` / `Template/render` | `urn:plmail:params:jmap:templates`. Kein `accountId`-Argument bei get und set; pro Benutzer. Siehe [Vorlagen](#vorlagen). |

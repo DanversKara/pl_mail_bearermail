@@ -689,7 +689,7 @@ Everything registered in [`src/Jmap/Method/`](../src/Jmap/Method/):
 | `InboxTab/get` / `InboxTab/changes` | `urn:plmail:params:jmap:inboxtabs`. The user's tabs, the same on every account. See [Inbox tabs](#inbox-tabs-urnplmailparamsjmapinboxtabs). |
 | `SearchSnippet/get` | |
 | `Calendar/get` | `urn:plmail:params:jmap:calendars`. One account serves calendars. |
-| `CalendarEvent/get` / `CalendarEvent/query` / `CalendarEvent/set` | An id is the series, not an occurrence; `/query` requires a date window, and `expandRecurrences: true` makes it answer per occurrence. |
+| `CalendarEvent/get` / `CalendarEvent/query` / `CalendarEvent/set` | An id is the series, not an occurrence; `/query` requires a date window, and `expandRecurrences: true` makes it answer per occurrence. `alerts` is settable: offset triggers (`"-PT30M"`, `"-P1D"`, relative to the start or the end), `display` or `email`, at most ten; the server delivers them (push and mail). |
 | `EmailSubmission/get` / `EmailSubmission/set` / `EmailSubmission/changes` | |
 | `Identity/get` / `Identity/set` | |
 | `Template/get` / `Template/set` / `Template/render` | `urn:plmail:params:jmap:templates`. No `accountId` argument on get and set; per-user. See [Templates](#templates). |
