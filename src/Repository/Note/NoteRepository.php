@@ -58,6 +58,34 @@ class NoteRepository extends ServiceEntityRepository
     }
 
     /**
+     * BearerMail: the event (series) ids any of this user's notes link to, not
+     * counting notes in the bin. An occurrence link ("12_20261020T090000Z")
+     * counts for its series.
+     *
+     * @return array<int, true>
+     */
+    public function linkedEventIds(UserInterface $user): array
+    {
+        $out = [];
+        foreach ($this->findForUser($user) as $note) {
+            if (null !== $note->trashedAt) {
+                continue;
+            }
+            foreach ($note->links as $link) {
+                if ('event' !== ($link['type'] ?? '')) {
+                    continue;
+                }
+                $series = explode('_', (string) ($link['id'] ?? ''), 2)[0];
+                if (ctype_digit($series)) {
+                    $out[(int) $series] = true;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Notes whose reminder has come due and not been sent, newest due last,
      * not older than $since (a reminder missed by more than that is dropped
      * rather than delivered hours late), and not in the bin.
