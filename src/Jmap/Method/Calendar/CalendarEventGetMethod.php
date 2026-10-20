@@ -14,6 +14,7 @@ use App\Service\Calendar\Change\CalendarChangeReader;
 use App\Repository\Calendar\CalendarEventOccurrenceRepository;
 use App\Repository\Calendar\CalendarEventRepository;
 use App\Repository\Calendar\EventSourceLinkRepository;
+use App\Repository\Note\NoteRepository;
 
 /**
  * "CalendarEvent/get".
@@ -58,6 +59,7 @@ final class CalendarEventGetMethod implements JmapMethod
         private readonly CalendarEventMapper $mapper,
         private readonly CalendarChangeReader $changes,
         private readonly ?EventSourceLinkRepository $sourceLinks = null,
+        private readonly ?NoteRepository $notes = null,
     ) {
     }
 
@@ -175,9 +177,9 @@ final class CalendarEventGetMethod implements JmapMethod
     }
 
     /**
-     * plMail extension `isLinked`: the event came from an email — the link
-     * icon on the phone's calendar widget. Worked out for the whole list in
-     * one query, and only when it was asked for (or everything was).
+     * plMail extension `isLinked`: the event came from an email, or one of
+     * the user's notes links to it — the link icon on the phone's calendar
+     * widget. Worked out for the whole list in two queries, and only when it was asked for (or everything was).
      *
      * @param list<array<string,mixed>> $list
      * @param list<string>|null         $properties
@@ -193,7 +195,8 @@ final class CalendarEventGetMethod implements JmapMethod
         $seriesOf = static fn (array $object): int => (int) ($object['seriesId'] ?? $object['id'] ?? 0);
         $ids      = array_values(array_unique(array_filter(array_map($seriesOf, $list))));
 
-        $linked = $this->sourceLinks?->eventIdsWithMessage($ids) ?? [];
+        $linked = ($this->sourceLinks?->eventIdsWithMessage($ids) ?? [])
+            + ($this->notes?->linkedEventIds($context->user) ?? []);
 
         foreach ($list as $i => $object) {
             $list[$i]['isLinked'] = isset($linked[$seriesOf($object)]);

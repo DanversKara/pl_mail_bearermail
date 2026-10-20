@@ -4646,3 +4646,132 @@ contacts:
     merge_undo_expired: Le délai d’annulation de 90 jours pour cette fusion est dépassé.
     validation:
         name_required: 'Donnez un nom au contact.'
+notes:
+    media:
+        add_image: 'Ajouter une image'
+        draw: 'Dessiner'
+        record: 'Enregistrer une note vocale'
+        delete: 'Retirer'
+        failed: 'Cela n''a pas été enregistré. Réessayez.'
+        mic_denied: 'Le micro est bloqué. Autorisez-le pour ce site dans le navigateur, puis réessayez.'
+        eraser: 'Gomme'
+        pen_size: 'Taille du crayon'
+        clear: 'Effacer'
+        cancel: 'Annuler'
+        save_drawing: 'Enregistrer le dessin'
+    share:
+        done_items: '{1}Terminé (1)|]1,Inf[Terminés (%count%)'
+        heading: 'Partager et télécharger'
+        page_title: 'Note partagée'
+        locked: 'Cette note est protégée'
+        password: 'Mot de passe'
+        open: 'Ouvrir la note'
+        wrong_password: 'Ce mot de passe est incorrect.'
+        too_many: 'Trop d''essais. Réessayez dans quelques minutes.'
+        editable_hint: 'Toute personne disposant de ce lien peut modifier la note. Les changements sont enregistrés pendant la saisie.'
+        download_txt: 'Télécharger en .txt'
+        download_png: 'Télécharger en .png'
+        copy: 'Copier le lien'
+        copied: 'Copié'
+        copy_failed: 'Copie impossible'
+        delete: 'Supprimer le lien'
+        can_edit: 'Peut modifier'
+        view_only: 'Lecture seule'
+        has_password: 'Mot de passe'
+        expires: 'Expire le %date%'
+        expired: 'Expiré le %date%'
+        never_expires: 'N''expire jamais'
+        views: '{0}Pas encore ouvert|{1}Ouvert une fois|]1,Inf[Ouvert %count% fois'
+        password_optional: 'Mot de passe (facultatif)'
+        expiry: 'Expiration'
+        allow_edit: 'Autoriser les personnes ayant le lien à modifier (collaborateurs)'
+        create: 'Créer le lien'
+        expires_in:
+            '1': '1 jour'
+            '7': '7 jours'
+            '30': '30 jours'
+            '365': '1 an'
+    reminder:
+        title: 'Me le rappeler'
+        later: 'Plus tard aujourd''hui'
+        tomorrow: 'Demain matin'
+        week: 'La semaine prochaine'
+        pick: 'Date et heure'
+        save: 'Définir'
+        remove: 'Supprimer le rappel'
+        failed: 'Le rappel n''a pas pu être enregistré. Réessayez.'
+    saving: 'Enregistrement…'
+    saved: 'Enregistrée'
+    save_failed: 'Non enregistrée — vérifiez la connexion'
+    list_item: 'Élément de liste'
+    remove_item: 'Supprimer l’élément'
+    labels_placeholder: 'Libellés, séparés par des virgules'
+    unlink: 'Retirer le lien'
+    add_link: 'Lier'
+    show_checkboxes: 'Afficher les cases à cocher'
+    hide_checkboxes: 'Masquer les cases à cocher'
+    undo: 'Annuler'
+    redo: 'Rétablir'
+    close: 'Fermer'
+    add_note: 'Ajouter une note'
+    none_linked: 'Aucune note pour l’instant.'
+    new_note: 'Nouvelle note'
+    new_list: 'Nouvelle liste'
+    format:
+        bold: 'Gras'
+        italic: 'Italique'
+        underline: 'Souligné'
+        heading: 'Titre'
+        bullets: 'Liste à puces'
+    nav: Notes
+    title: Notes
+    back: Retour
+    search: Rechercher dans les notes
+    title_placeholder: Titre
+    take_a_note: Créer une note…
+    checklist_placeholder: 'Un élément par ligne'
+    checklist_hint: 'Un élément par ligne. Mettez [x] devant un élément terminé.'
+    as_checklist: Liste de cases à cocher
+    add: Ajouter
+    save: Enregistrer
+    pinned: Épinglées
+    others: Autres
+    untitled: Note sans titre
+    empty_note: Note vide
+    more_items: '+ %count% de plus'
+    edited: 'Modifiée %when%'
+    pin: Épingler
+    unpin: Désépingler
+    archive: Archiver
+    unarchive: Désarchiver
+    delete: Mettre à la corbeille
+    restore: Restaurer
+    delete_forever: Supprimer définitivement
+    delete_forever_confirm: 'Supprimer définitivement cette note ? Impossible de revenir en arrière.'
+    empty_search: Aucune note ne correspond à cette recherche.
+    color: Couleur
+    color_none: Aucune couleur
+    views:
+        notes: Notes
+        archive: Archives
+        trash: Corbeille
+    empty:
+        notes: 'Les notes ajoutées ici ou sur votre téléphone apparaissent ici.'
+        archive: 'Les notes archivées apparaissent ici.'
+        trash: 'Aucune note dans la corbeille.'
+    colors:
+        red: Rouge
+        orange: Orange
+        yellow: Jaune
+        green: Vert
+        teal: Bleu-vert
+        blue: Bleu
+        purple: Violet
+        pink: Rose
+        brown: Marron
+        gray: Gris
+    link_types:
+        event: Événement
+        file: Fichier
+        contact: Contact
+        mail: E-mail

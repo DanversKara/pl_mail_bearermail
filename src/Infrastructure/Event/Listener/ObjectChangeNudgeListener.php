@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Event\Listener;
 
 use App\Entity\Calendar\CalendarEvent;
+use App\Entity\Note\Note;
 use App\Service\Push\ObjectChangeNudges;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\OnFlushEventArgs;
@@ -33,6 +34,10 @@ final readonly class ObjectChangeNudgeListener
                     $userId = $entity->usr->id ?? $entity->calendar->usr->id ?? null;
                     if (null !== $userId) {
                         $this->nudges->record((int) $userId, ObjectChangeNudges::CALENDAR);
+                    }
+                } elseif ($entity instanceof Note) {
+                    if (null !== $entity->usr->id) {
+                        $this->nudges->record((int) $entity->usr->id, ObjectChangeNudges::NOTES);
                     }
                 }
             }

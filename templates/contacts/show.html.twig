@@ -133,6 +133,12 @@ inRelations (ones pointing at it), refEmails (ReferenceEmailFinder rows).
                 </div>
             </div>
 
+            {# ── Notes about this person ── #}
+            {% import 'notes/_macros.html.twig' as nm %}
+            <section class="{{ cardCls }}">
+                {{ nm.linkedNotes(notes, 'contact', contact.id, contact.displayName, path('app_contacts_show', { id: contact.id })) }}
+            </section>
+
             {# ── Reference emails ── #}
             <section class="{{ cardCls }}">
                 <h3 class="text-sm font-semibold text-ink mb-1">{{ 'contacts.reference_emails'|trans }}</h3>

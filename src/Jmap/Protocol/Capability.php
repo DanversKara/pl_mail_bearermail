@@ -100,6 +100,13 @@ final class Capability
     public const string TEMPLATES = 'urn:plmail:params:jmap:templates';
 
     /**
+     * Notes, after Google Keep: short text or checklist notes, colour, pinned and archived, and
+     * links to events, files, contacts and mails. Per user, like TEMPLATES, so it appears at
+     * the top level of the Session and under no account. Note/get and Note/set.
+     */
+    public const string NOTES = 'urn:plmail:params:jmap:notes';
+
+    /**
      * Vendor extension: the inbox tabs, as the reader arranged them — which
      * built-in categories are switched on, the tabs they made themselves, and
      * the order of all of them. InboxTab/get and InboxTab/changes, plus
@@ -132,6 +139,7 @@ final class Capability
         self::SYNC,
         self::CONTACTS,
         self::TEMPLATES,
+        self::NOTES,
         self::INBOX_TABS,
     ];
 }
