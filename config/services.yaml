@@ -21,6 +21,12 @@ parameters:
     # FeedbackMailer) rather than to upstream plMail's developer.
     app.fallback_feedback_to: ''
     app.feedback_to: '%env(default:app.fallback_feedback_to:APP_FEEDBACK_TO)%'
+    # BearerMail: Admin → Security → Sign-in protection (see
+    # App\Service\Security\SignInProtection). ADMIN_NETWORK_LOCK=off is the way
+    # back in when the home address changed and Admin answers 403.
+    app.sign_in_protection_file: '%kernel.project_dir%/var/secrets/sign_in_protection.json'
+    app.admin_network_lock_default: ''
+    app.admin_network_lock: '%env(default:app.admin_network_lock_default:ADMIN_NETWORK_LOCK)%'
 
     # Whether this install is a public demo. Read through `default:` so an
     # install that never heard of the variable is a normal one — the accident
@@ -362,3 +368,7 @@ services:
         # nothing has to be registered here by hand.
         App\Service\Onboarding\OnboardingStepHandlerInterface:
             tags: ['app.onboarding_step']
+
+when@test:
+    parameters:
+        app.sign_in_protection_file: '%kernel.cache_dir%/sign_in_protection.json'

@@ -1,0 +1,14 @@
+# BearerMail: headers taken off mail OUR users send (submission port only —
+# the `subcleanup` service in master.cf; mail arriving from outside keeps its
+# headers untouched).
+#
+# The Received: line Postfix writes on submission names the container the web
+# and phone apps send from and its internal address. Nobody receiving the mail
+# needs that, and spam filters do not use it: they judge the server that hands
+# the message over (Mailjet's, or this one's public address when sending
+# direct), checked against SPF, DKIM and DMARC. Gmail and Proton drop the same
+# hop. X-Originating-IP and the mail-program headers go for the same reason.
+/^Received:/            IGNORE
+/^X-Originating-IP:/    IGNORE
+/^X-Mailer:/            IGNORE
+/^User-Agent:/          IGNORE

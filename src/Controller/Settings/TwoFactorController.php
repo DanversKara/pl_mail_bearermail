@@ -8,6 +8,7 @@ use App\Controller\ChecksCsrf;
 use App\Entity\User\User;
 use App\Repository\User\TrustedDeviceRepository;
 use App\Security\TwoFactor\TrustedDeviceCookieJar;
+use App\Service\Security\SignInProtection;
 use App\Service\User\TwoFactor\TwoFactorEnrolment;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,6 +54,7 @@ final class TwoFactorController extends AbstractController
         // region in _layout/app.html.twig prints what it finds verbatim, so a
         // key put in here reaches the user as "two_factor.flash.code_rejected".
         private readonly TranslatorInterface $translator,
+        private readonly SignInProtection $protection,
     ) {
     }
 
@@ -98,6 +100,13 @@ final class TwoFactorController extends AbstractController
         $user = $this->getUser();
 
         if (false === $user->isTotpAuthenticationEnabled()) {
+            return $this->redirectToSection();
+        }
+
+        // BearerMail: Admin → Security → Sign-in protection requires it.
+        if (true === $this->protection->requiresTwoFactor($user)) {
+            $this->addFlash('error', $this->translator->trans('sign_in_protection.cannot_disable'));
+
             return $this->redirectToSection();
         }
 

@@ -1,0 +1,76 @@
+{% import '_partials/_card_chrome.html.twig' as chrome %}
+{#
+admin/security/_sign_in.html.twig — BearerMail: Admin → Security → Sign-in
+protection. See SignInProtectionController.
+
+Accepts:
+  settings    {twoFactor, adminLock, adminNetworks}
+  ip          the address this request came from, as the server sees it
+  ipIncluded  whether that address is in the saved list
+  overridden  lock saved on, but ADMIN_NETWORK_LOCK=off switches it off
+  networks    the textarea's text
+  saved       '' | saved
+  error       '' | bad_network | no_networks | would_lock_out
+#}
+{% set input = 'mt-1 block w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink' %}
+{% set btn = 'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer' %}
+
+<turbo-frame id="admin-sign-in">
+<div class="space-y-3">
+
+    {% if saved %}
+        <div class="px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-600 text-[13px]">{{ 'sign_in_protection.saved'|trans }}</div>
+    {% endif %}
+    {% if error %}
+        <div class="px-3 py-2 rounded-lg bg-danger/10 text-danger text-[13px]">{{ ('sign_in_protection.error.' ~ error)|trans({'%ip%': ip}) }}</div>
+    {% endif %}
+
+    <div class="{{ chrome.shell() }}">
+        <div class="flex items-center gap-2.5 {{ chrome.band() }}">
+            <i class="fa-solid fa-shield-halved text-xs text-ink-faint" aria-hidden="true"></i>
+            <h2 class="text-sm font-semibold text-ink">{{ 'sign_in_protection.heading'|trans }}</h2>
+        </div>
+
+        <form method="post" action="{{ path('app_admin_sign_in_save') }}" class="px-4 py-4 space-y-5">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_sign_in_protection') }}">
+
+            <fieldset>
+                <legend class="text-[13px] font-medium text-ink-soft">{{ 'sign_in_protection.two_factor.label'|trans }}</legend>
+                <p class="mt-0.5 text-xs text-ink-faint">{{ 'sign_in_protection.two_factor.help'|trans }}</p>
+                <div class="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+                    {% for value in ['off', 'admins', 'everyone'] %}
+                        <label class="inline-flex items-center gap-2 text-sm text-ink">
+                            <input type="radio" name="twoFactor" value="{{ value }}" {{ settings.twoFactor == value ? 'checked' }}>
+                            {{ ('sign_in_protection.two_factor.' ~ value)|trans }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <div>
+                <label class="inline-flex items-center gap-2 text-sm text-ink">
+                    <input type="checkbox" name="adminLock" value="1" {{ settings.adminLock ? 'checked' }}>
+                    {{ 'sign_in_protection.admin_lock.label'|trans }}
+                </label>
+                <p class="mt-0.5 text-xs text-ink-faint">{{ 'sign_in_protection.admin_lock.help'|trans }}</p>
+                {% if overridden %}
+                    <p class="mt-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">{{ 'sign_in_protection.admin_lock.overridden'|trans }}</p>
+                {% endif %}
+
+                <label for="sip-networks" class="mt-3 block text-[13px] font-medium text-ink-soft">{{ 'sign_in_protection.admin_lock.networks'|trans }}</label>
+                <textarea id="sip-networks" name="adminNetworks" rows="3" spellcheck="false" autocomplete="off"
+                          placeholder="203.0.113.7&#10;192.168.1.0/24" class="{{ input }} font-mono">{{ networks ?: ip }}</textarea>
+                <p class="mt-1 text-xs text-ink-faint">
+                    {{ 'sign_in_protection.admin_lock.you_are'|trans }} <span class="font-mono text-ink">{{ ip }}</span>
+                    {% if settings.adminLock %}· {{ (ipIncluded ? 'sign_in_protection.admin_lock.included' : 'sign_in_protection.admin_lock.not_included')|trans }}{% endif %}
+                </p>
+                <p class="mt-1 text-xs text-ink-faint">{{ 'sign_in_protection.admin_lock.networks_help'|trans }}</p>
+            </div>
+
+            <button type="submit" class="{{ btn }} bg-accent text-accent-ink hover:bg-accent-strong">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>{{ 'sign_in_protection.save'|trans }}
+            </button>
+        </form>
+    </div>
+</div>
+</turbo-frame>
