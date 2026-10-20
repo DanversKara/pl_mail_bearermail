@@ -13,6 +13,7 @@ use App\Repository\Drive\DriveFileRepository;
 use App\Repository\Drive\DriveFolderRepository;
 use App\Repository\Drive\DriveShareRepository;
 use App\Service\Drive\DrivePolicy;
+use App\Service\Drive\DrivePreviewer;
 use App\Service\Drive\DriveStorage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -55,6 +56,8 @@ final class DriveController extends AbstractController
         private readonly TranslatorInterface $translator,
         // BearerMail: quotas, file-size limit and "Drive off" per user.
         private readonly DrivePolicy $policy,
+        // BearerMail: the tiles' pictures and first pages.
+        private readonly ?DrivePreviewer $previewer = null,
     ) {}
 
     // ── Browsing ─────────────────────────────────────────────────────────────
@@ -314,6 +317,30 @@ final class DriveController extends AbstractController
         return $response;
     }
 
+    /**
+     * BearerMail: the tile's preview — the picture scaled down, or a PDF's
+     * first page — as WebP. 404 when there is none (the tile keeps its icon).
+     * The URL carries the file's size, so a replaced file is fetched anew.
+     */
+    #[Route('/{id<\d+>}/preview', name: 'preview', methods: ['GET'])]
+    public function preview(int $id): Response
+    {
+        $file = $this->ownFile($id);
+        $path = $this->previewer?->imagePath($file);
+
+        if (null === $path) {
+            throw $this->createNotFoundException();
+        }
+
+        $response = new BinaryFileResponse($path);
+        $response->headers->set('Content-Type', 'image/webp');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->setPrivate();
+        $response->setMaxAge(7 * 86400);
+
+        return $response;
+    }
+
     #[Route('/{id<\d+>}/rename', name: 'rename', methods: ['GET', 'POST'])]
     public function rename(Request $request, int $id): Response
     {
@@ -350,6 +377,7 @@ final class DriveController extends AbstractController
         $this->assertCsrf($request, 'drive_delete_' . $file->id);
 
         $folder = $file->folder;
+        $this->previewer?->forget($file);
         $this->storage->delete($file);
         $this->em->remove($file);
         $this->em->flush();

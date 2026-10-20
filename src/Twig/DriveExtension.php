@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Twig;
 
+use App\Entity\Drive\DriveFile;
 use App\Entity\User\User;
 use App\Service\Drive\DrivePolicy;
+use App\Service\Drive\DrivePreviewer;
 use Symfony\Bundle\SecurityBundle\Security;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -20,6 +22,7 @@ final class DriveExtension extends AbstractExtension
     public function __construct(
         private readonly ?DrivePolicy $policy = null,
         private readonly ?Security $security = null,
+        private readonly ?DrivePreviewer $previewer = null,
     ) {
     }
 
@@ -45,8 +48,23 @@ final class DriveExtension extends AbstractExtension
     {
         return [
             new TwigFunction('drive_icon', $this->icon(...)),
+            // BearerMail: {kind: 'picture'|'pdf'|'text'|null, excerpt: ?string}.
+            new TwigFunction('drive_preview', $this->preview(...)),
             // BearerMail: false for a user whose Drive an admin switched off.
             new TwigFunction('drive_enabled', $this->enabled(...)),
+        ];
+    }
+
+    /**
+     * @return array{kind: string|null, excerpt: string|null}
+     */
+    public function preview(DriveFile $file): array
+    {
+        $kind = $this->previewer?->kind($file);
+
+        return [
+            'kind'    => $kind,
+            'excerpt' => 'text' === $kind ? $this->previewer?->excerpt($file) : null,
         ];
     }
 
