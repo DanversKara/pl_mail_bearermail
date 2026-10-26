@@ -87,6 +87,7 @@ These are the variables in `.env`, in the order they appear there.
 | `INTEGRATIONS_ALLOW_HTTP` | Whether a user may name a `http://` server for a self-hosted integration. | `false` | No | See [the SSRF guard](#the-ssrf-guard) below. |
 | `INTEGRATIONS_ALLOWED_HOSTS` | Comma-separated hosts exempt from the private-range block. | blank | No | See [the SSRF guard](#the-ssrf-guard) below. |
 | `APP_FEEDBACK_TO` | Where **Send feedback** in What's new mails to. The mail leaves through the person's own account; this is only the recipient. | empty — BearerMail sends it to `postmaster@` on `MAIL_DOMAIN` (the `app.fallback_feedback_to` parameter is empty too) | No | Feedback from the people on this install comes to you. Point it at another address to read it there; a typo sends it nowhere, and the person who wrote it gets a bounce in their own mailbox. |
+| `APPS_DOWNLOAD_URL` | Where the **Download apps** button in the web header goes, in a new tab. | `https://docs.bearermail.com/download.html` | No | Point it at your own page, or leave it empty to hide the button. |
 
 **The failure mode of this table is treating a blank as a missing value.** Four of the blanks
 above are load-bearing: they are blank so that first-run generation happens, and filling one in

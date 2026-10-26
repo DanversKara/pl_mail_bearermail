@@ -4817,6 +4817,7 @@ whats_new:
             failed: 'The page couldn''t be captured, so nothin'' will be lashed on.'
             label: 'Lash on a likeness o'' the page ye were on'
             preview: 'The likeness that''ll be lashed on'
+            share: 'Take the likeness by showin'' this tab instead'
             taking: 'Takin'' the likeness…'
         send: 'Send word'
         sent:
@@ -4868,3 +4869,5 @@ sign_in_protection:
         bad_network: 'One o'' them entries be no address nor range.'
         no_networks: 'Add at least one address afore ye drop the lock.'
         would_lock_out: 'That list leaves out yer own address (%ip%), so stowin'' it would lock ye out. Add it an'' try again.'
+topbar:
+    download_apps: 'Fetch the apps'

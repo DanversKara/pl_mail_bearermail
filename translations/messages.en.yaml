@@ -5072,6 +5072,7 @@ whats_new:
             failed: 'The page could not be captured, so nothing will be attached.'
             label: 'Attach a screenshot of the page you were on'
             preview: 'The screenshot that will be attached'
+            share: 'Take it by sharing this tab instead'
             taking: 'Taking the screenshot…'
         send: 'Send feedback'
         sent:
@@ -5123,3 +5124,5 @@ sign_in_protection:
         bad_network: 'One of the entries is not an address or a range.'
         no_networks: 'Add at least one address before turning the lock on.'
         would_lock_out: 'That list leaves out your own address (%ip%), so saving it would lock you out. Add it and save again.'
+topbar:
+    download_apps: 'Download the apps'

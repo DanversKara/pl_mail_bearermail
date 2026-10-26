@@ -11,12 +11,28 @@ the next mirror.
 
 | If you want to | Start at |
 |---|---|
+| Get the phone apps | [Download apps](#download-apps) |
 | Use a feature | [Using plMail](#using-plmail) |
 | Install or run it | [Installing and running](#installing-and-running) |
 | Connect Gmail, Outlook or a CalDAV server | [Providers](#providers) |
 | Understand or extend the internals | [How it works](#how-it-works) |
 
 ---
+
+## Download apps
+
+The phone apps, and which one to get.
+
+| Page | What it covers |
+|---|---|
+| [Download the apps](apps/download.md) | Android and iPhone downloads, the Google version, which one you need |
+| [Android app](apps/android.md) | Installing, pairing, what the app does, the home-screen widgets, updates |
+
+## iOS
+
+| Page | What it covers |
+|---|---|
+| [iPhone and iPad](apps/ios.md) | The web app on the Home Screen, SideStore and AltStore, building with Xcode, the seven-day limit |
 
 ## Using plMail
 

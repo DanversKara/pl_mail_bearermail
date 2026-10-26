@@ -39,6 +39,8 @@ twig:
         # carries a dot (#165). The top bar and the layout read it on every
         # signed-in page, like onboarding above.
         whatsNew: '@App\Twig\WhatsNewGlobal'
+        # BearerMail: the header's "Download apps" button (APPS_DOWNLOAD_URL).
+        apps_download_url: '%app.apps_download_url%'
 
 when@test:
     twig:

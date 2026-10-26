@@ -5041,6 +5041,7 @@ whats_new:
             failed: 'Die Seite ließ sich nicht aufnehmen, also wird nichts angehängt.'
             label: 'Screenshot der Seite anhängen, auf der du warst'
             preview: 'Der Screenshot, der angehängt wird'
+            share: 'Stattdessen per Bildschirmfreigabe aufnehmen'
             taking: 'Screenshot wird aufgenommen …'
         send: 'Feedback senden'
         sent:
@@ -5092,3 +5093,5 @@ sign_in_protection:
         bad_network: 'Einer der Einträge ist keine Adresse und kein Bereich.'
         no_networks: 'Füge mindestens eine Adresse hinzu, bevor du die Sperre einschaltest.'
         would_lock_out: 'In der Liste fehlt deine eigene Adresse (%ip%) – Speichern würde dich aussperren. Füge sie hinzu und speichere erneut.'
+topbar:
+    download_apps: 'Apps herunterladen'

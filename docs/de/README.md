@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha1:78b8871436f956dd3a80280b7dbf088ff1df56cb -->
+<!-- translated-from: README.md sha1:12948f29e73560438b1481349351a18baa411170 -->
 
 # plMail-Dokumentation
 
@@ -13,12 +13,28 @@ die nächste Spiegelung.
 
 | Wenn du … willst | Fang an bei |
 |---|---|
+| die Handy-Apps holen | [Apps herunterladen](#apps-herunterladen) |
 | eine Funktion benutzen | [plMail verwenden](#plmail-verwenden) |
 | es installieren oder betreiben | [Installieren und betreiben](#installieren-und-betreiben) |
 | Gmail, Outlook oder einen CalDAV-Server anbinden | [Anbieter](#anbieter) |
 | die Interna verstehen oder erweitern | [Wie es funktioniert](#wie-es-funktioniert) |
 
 ---
+
+## Apps herunterladen
+
+Die Apps fürs Handy, und welche du brauchst.
+
+| Seite | Worum es geht |
+|---|---|
+| [Apps herunterladen](apps/download.md) | Downloads für Android und iPhone, die Google-Version, welche du brauchst |
+| [Android-App](apps/android.md) | Installieren, Koppeln, was die App kann, die Widgets, Updates |
+
+## iOS
+
+| Seite | Worum es geht |
+|---|---|
+| [iPhone und iPad](apps/ios.md) | Die Web-App auf dem Home-Bildschirm, SideStore und AltStore, mit Xcode bauen, die Sieben-Tage-Grenze |
 
 ## plMail verwenden
 

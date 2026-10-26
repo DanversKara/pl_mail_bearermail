@@ -509,6 +509,24 @@
         {% endif %}
     </a>
 
+    {# ── Download apps (BearerMail) ────────────────────────────────────
+       The phone apps' download page on the docs site, in a new tab.
+       Beside the calendar switch, where the owner asked for it; hidden on a
+       phone like the buttons after it, and when APPS_DOWNLOAD_URL is empty. #}
+    {% if apps_download_url %}
+    <a
+        href="{{ apps_download_url }}"
+        target="_blank" rel="noopener" data-turbo="false"
+        class="max-md:hidden flex cursor-pointer items-center justify-center w-9 h-9 rounded-lg
+               transition-colors flex-shrink-0
+               text-ink-muted hover:bg-hover"
+        aria-label="{{ 'topbar.download_apps'|trans }}"
+        title="{{ 'topbar.download_apps'|trans }}"
+    >
+        <i class="fa-solid fa-mobile-screen-button text-base" aria-hidden="true"></i>
+    </a>
+    {% endif %}
+
     {# ── Contacts ──────────────────────────────────────────────────────
        The address book, beside the calendar switch: both are the
        non-mail half of the "all in one" system, and the calendar button's

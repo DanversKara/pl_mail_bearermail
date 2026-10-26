@@ -21,6 +21,10 @@ parameters:
     # FeedbackMailer) rather than to upstream plMail's developer.
     app.fallback_feedback_to: ''
     app.feedback_to: '%env(default:app.fallback_feedback_to:APP_FEEDBACK_TO)%'
+    # BearerMail: where the header's "Download apps" button goes — the docs
+    # site's page with the Android and iPhone downloads. Empty hides the button.
+    app.apps_download_url_default: 'https://docs.bearermail.com/download.html'
+    app.apps_download_url: '%env(default:app.apps_download_url_default:APPS_DOWNLOAD_URL)%'
     # BearerMail: Admin → Security → Sign-in protection (see
     # App\Service\Security\SignInProtection). ADMIN_NETWORK_LOCK=off is the way
     # back in when the home address changed and Admin answers 403.
