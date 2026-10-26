@@ -153,11 +153,15 @@ self-contained: no {% extends %}, no block dependencies.
     <div class="w-full px-4 md:px-6 py-5"{{ thread_summary.root(thread) }}>
 
         <div class="flex items-baseline gap-3 mb-6">
-            <h1 class="text-xl font-semibold text-ink min-w-0 break-words">
+            {# data-thread-subject: mail--encrypted-message puts a subject it
+               decrypted here when the outside only said "..." (RFC 9788). #}
+            <h1 class="text-xl font-semibold text-ink min-w-0 break-words" data-thread-subject>
                 {{ thread.subject ?: ('thread.no_subject'|trans) }}
             </h1>
-            {% if thread.messageCount > 1 %}
-                <span class="text-sm text-ink-faint flex-shrink-0">{{ thread.messageCount }}</span>
+            {# The messages shown, not thread.messageCount: a conversation
+               partly in the bin shows one side of itself (see below). #}
+            {% if messages|default(thread.messages)|length > 1 %}
+                <span class="text-sm text-ink-faint flex-shrink-0">{{ messages|default(thread.messages)|length }}</span>
             {% endif %}
 
             {# The offer to summarise, at the right-hand end of the subject and
@@ -203,6 +207,10 @@ self-contained: no {% extends %}, no block dependencies.
         {% endfor %}
         {% do address_book_prime(badgeAddresses) %}
 
+        {# One side of a conversation that is partly in the bin: its deleted
+           messages when it was opened from Trash, the others from anywhere
+           else (MailController::side()). So the messages here are all deleted
+           or none of them is, and none needs marking as such. #}
         <div id="thread_messages_{{ thread.id }}" class="thread-messages" data-enter-stagger>
             {% for message in messages %}
                 {% include 'mail/_thread_message.html.twig' with {

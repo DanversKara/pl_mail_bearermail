@@ -6,6 +6,7 @@ namespace App\Tests\Service\Mail;
 
 use App\Domain\DTO\Mail\IngestedMessage;
 use App\Domain\Enum\Mail\CategorySource;
+use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Entity\Ai\AiSettings;
 use App\Entity\Mail\Account;
@@ -31,6 +32,7 @@ use App\Service\Ai\PromptLibrary;
 use App\Service\Mail\MessageCategorizer;
 use App\Service\Ai\OllamaClient;
 use App\Service\Ai\OpenAiClient;
+use App\Service\Label\LabelResolver;
 use App\Service\Mail\HeldMailReleaser;
 use App\Service\Mail\PostIngestPipeline;
 use DateTimeImmutable;
@@ -155,6 +157,37 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         }
     }
 
+    /**
+     * An import is bulk work, and a week's limit in Admin → AI (#208) means a
+     * week for it too — even though the mail is recent enough for every other
+     * step's thirty days.
+     */
+    public function testAnImportDoesNotQueueMailOlderThanTheLimit(): void
+    {
+        $this->assistantSorts(backlogDays: 7);
+        // No importFinished(): the folder has never completed a sync.
+
+        $this->ingest($this->message('last-fortnight', '-10 days'));
+
+        self::assertNotContains(ClassifyMailMessage::class, $this->classesOn('enrich'));
+        self::assertContains(ExtractEventsMessage::class, $this->classesOn('enrich'), 'only the sorting is limited');
+    }
+
+    /**
+     * The same message, arriving on a finished account: live mail is never
+     * limited, however low the number. Not held, so it takes the chunked path
+     * rather than the one-message envelope held mail always gets.
+     */
+    public function testLiveMailIsQueuedHoweverLowTheLimit(): void
+    {
+        $this->assistantSorts(hold: false, backlogDays: 1);
+        $this->importFinished();
+
+        $this->ingest($this->message('last-fortnight', '-10 days'));
+
+        self::assertContains(ClassifyMailMessage::class, $this->classesOn('enrich_live'));
+    }
+
     public function testArrivingMailIsKeptOutOfTheTabsWhileTheAssistantSorts(): void
     {
         $this->assistantSorts();
@@ -212,6 +245,52 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         // The timed release arriving after the verdict has already released
         // the message is the ordinary case, and must be a no-op.
         self::assertSame(0, $releaser->release([$message]));
+    }
+
+    /**
+     * The sidebar's Inbox row and the category tabs light up for the same
+     * arrival at the same moment (#371).
+     *
+     * The tabs have never shown held mail; the sidebar's Inbox dot and badge
+     * did, so a new message announced itself in two steps a model call apart.
+     * Both read the counts of one answer, so agreeing in the data is what
+     * makes them agree on the screen.
+     */
+    public function testHeldMailLightsTheSidebarAndTheTabsTogether(): void
+    {
+        $this->assistantSorts();
+        $this->importFinished();
+
+        $message = $this->message('together', '-1 minute');
+        $message->addLabel(self::getContainer()->get(LabelResolver::class)->systemLabel(LabelRole::Inbox, $this->account));
+        $this->em->flush();
+
+        $this->ingest($message);
+
+        self::assertTrue($message->isCategoryHeld());
+
+        $threads = self::getContainer()->get(MessageThreadRepository::class);
+        $now     = new DateTimeImmutable('+1 second');
+        $inbox   = LabelRole::Inbox->value;
+
+        // A held thread still comes back from the grouped count, under '':
+        // its NULL category folded to a key no tab has. Nothing else may.
+        $tabs = $threads->countNewByCategoryForUnifiedInbox($this->user, $now);
+        unset($tabs['']);
+
+        self::assertSame([], $tabs, 'held mail is in no tab');
+        self::assertSame(0, $threads->countNewPerRole($this->user, $now)[$inbox] ?? 0, 'so the Inbox dot waits too');
+        self::assertSame(0, $threads->countUnreadPerRole($this->user)[$inbox] ?? 0, 'and so does the Inbox badge');
+
+        self::getContainer()->get(HeldMailReleaser::class)->release([$message]);
+        $this->em->refresh($message->thread);
+
+        // Keyed by the tab the release filed it in, whichever the rules chose.
+        $tab = (string) $message->thread->category?->value;
+
+        self::assertSame(1, $threads->countNewByCategoryForUnifiedInbox($this->user, $now)[$tab] ?? 0);
+        self::assertSame(1, $threads->countNewPerRole($this->user, $now)[$inbox] ?? 0);
+        self::assertSame(1, $threads->countUnreadPerRole($this->user)[$inbox] ?? 0);
     }
 
     public function testMailHeldTooLongIsFoundByTheSweep(): void
@@ -524,7 +603,7 @@ final class ClassificationHoldFlowTest extends KernelTestCase
     }
 
     /** The installation has the assistant sorting mail, and so does this person. */
-    private function assistantSorts(CategorySource $source = CategorySource::Assistant, bool $hold = true): void
+    private function assistantSorts(CategorySource $source = CategorySource::Assistant, bool $hold = true, int $backlogDays = AiSettings::DEFAULT_CATEGORISE_BACKLOG_DAYS): void
     {
         $settings = $this->em->getRepository(AiSettings::class)->findOneBy([]) ?? new AiSettings();
 
@@ -534,6 +613,7 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         $settings->categorisationEnabled = true;
         $settings->holdUntilClassified   = $hold;
         $settings->holdMaxSeconds        = AiSettings::DEFAULT_HOLD_MAX_SECONDS;
+        $settings->categoriseBacklogDays = $backlogDays;
 
         $this->em->persist($settings);
 

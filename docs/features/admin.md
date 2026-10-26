@@ -22,6 +22,10 @@ answer the chip is absent entirely rather than reading "development" beside ever
 Two images can both call themselves `main`, which is why the commit is shown next to the label and
 not instead of it.
 
+A click on the chip copies both, label and commit with one space between them
+(`milestone-v0.4.0 0805208`), ready for a bug report or a deploy command; its clipboard icon turns
+into a tick to say so. It also works on a phone and on an instance served over plain HTTP.
+
 ## System
 
 Live panels, refreshed every ten seconds. Each can be collapsed, and a collapsed card shows a
@@ -381,6 +385,12 @@ Two files, and neither is any use alone:
   are published in the JMAP session instead and the app builds its `FirebaseOptions` at runtime.
   They ship inside every Firebase APK and are public by nature, so they are stored in clear.
 
+  **The package to register** when you add the Android app to the Firebase project is
+  `de.pluetzner.plmail`, the app from the Play Store. The APKs released on GitHub were built as
+  `de.plmail.google`; a project that registered only that one keeps working as before. A file that
+  registers several packages is fine: plMail publishes the Play Store one where it is there, then
+  `de.plmail.google`, and otherwise the first app in the file.
+
 **A pair from two different projects is refused, saying which is which.** Nothing downstream can
 detect that mistake: the app registers happily against one project, the server sends happily to the
 other, every message is rejected into a log file and the user's symptom is that notifications do not
@@ -614,12 +624,22 @@ Sorting is the one to be careful with: it runs unattended. It can only ever act 
 if a header, a Gmail label or the fact that you have written to somebody already decided the
 category, the model is not consulted and its opinion is not used. Switching it off needs no cleanup.
 
-Two things keep sorting from getting in the way of mail arriving:
+Three things keep sorting from getting in the way of mail arriving:
 
 - **Only recent mail is sorted as it comes in.** Mail from the last 30 days is asked about straight
   away. When you add an account, the rest of its mailbox is sorted afterwards, in the background,
   newest first, and only once the import has finished — so a first import is not hours of model
   calls with new mail waiting behind them.
+- **Imported mail is sorted only up to an age.** **Sort imported mail up to (days old)** is how far
+  back an import and that background pass go: 30 days by default. On a slow model host this is the
+  difference between an afternoon and several days — at twenty seconds a message, a mailbox of
+  14,000 is about 70 hours of the host. Mail older than that is never asked about. It keeps the tab
+  the ordinary rules gave it — Gmail's own category, a newsletter's or a mailing list's headers, the
+  fact that you write to the sender — and **Primary** when nothing recognised it, and it is found by
+  search like any other mail. New mail is always sorted, whatever date it carries. `0` sorts
+  everything. To have the older mail sorted once, when you choose, run
+  `php bin/console app:ai:classify-backlog --any-age --limit=20000` (add `--email=` for one person's
+  mail). Lowering the number also stops older mail that was already waiting in the queue.
 - **Wait for the assistant before showing new mail in a tab.** For people who let the assistant sort
   their mail, new mail is kept out of the inbox tabs for the moment the assistant needs, so it shows
   up once, in the right tab, instead of appearing in one and moving to another. **Wait at most** is
@@ -717,7 +737,9 @@ become a second way into every mailbox on the install:
 
 - **Change an existing user's password.** The field exists on create and not on edit. Someone who
   has not signed in yet has no mail, so setting their initial password discloses nothing; changing
-  it afterwards would. A forgotten password is reset with `app:user:password` on the console.
+  it afterwards would. And even the initial one works only once: the person has to choose their own
+  the first time they sign in, so the one you typed stops being a way in. A forgotten password is
+  reset with `app:user:password` on the console, which makes the same one-time password.
 - **Remove anyone's second factor.** That is `app:user:2fa-disable` on the console, and only there.
 - **Read anyone's mail.** Nothing in this area touches an account or a message.
 
@@ -849,6 +871,11 @@ Monitoring data is kept by every stage. Clear the logs from **Logs**, and stale 
 and once a night, not on arrival — so the first search of the day is the one that pulls the day's
 mail in, and it pulls it in for the search after it, not for itself. Ordinary search finds new mail
 straight away, which is why this is usually invisible.
+
+**An `--any-age` run reaches only as far as its `--limit`.** The scheduled pass that follows it stops
+at the age limit again, so a run with the default limit of 200 sorts 200 older messages and leaves
+the rest. Give it a limit as large as the mail you want sorted. It also does nothing while the last
+pass is still in the queue, and says so — run it again once that has drained.
 
 **The reported-mail export is other people's mail.** It is a plain, unencrypted JSON file holding
 the text of messages your users decided to hand over — unlike the config backup, which is encrypted

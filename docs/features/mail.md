@@ -27,6 +27,17 @@ Mail**, **Trash**, and **Spam** where an account has a junk folder — has an ey
 Labels**: switch one off and its row leaves the sidebar, switch it back on and it returns, both
 straight away. **Unread** and **All Mail** are the ones that start off.
 
+**Snoozed**, **Archive**, **Spam** and **Trash** wait behind a **More** row, and **Settings → General →
+Sidebar** chooses which rows those are: tick a folder there and it moves behind More, clear it and it
+comes back to the sidebar proper. The **Inbox** always stays on top, and so does **All Mail**, which
+is not offered. The other rows keep the sidebar's own order whichever side of More they are on, and
+with nothing ticked there is no More at all. This decides where a row sits, never whether it exists —
+the eye in Settings → Labels still switches one off altogether, and **Unread** and **Spam** still
+wait for their label to be on and **Snoozed** for something to be snoozed, wherever you put them.
+More comes back open when you are on a page inside it. The choice is remembered against your
+account, is kept in a configuration backup, and shows only in the full sidebar: the narrow icon rail
+has no More, so a folder tucked behind it is not in the rail.
+
 **Unread** gathers unread mail from everywhere — archived and labelled conversations included, with
 no category tabs — and leaves out only what you have put away: the bin, spam and anything snoozed.
 Dropping a conversation on it marks the conversation unread and leaves it where it is, which is
@@ -397,6 +408,14 @@ Replies collapse into one conversation, ordered oldest to newest with the latest
 expanded. Each message has its own menu: **Star**, **Archive**, **Mark as unread**,
 **Delete this message**, **Print**, and **Show original**.
 
+Deleting one message of a conversation leaves the conversation where it is: it stays in the inbox
+and under its labels until every message of it is in the bin, and it is listed in Trash as well.
+Each list shows its own part of it. Opened from Trash, it shows only the deleted messages; opened
+from anywhere else, only the others. The row's sender, preview, date and message count are those of
+the same part, and so are its buttons: in the inbox it is live mail with **Delete**, in Trash it is
+deleted mail with **Move to inbox** and **Delete forever**. A conversation entirely in the bin is
+shown whole wherever it is opened.
+
 **Show original** reconstructs the message from the stored header map and the decoded body — no
 raw RFC 822 blob is kept — and prints the SPF, DKIM and DMARC verdicts alongside it where the
 provider recorded an `Authentication-Results` header. Both it and **Print** open in their own tab.
@@ -760,7 +779,8 @@ config backup carries it.
 With it on, each row in Spam and the bin has a **Delete forever** button (the flame) beside **Move
 to inbox**, and it asks first. Nothing else can be deleted for good: a conversation in the inbox or
 the archive has to be thrown away once before this is offered, because there is no Undo to catch a
-slip.
+slip. On a conversation only part of which is in the bin, it deletes that part, and the rest of the
+conversation stays where it is.
 
 In **Spam** and in the bin, the toolbar above a selection has the same **Delete forever** in place of
 **Delete**. In Spam that makes a page of spam one click and one question rather than a trip to the
@@ -831,6 +851,20 @@ you had it.
 **Keys and ticked rows.** Beside the list a selection and an open conversation can be on screen
 together. A key still goes to the selection first: `e` with two rows ticked archives those two and
 leaves the conversation you are reading open.
+
+## Who a message is from
+
+A sender's name is whatever they typed, so a mail signed **PayPal** can come from anywhere. The
+part they cannot choose is their address, so an open message prints it as large and as dark as
+the name, and wraps it rather than cutting it off at the end, which is where the domain is.
+
+**Replies go to …** appears under the sender when the message's Reply-To points at a different
+organisation than its From address — the address your answer would actually go to. It is a line
+of fact, not a warning: newsletters and ticket systems answer from somewhere else all the time, and
+a warning on ordinary mail teaches you to ignore the one that matters. When plMail does think a
+name is pretending to be somebody else, it says so in a banner above the message, as before.
+
+There is no setting; this is on for everybody.
 
 ## Remote images
 
@@ -1026,6 +1060,9 @@ From, Cc, Bcc and the subject folded away behind the chevron beside it. Replying
 retargeting — but forwarding always does, and the recipient is the one thing a forward is missing,
 so the field is the first thing under the caret rather than a line of text describing it.
 
+A forward carries the original's attachments with it, already attached and removable like any
+other; pictures that are part of the body stay in the quote. A reply does not carry them.
+
 A forward opens with the original folded behind the **show quoted text** pill. If you would rather
 see it spread out from the start, **Settings → General → Composing** has the switch — folded stays
 the default, and either way the quote counts as the message's content: sending a forward without a
@@ -1139,17 +1176,24 @@ sent before anything is attached to anything.
 
 ## Undo send
 
-Pressing send queues the message with a **ten-second** delay and leaves the composer exactly where
-it is. The Send button becomes the way back: it reads **Sending…** with *click to cancel* under it,
-and a second click on that same button calls the send off. That is the only cancel there is — no
-toast, no bar at the foot of the thread — and it works the same in the floating composer and in a
-reply written inside a conversation.
+Pressing send queues the message with a **ten-second** delay. What the composer does meanwhile is
+yours to choose, under **Settings → General → Composing → When you press Send**:
 
-While the send is out the message itself is out of reach: the window is showing a copy of mail that
-has left, so the fields are frozen rather than editable. When the window expires the composer closes
-on its own, a **Message sent** toast confirms it, and the message takes its place in the
-conversation — unless it was a **forward**, which starts a conversation of its own and is therefore
-found in **Sent** rather than under the mail it was forwarded from.
+- **Close it**, the default. The composer closes as soon as the server has the message, and a
+  **Sending…** toast with an **Undo** button counts the cancel down. While the server is still
+  taking the message the Send button only says **Sending…**: it is busy, not a second way back, so
+  a double click cannot call off the mail you just sent.
+- **Keep it open.** The composer stays exactly where it is, and the Send button becomes the way
+  back: it reads **Sending…** with *click to cancel* under it, and a second click on that same
+  button calls the send off. That works the same in the floating composer and in a reply written
+  inside a conversation.
+
+While a kept-open send is out the message itself is out of reach: the window is showing a copy of
+mail that has left, so the fields are frozen rather than editable. When the window expires the
+composer closes on its own. Either way the message then takes its place in the conversation — unless
+it was a **forward**, which starts a conversation of its own and is therefore found in **Sent**
+rather than under the mail it was forwarded from — and a draft sent from the **Drafts** list leaves
+that list.
 
 Cancelling says nothing. The draft coming back with everything in it — recipients, subject, body,
 attachments — is the confirmation, and it is the same in both composers.

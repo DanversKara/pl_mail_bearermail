@@ -2,6 +2,7 @@ import { Controller } from '@hotwired/stimulus';
 import { csrfToken, jsonCsrfHeaders } from '../../csrf.js';
 import { requestFailed } from '../../request_errors.js';
 import { uploadAppIcons } from '../../app_icons.js';
+import { showToast } from '../../toast.js';
 
 export default class extends Controller {
     static values = {
@@ -10,11 +11,13 @@ export default class extends Controller {
         importUrl: String,
         resetUrl: String,
         appIconsUrl: String,
+        logoUploadUrl: String,
+        logoRemoveUrl: String,
         logoDefault: String,
     };
 
     static targets = ['paneAlpha', 'paneBlur', 'radius', 'scrimAlpha', 'accent', 'theme',
-        'logoMotif', 'logoOriginal', 'logoOriginalOption', 'logoStyle', 'logoLinked', 'logoGrid', 'importInput', 'uploadInput',
+        'logoMotif', 'logoOriginal', 'logoOriginalOption', 'logoStyle', 'logoLinked', 'logoGrid', 'logoPaintStep', 'logoUploadInput', 'importInput', 'uploadInput',
         'inkColor', 'inkColorField', 'inkDefault', 'inkCustom', 'inkDerived', 'inkMuted', 'inkMutedField', 'inkFaint', 'inkFaintField',
         'mainTint', 'mainTintField', 'mainTintDefault', 'mainTintCustom', 'mainAlpha', 'mainAlphaField', 'mainAlphaMatch', 'mainAlphaCustom',
         'backgroundSolid', 'backgroundSolidSwatch',
@@ -24,6 +27,7 @@ export default class extends Controller {
     connect() {
         this.root = document.documentElement;
         this.pending = null;
+        this.saving = null;
 
         // The choice the installed app's PNGs were last drawn for. The page's
         // own choice is the layout's business (core--app-icons draws it when it
@@ -180,6 +184,16 @@ export default class extends Controller {
 
         this.setVars(source.dataset.cssVars);
         this.queue();
+    }
+
+    /**
+     * Preview lines: the variables, and the count on <html> that decides where
+     * a list row goes to one line (`row-line:` in app.css). No variable can do
+     * that part — a container query does not read custom properties.
+     */
+    applyPreviewLines(event) {
+        this.root.dataset.listPreviewLines = event.currentTarget.value;
+        this.applyVars(event);
     }
 
     setVars(json) {
@@ -409,15 +423,22 @@ export default class extends Controller {
         const motif = event.currentTarget.dataset.logoMotif;
 
         this.logoMotifTarget.value = motif;
-        this.logoOriginalTarget.value = motif === 'pl' ? '0' : '1';
 
         this.element.querySelectorAll('[data-logo-motif]').forEach((button) => {
             this.markSelected(button, button.dataset.logoMotif === motif);
         });
 
-        this.element.querySelectorAll('[data-logo-paint]').forEach((image) => {
-            image.src = this.iconUrl(motif, image.dataset.logoPaint);
-        });
+        // The uploaded logo (#48) is worn over the motif rather than instead
+        // of it: the motif's own fields stay as they were, so going back to it
+        // finds it painted as it was left, and its colourway tiles keep
+        // showing it.
+        if (motif !== 'custom') {
+            this.logoOriginalTarget.value = motif === 'pl' ? '0' : '1';
+
+            this.element.querySelectorAll('[data-logo-paint]').forEach((image) => {
+                image.src = this.iconUrl(motif, image.dataset.logoPaint);
+            });
+        }
 
         this.syncLogoMode();
         this.repaintLogo();
@@ -484,6 +505,12 @@ export default class extends Controller {
      */
     syncLogoMode() {
         const mode = this.logoMode();
+        const custom = this.logoMotifTarget.value === 'custom';
+
+        // An uploaded logo has no paints, so step two has nothing to offer it.
+        if (this.hasLogoPaintStepTarget) {
+            this.logoPaintStepTarget.hidden = custom;
+        }
 
         if (this.hasLogoOriginalOptionTarget) {
             this.logoOriginalOptionTarget.hidden = this.logoMotifTarget.value === 'pl';
@@ -494,7 +521,7 @@ export default class extends Controller {
         });
 
         if (this.hasLogoGridTarget) {
-            this.logoGridTarget.hidden = mode !== 'independent';
+            this.logoGridTarget.hidden = custom || mode !== 'independent';
         }
     }
 
@@ -508,6 +535,12 @@ export default class extends Controller {
      * drawn to wear, any other motif to its own original design.
      */
     logoPaint() {
+        // The uploaded logo's "paint" is its hash, the last segment of each of
+        // its URLs; see the custom tile in _appearance.html.twig.
+        if (this.logoMotifTarget.value === 'custom') {
+            return this.element.querySelector('[data-logo-motif="custom"]').dataset.logoCustom;
+        }
+
         const mode = this.logoMode();
 
         if (mode === 'original') {
@@ -1000,7 +1033,10 @@ export default class extends Controller {
             clearTimeout(this.pending);
         }
 
-        this.pending = setTimeout(() => this.save(), delay);
+        this.pending = setTimeout(() => {
+            this.pending = null;
+            this.saving = this.save();
+        }, delay);
     }
 
     async save() {
@@ -1106,6 +1142,98 @@ export default class extends Controller {
         }
     }
 
+    /**
+     * Upload an SVG as the user's own logo (#48), and wear it.
+     *
+     * Anything waiting to be saved goes first, so the reload that follows
+     * cannot lose a pick made a moment before. The pane is then rendered
+     * again rather than patched: every form of the logo (tab, top bar, tile,
+     * manifest) has a URL only the server can spell, and the layout draws the
+     * installed app's PNGs from the new logo on that render.
+     *
+     * A refusal says why in the server's own sentence: not an SVG, too big,
+     * or nothing a logo could be made of.
+     */
+    async uploadLogo() {
+        const file = this.logoUploadInputTarget.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        const data = new FormData();
+        data.append('logo', file);
+
+        await this.flushSave();
+
+        let response;
+
+        try {
+            response = await fetch(this.logoUploadUrlValue, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken() },
+                body: data,
+            });
+        } catch {
+            requestFailed(null);
+            return;
+        } finally {
+            this.logoUploadInputTarget.value = '';
+        }
+
+        if (response.status === 400 || response.status === 413 || response.status === 422) {
+            const result = await response.json().catch(() => ({}));
+            showToast(result.message ?? '', { type: 'error' });
+            return;
+        }
+
+        if (requestFailed(response)) {
+            return;
+        }
+
+        this.reloadPane();
+    }
+
+    /** Forget the uploaded logo and go back to the motif kept underneath it. */
+    async removeLogo() {
+        await this.flushSave();
+
+        let response;
+
+        try {
+            response = await fetch(this.logoRemoveUrlValue, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken() },
+            });
+        } catch {
+            requestFailed(null);
+            return;
+        }
+
+        if (requestFailed(response)) {
+            return;
+        }
+
+        this.reloadPane();
+    }
+
+    /** Send a queued save now rather than after its delay. */
+    async flushSave() {
+        if (this.pending) {
+            clearTimeout(this.pending);
+            this.pending = null;
+            await this.save();
+        }
+    }
+
+    reloadPane() {
+        if (window.Turbo) {
+            window.Turbo.visit(window.location.href, { action: 'replace' });
+        } else {
+            window.location.reload();
+        }
+    }
+
     async importFile() {
         const file = this.importInputTarget.files[0];
 
@@ -1141,6 +1269,18 @@ export default class extends Controller {
     }
 
     async reset() {
+        // A change made a moment ago is still waiting out its debounce, or on
+        // its way. Sent after the reset, it would put back what the reset just
+        // removed — a theme picked and then reset within 400 ms came back on
+        // the reload. So the queued one is dropped and one in flight is waited
+        // for: the reset has to be the last word.
+        if (this.pending) {
+            clearTimeout(this.pending);
+            this.pending = null;
+        }
+
+        await this.saving;
+
         let response;
 
         try {

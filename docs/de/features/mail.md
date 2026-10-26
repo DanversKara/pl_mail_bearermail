@@ -1,4 +1,4 @@
-<!-- translated-from: features/mail.md sha1:df37980670901d8064e9a02c3c0316ebd5549b93 -->
+<!-- translated-from: features/mail.md sha1:e10e5d0559ab9c2a857d4c77d58875bf76e142d2 -->
 
 # Mail
 
@@ -30,6 +30,19 @@ Jeder Systemeintrag — **Posteingang**, **Ungelesen**, **Gesendet**, **Entwürf
 hat unter **Einstellungen → Labels** ein Auge: Schaltest du einen aus, verschwindet seine Zeile aus
 der Seitenleiste, schaltest du ihn wieder ein, ist sie zurück — beides sofort. **Ungelesen** und
 **Alle E-Mails** beginnen ausgeschaltet.
+
+**Zurückgestellt**, **Archiv**, **Spam** und **Papierkorb** warten hinter einer Zeile **Mehr**, und
+unter **Einstellungen → Allgemein → Seitenleiste** legst du fest, welche Zeilen das sind: Haken
+setzen, und der Ordner rutscht hinter „Mehr“; Haken entfernen, und er kommt zurück in die
+Seitenleiste selbst. Der **Posteingang** bleibt immer oben, ebenso **Alle E-Mails**, das nicht zur
+Wahl steht. Die übrigen Zeilen behalten auf beiden Seiten die Reihenfolge der Seitenleiste, und ohne
+einen einzigen Haken gibt es gar kein „Mehr“. Das bestimmt, wo eine Zeile steht, nie, ob es sie gibt
+— das Auge unter Einstellungen → Labels schaltet sie weiterhin ganz aus, und **Ungelesen** und
+**Spam** warten weiterhin darauf, dass ihr Label eingeschaltet ist, **Zurückgestellt** darauf, dass
+etwas zurückgestellt ist, egal wohin du sie legst. „Mehr“ ist aufgeklappt, sobald du dich auf einer
+Seite darin befindest. Die Wahl wird an dein Konto gebunden, steckt in einer Konfigurationssicherung
+und zeigt sich nur in der vollen Seitenleiste: Die schmale Symbolleiste hat kein „Mehr“, ein
+dahinter versteckter Ordner fehlt dort also.
 
 **Ungelesen** sammelt ungelesene Mails von überall — archivierte und gelabelte Konversationen
 eingeschlossen, ohne Kategorie-Tabs — und lässt nur weg, was du weggeräumt hast: Papierkorb, Spam
@@ -440,6 +453,14 @@ Antworten klappen zu einer Konversation zusammen, von alt nach neu sortiert, die
 Nachricht aufgeklappt. Jede Nachricht hat ihr eigenes Menü: **Markieren**, **Archivieren**,
 **Als ungelesen markieren**, **Diese Nachricht löschen**, **Drucken** und **Original anzeigen**.
 
+Wenn du eine Nachricht einer Konversation löschst, bleibt die Konversation, wo sie ist: Sie steht im
+Posteingang und unter ihren Labels, bis jede Nachricht darin im Papierkorb liegt, und zusätzlich im
+Papierkorb. Jede Liste zeigt ihren Teil davon. Aus dem Papierkorb geöffnet zeigt sie nur die
+gelöschten Nachrichten, von überall sonst nur die anderen. Absender, Vorschau, Datum und Anzahl der
+Nachrichten in der Zeile gehören zum selben Teil, ebenso ihre Knöpfe: Im Posteingang ist sie Post mit
+**Löschen**, im Papierkorb gelöschte Post mit **In den Posteingang** und **Endgültig löschen**. Eine
+Konversation, die ganz im Papierkorb liegt, wird überall vollständig gezeigt.
+
 **Original anzeigen** setzt die Nachricht aus der gespeicherten Header-Zuordnung und dem
 dekodierten Text wieder zusammen — ein roher RFC-822-Blob wird nicht aufbewahrt — und stellt
 die SPF-, DKIM- und DMARC-Urteile daneben, sofern der Anbieter einen
@@ -837,7 +858,9 @@ eine Entscheidung für dein eigenes Konto, und eine Konfigurationssicherung enth
 Ist sie an, hat jede Zeile im Spam und im Papierkorb neben **In den Posteingang** einen Knopf
 **Endgültig löschen** (die Flamme), und er fragt vorher nach. Sonst lässt sich nichts endgültig
 löschen: Eine Konversation im Posteingang oder im Archiv muss erst einmal weggeworfen worden sein,
-bevor das angeboten wird, denn es gibt kein Rückgängig, das einen Fehlklick auffängt.
+bevor das angeboten wird, denn es gibt kein Rückgängig, das einen Fehlklick auffängt. Bei einer
+Konversation, von der nur ein Teil im Papierkorb liegt, löscht er diesen Teil, und der Rest der
+Konversation bleibt, wo er ist.
 
 Im **Spam** und im Papierkorb hat die Werkzeugleiste über einer Auswahl dasselbe **Endgültig
 löschen** anstelle von **Löschen**. Im Spam ist eine Seite voll Spam so ein Klick und eine Frage
@@ -917,6 +940,22 @@ zurückbringt, wie du es eingerichtet hattest.
 **Tasten und angehakte Zeilen.** Neben der Liste können eine Auswahl und eine geöffnete
 Unterhaltung gleichzeitig zu sehen sein. Eine Taste gilt trotzdem zuerst der Auswahl: `e` mit zwei
 angehakten Zeilen archiviert diese zwei und lässt die Unterhaltung offen, die du gerade liest.
+
+## Von wem eine Mail kommt
+
+Den Absendernamen kann jeder frei eintippen, also kann eine Mail mit **PayPal** von überall
+kommen. Was der Absender nicht wählen kann, ist seine Adresse. In einer geöffneten Mail steht sie
+deshalb so groß und so dunkel wie der Name und bricht um, statt am Ende abgeschnitten zu werden,
+denn dort steht die Domain.
+
+**Antworten gehen an …** erscheint unter dem Absender, wenn das Reply-To der Mail auf eine andere
+Organisation zeigt als ihre Absenderadresse — die Adresse, an die deine Antwort tatsächlich ginge.
+Das ist eine sachliche Zeile, keine Warnung: Newsletter und Ticketsysteme antworten ständig von
+woanders, und eine Warnung bei gewöhnlicher Mail bringt dir bei, genau die eine zu übergehen, auf
+die es ankommt. Hält plMail einen Namen tatsächlich für vorgetäuscht, sagt es das wie bisher in
+einem Banner über der Nachricht.
+
+Eine Einstellung gibt es nicht; das gilt für alle.
 
 ## Externe Bilder
 
@@ -1132,6 +1171,9 @@ Bcc und Betreff. Bei einer Antwort änderst du die Empfängerin selten, bei eine
 immer, und genau sie fehlt einer Weiterleitung ja noch. Also steht dort das Feld und nicht eine
 Zeile, die davon erzählt.
 
+Eine Weiterleitung nimmt die Anhänge des Originals mit, schon angehängt und wie jeder andere
+entfernbar; Bilder, die zum Text gehören, bleiben im Zitat. Eine Antwort nimmt sie nicht mit.
+
 Eine Weiterleitung öffnet mit dem Original hinter der Kapsel **Zitierten Text anzeigen**. Wenn du
 es lieber gleich ausgeklappt siehst: Der Schalter steht unter **Einstellungen → Allgemein →
 Verfassen** — eingeklappt bleibt die Vorgabe. So oder so zählt das Zitat als Inhalt der Nachricht:
@@ -1257,19 +1299,26 @@ wird.
 
 ## Senden rückgängig machen
 
-Auf Senden zu drücken reiht die Nachricht mit **zehn Sekunden** Verzögerung ein und lässt das
-Fenster genau dort, wo es ist. Der Senden-Knopf wird selbst zum Weg zurück: Er liest sich
-**Wird gesendet…** mit *zum Abbrechen klicken* darunter, und ein zweiter Klick auf denselben Knopf
-sagt das Senden ab. Mehr Abbruch gibt es nicht — keine Einblendung, keine Leiste am Fuß der
-Konversation — und es geht im schwebenden Fenster genauso wie in einer Antwort, die du direkt in
-der Konversation schreibst.
+Auf Senden zu drücken reiht die Nachricht mit **zehn Sekunden** Verzögerung ein. Was das Fenster
+währenddessen tut, wählst du unter **Einstellungen → Allgemein → Verfassen → Beim Senden**:
 
-Solange das Senden läuft, ist die Nachricht selbst nicht mehr erreichbar: Das Fenster zeigt eine
-Kopie von Post, die schon weg ist, die Felder sind also eingefroren statt bearbeitbar. Läuft das
-Zeitfenster ab, schließt sich das Fenster von allein, eine Einblendung **Nachricht gesendet**
-bestätigt es, und die Nachricht nimmt ihren Platz in der Konversation ein — außer es war eine
-**Weiterleitung**: Die beginnt eine eigene Konversation und steht darum unter **Gesendet** und
-nicht unter der Mail, aus der du sie weitergeleitet hast.
+- **Schließen**, die Vorgabe. Das Fenster schließt sich, sobald der Server die Nachricht hat, und
+  eine Einblendung **Wird gesendet…** mit einem Knopf **Rückgängig** zählt den Abbruch herunter.
+  Solange der Server die Nachricht noch entgegennimmt, sagt der Senden-Knopf nur **Wird
+  gesendet…**: Er ist beschäftigt, kein zweiter Weg zurück, und ein Doppelklick kann die Mail, die
+  du gerade gesendet hast, nicht absagen.
+- **Offen lassen.** Das Fenster bleibt genau dort, wo es ist, und der Senden-Knopf wird selbst zum
+  Weg zurück: Er liest sich **Wird gesendet…** mit *zum Abbrechen klicken* darunter, und ein
+  zweiter Klick auf denselben Knopf sagt das Senden ab. Das geht im schwebenden Fenster genauso wie
+  in einer Antwort, die du direkt in der Konversation schreibst.
+
+Solange ein offen gelassenes Senden läuft, ist die Nachricht selbst nicht mehr erreichbar: Das
+Fenster zeigt eine Kopie von Post, die schon weg ist, die Felder sind also eingefroren statt
+bearbeitbar. Läuft das Zeitfenster ab, schließt sich das Fenster von allein. So oder so nimmt die
+Nachricht danach ihren Platz in der Konversation ein — außer es war eine **Weiterleitung**: Die
+beginnt eine eigene Konversation und steht darum unter **Gesendet** und nicht unter der Mail, aus
+der du sie weitergeleitet hast —, und ein Entwurf, den du aus der Liste **Entwürfe** sendest,
+verschwindet aus dieser Liste.
 
 Ein Abbruch sagt nichts. Der Entwurf, der mit allem darin zurückkommt — Empfänger, Betreff, Text,
 Anhänge —, ist die Bestätigung, und das ist in beiden Fenstern gleich.

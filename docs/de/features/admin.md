@@ -1,4 +1,4 @@
-<!-- translated-from: features/admin.md sha1:32548a111582d707b9c8a1ef8439eeaebb02c69c -->
+<!-- translated-from: features/admin.md sha1:759bc93bc0ffbc875edde959d545889254ed9a13 -->
 
 # Administration
 
@@ -26,6 +26,11 @@ describe` zurück, und wo niemand die Antwort kennt, fehlt der Chip ganz, statt 
 
 Zwei Images können sich beide `main` nennen, und darum steht der Commit neben dem Namen und
 nicht an seiner Stelle.
+
+Ein Klick auf den Chip kopiert beides, Namen und Commit mit einem Leerzeichen dazwischen
+(`milestone-v0.4.0 0805208`), bereit für einen Fehlerbericht oder einen Deploy-Befehl; sein
+Zwischenablage-Symbol wird dabei zu einem Haken. Das geht auch auf dem Handy und auf einer
+Instanz, die nur über HTTP erreichbar ist.
 
 ## System
 
@@ -422,6 +427,12 @@ Zwei Dateien, und keine ist allein zu gebrauchen:
   die App baut ihre `FirebaseOptions` zur Laufzeit. Sie stecken im APK jeder Firebase-App und sind
   ihrer Natur nach öffentlich, werden also im Klartext gespeichert.
 
+  **Das Paket, das du registrierst**, wenn du die Android-App zum Firebase-Projekt hinzufügst, ist
+  `de.pluetzner.plmail`, die App aus dem Play Store. Die auf GitHub veröffentlichten APKs wurden als
+  `de.plmail.google` gebaut; ein Projekt, das nur dieses Paket registriert hat, funktioniert weiter
+  wie bisher. Eine Datei mit mehreren Paketen ist in Ordnung: plMail veröffentlicht die aus dem Play
+  Store, wenn sie dabei ist, dann `de.plmail.google`, sonst die erste App in der Datei.
+
 **Ein Paar aus zwei verschiedenen Projekten wird abgelehnt, unter Nennung beider.** Nichts weiter
 unten kann diesen Fehler erkennen: Die App registriert sich fröhlich gegen das eine Projekt, der
 Server sendet fröhlich an das andere, jede Nachricht wird in eine Protokolldatei hinein abgelehnt,
@@ -675,12 +686,23 @@ den Stichentscheid geben — wenn ein Header, ein Gmail-Label oder die Tatsache,
 schon geschrieben hast, die Kategorie bereits bestimmt hat, wird das Modell gar nicht gefragt.
 Ausschalten erfordert kein Aufräumen.
 
-Zwei Dinge sorgen dafür, dass das Einsortieren ankommender Mail nicht im Weg steht:
+Drei Dinge sorgen dafür, dass das Einsortieren ankommender Mail nicht im Weg steht:
 
 - **Nur aktuelle Mail wird beim Eintreffen einsortiert.** Nach Mail aus den letzten 30 Tagen wird
   sofort gefragt. Wenn du ein Konto hinzufügst, wird der Rest des Postfachs danach einsortiert, im
   Hintergrund, die neueste zuerst, und erst, wenn der Import abgeschlossen ist — ein erster Import
   besteht also nicht aus stundenlangen Modellaufrufen, hinter denen neue Mail wartet.
+- **Importierte Mail wird nur bis zu einem Alter einsortiert.** **Importierte Mail einsortieren bis
+  (Tage alt)** legt fest, wie weit ein Import und dieser Durchlauf im Hintergrund zurückgehen: 30 Tage
+  als Vorgabe. Auf einem langsamen Modell-Host ist das der Unterschied zwischen einem Nachmittag und
+  mehreren Tagen — bei zwanzig Sekunden pro Nachricht sind 14.000 Mails rund 70 Stunden Rechenzeit.
+  Nach älterer Mail wird nie gefragt. Sie behält den Tab, den die normalen Regeln ihr gegeben haben —
+  Gmails eigene Kategorie, die Header eines Newsletters oder einer Mailingliste, die Tatsache, dass
+  du dem Absender schreibst — und **Allgemein**, wenn nichts davon gegriffen hat, und die Suche
+  findet sie wie jede andere Mail. Neue Mail wird immer einsortiert, egal welches Datum sie trägt.
+  `0` sortiert alles ein. Um die ältere Mail einmal einsortieren zu lassen, wann du willst, führe
+  `php bin/console app:ai:classify-backlog --any-age --limit=20000` aus (mit `--email=` für die Mail
+  einer Person). Eine kleinere Zahl hält auch ältere Mail an, die schon in der Warteschlange steht.
 - **Auf den Assistenten warten, bevor neue Mail in einem Tab erscheint.** Für alle, die ihre Mail
   vom Assistenten sortieren lassen, bleibt neue Mail für den Moment, den der Assistent braucht, aus
   den Posteingangs-Tabs heraus — sie erscheint dann einmal, im richtigen Tab, statt in einem
@@ -783,8 +805,10 @@ Admin-Sitzung darf kein zweiter Weg in jedes Postfach dieser Installation werden
 
 - **Das Passwort eines bestehenden Benutzers ändern.** Das Feld gibt es beim Anlegen und nicht
   beim Bearbeiten. Wer sich noch nie angemeldet hat, hat keine Mail, sein erstes Passwort zu
-  setzen gibt also nichts preis; es danach zu ändern schon. Ein vergessenes Passwort setzt du
-  mit `app:user:password` auf der Konsole zurück.
+  setzen gibt also nichts preis; es danach zu ändern schon. Und selbst das erste gilt nur
+  einmal: Bei der ersten Anmeldung muss die Person ein eigenes wählen, das von dir getippte ist
+  danach kein Weg mehr hinein. Ein vergessenes Passwort setzt du mit `app:user:password` auf der
+  Konsole zurück; auch das ergibt ein solches Einmal-Passwort.
 - **Jemandem den zweiten Faktor abnehmen.** Das ist `app:user:2fa-disable` auf der Konsole, und
   nur dort.
 - **Die Mail von irgendjemandem lesen.** Nichts in diesem Bereich fasst ein Konto oder eine
@@ -930,6 +954,12 @@ Monitoring-Daten bleiben auf jeder Stufe erhalten. Die Protokolle leerst du unte
 Indexiert wird nach einer Suche und einmal pro Nacht, nicht bei der Ankunft — die erste Suche des
 Tages zieht also die Mail des Tages nach, und zwar für die Suche danach, nicht für sich selbst. Die
 normale Suche findet neue Mail sofort, weshalb das meistens gar nicht auffällt.
+
+**Ein Lauf mit `--any-age` reicht nur so weit wie sein `--limit`.** Der geplante Durchlauf danach
+hält wieder an der Altersgrenze, ein Lauf mit dem Standardlimit von 200 sortiert also 200 ältere
+Nachrichten ein und lässt den Rest liegen. Gib ihm ein Limit, so groß wie die Mail, die du
+einsortiert haben willst. Solange der letzte Durchlauf noch in der Warteschlange steht, tut er
+außerdem nichts und sagt das — starte ihn dann noch einmal, wenn sie leer ist.
 
 **Der Export der gemeldeten Mails sind fremde Mails.** Es ist eine schlichte, unverschlüsselte
 JSON-Datei mit dem Text von Nachrichten, die deine Leute weitergegeben haben — anders als die

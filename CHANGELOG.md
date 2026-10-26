@@ -10,6 +10,236 @@ The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, `milestone-vX.Y.Z` the work collected for that
 release before it reaches `main`, and `sha-…` pins one commit.
 
+## v0.4.0 — 2026-10-26
+
+<!-- highlight screenshot=encryption -->
+**End-to-end encryption, with OpenPGP and S/MIME.** plMail now writes, reads and signs encrypted
+mail, and your keys are never on the server in a form it can read: your browser makes them, keeps
+them locked under your password and does the encrypting itself. When everybody you write to has a
+key, the message is encrypted on its own, subject included, and a lock on each recipient shows it.
+Everything is under Settings → Encryption; the entries below go into each part.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Migration:** the image now carries GnuPG; an installation outside Docker needs `gpg` 2.2 or later
+on the `PATH`. The encryption work adds several tables and columns. Every migration is reversible,
+but going back down deletes everyone's keys, and with them access to anything encrypted to them.
+
+<!-- highlight screenshot=pop3-accounts -->
+**POP3 accounts.** For a provider without IMAP, Settings → Mail accounts → Add account now offers
+**POP3**. A POP3 account is one inbox: starring, labels and folders stay in plMail, nothing is
+fetched twice, and mail stays on the server unless you choose to delete it there once it is stored
+here. An existing account can switch between IMAP and POP3 and keeps its mail.
+[#289](https://github.com/karatektus/pl_mail/issues/289), by @mmssix.
+
+**Migration:** adds `account.incoming_protocol` and a `pop3_uidl` table.
+
+<!-- highlight screenshot=simplified-chinese -->
+**The interface is available in Simplified Chinese.** Choose **简体中文** during setup or under
+Settings → General → Language. Everything is translated, including sign-in errors and the emoji
+picker's search, and the language uses a 24-hour clock unless you chose another.
+[#326](https://github.com/karatektus/pl_mail/issues/326), by @CorrectRoadH.
+
+<!-- highlight screenshot=custom-logo -->
+**Upload a logo of your own.** Settings → Appearance → Logo has an **Upload your own…** button for an
+SVG. It is worn in the top bar, as the tab icon and as the installed app's icon, and sits beside the
+built-in logos as a **Your own** tile you can switch away from and back to. The file is cleaned
+before it is kept. The phone apps keep their previous icon.
+[#48](https://github.com/karatektus/pl_mail/issues/48), requested by @Apollosport.
+
+**Migration:** adds two appearance columns.
+
+**One preview line means one line per message.** With *Preview lines* on *One line*, the default,
+sender, subject and preview now share a single line as soon as the list is about laptop-wide;
+before, that took a wide desktop window.
+[#153](https://github.com/karatektus/pl_mail/issues/153), by @Flouss.
+
+**An open message shows who it really comes from.** A display name is whatever the sender typed,
+so `"PayPal" <service@evil.example>` used to read like the real thing. The address is now as large
+and dark as the name and is never cut off. When replies go to a different organisation than the
+sender, the header says so (*Replies go to …*).
+[#153](https://github.com/karatektus/pl_mail/issues/153), by @Flouss.
+
+**Choose which folders wait behind More in the sidebar.** Settings → General → Sidebar has a box
+for each of Unread, Starred, Sent, Drafts, Snoozed, Archive, Spam and Trash: ticked ones sit behind
+**More**, the rest stay in the sidebar. Nothing moves until you change it.
+[#151](https://github.com/karatektus/pl_mail/issues/151), by @Flouss.
+
+**Adding a large mailbox no longer means days of sorting by the assistant.** With **Sort mail into
+tabs** on, plMail asked the model about every old message after an import — 14,000 messages at
+twenty seconds each on a CPU model is about 70 hours of that host. Admin → AI now has
+**Sort imported mail up to (days old)**, 30 by default: an import and the background pass after it
+stop there, and so does older mail that was already waiting in the queue. Mail that has just arrived
+is always sorted, whatever its date. Older mail keeps the tab the ordinary rules gave it (**Primary**
+when no rule recognised it) and is found by search as before. `0` sorts everything again, and
+`php bin/console app:ai:classify-backlog --any-age --limit=N` sorts the older mail when you choose.
+[#208](https://github.com/karatektus/pl_mail/issues/208), by @phdelodder.
+
+**Migration:** adds `ai_settings.categorise_backlog_days`, 30 on the existing row. Installations that
+already sort by assistant stop asking about mail older than 30 days at the first background pass
+after the update; set it to `0` for the old behaviour.
+
+**Settings save without reloading the page.** Changing a switch or choice in Settings updates it in
+place, and you stay where you were scrolled. Only the language and the clock format still reload,
+because they change everything on the page.
+
+**A forward carries the original's attachments.** The forward opens with them attached, removable
+like any other. Pictures in the body stay in the quote, and replies are unchanged.
+[#323](https://github.com/karatektus/pl_mail/issues/323), by @phdelodder.
+
+**The calendar follows your timezone.** After you changed your timezone, the clock moved but the
+calendar stayed on the old zone. The calendar is now always drawn on your own clock. A calendar's
+own time zone in Settings → Calendars only decides the zone new events on it are written in, and
+starts as **Follow plMail**.
+[#343](https://github.com/karatektus/pl_mail/issues/343), reported by @KieranBeals.
+
+**Migration:** `calendar.time_zone` becomes nullable.
+
+**The build in the Administration header copies itself.** One click on the chip beside the
+Administration title puts the running image and commit on the clipboard, ready for a bug report.
+[#313](https://github.com/karatektus/pl_mail/issues/313).
+
+**The Send button no longer cancels the mail you just sent.** While a send was on its way, a double
+click on Send called it off. The button is now just busy; the toast's **Undo** is the way back.
+*Keep it open* sending is unchanged.
+[#302](https://github.com/karatektus/pl_mail/issues/302), reported by @pmdevelopment.
+
+**A draft sent from the Drafts list leaves the list,** as a discarded one always did, instead of
+staying until the next reload.
+[#310](https://github.com/karatektus/pl_mail/issues/310), reported by @pmdevelopment.
+
+**Bullet and numbered lists show up in the compose editor.** They were drawn without bullets or
+numbers and, in a reply, put under the quote. They now show their markers and appear where the
+caret is.
+[#328](https://github.com/karatektus/pl_mail/issues/328), by @phdelodder.
+
+**A signature with a blockquote in it is no longer indented in the sent mail,** and is no longer
+missing from the plain-text part.
+
+**Calendar dates are right west of UTC.** Anywhere in the Americas, headings and the month view
+showed every date a day early.
+[#325](https://github.com/karatektus/pl_mail/issues/325), reported by @ChillyEmber.
+
+**A connected calendar with a very long event address syncs again.** One such event, as Baïkal
+can have, failed the whole calendar's sync. By @mmssix.
+
+**Migration:** `calendar_event.remote_id` becomes `TEXT`.
+
+**Mail whose Date header appears more than once no longer trips up moves, flags and repairs,** and
+the phone apps can import it.
+[#357](https://github.com/karatektus/pl_mail/issues/357), reported by @sponger544.
+
+**Mail sent from the phone app shows the time it was sent.** It showed an hour late in Germany, two
+in summer. Mail sent before the update keeps its wrong time.
+[#363](https://github.com/karatektus/pl_mail/issues/363).
+
+**Push notifications for the Android app from the Play Store.**
+[#365](https://github.com/karatektus/pl_mail/issues/365).
+
+**Migration:** register `de.pluetzner.plmail`, the Play Store app, in the Firebase project; a
+project with only `de.plmail.google`, the APKs from GitHub, keeps working. See Administration →
+Push in the handbook.
+
+**IDLE no longer stops after a few hours on servers that hang up early,** such as FranklyMail.
+[#360](https://github.com/karatektus/pl_mail/issues/360), by @phdelodder.
+
+**The "New mail" notification no longer fires for mail a rule has already read or filed away.**
+Only unread mail still in the Inbox once the rules have run is announced, which also leaves out mail
+already read on another device.
+[#368](https://github.com/karatektus/pl_mail/issues/368), by @phdelodder.
+
+**New mail lights up the sidebar and its category tab at the same moment.** While the assistant was
+still sorting a message, the Inbox showed its dot and count seconds before the tab did.
+[#371](https://github.com/karatektus/pl_mail/issues/371).
+
+**A partly deleted conversation shows the deleted part in Trash and the rest everywhere else.**
+Opened from the Inbox, it used to show its deleted messages among the others and offered **Delete
+forever** instead of **Delete**. Each list now shows its own part, with its own sender, preview,
+date and count, as the phone app has since 0.4.2. **Delete forever** on such a conversation deletes
+only its deleted part instead of being refused.
+[#378](https://github.com/karatektus/pl_mail/pull/378).
+
+**A week across two months is no longer cut off at the top of the calendar on a small phone.** On a
+320px screen the label now names just the months ("Oct–Nov").
+[#253](https://github.com/karatektus/pl_mail/issues/253), by @pmdevelopment.
+
+**Your keys, made in your browser and recoverable.** The first time you sign in after the update,
+your browser makes an OpenPGP key for every address you send from. Settings → Encryption gives you a
+recovery phrase, known devices that reopen your keys after a password reset, import and export (for
+GnuPG, Thunderbird and Proton), and renewing a key or marking it compromised. Changing your password
+carries the keys over. [#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Migration:** `app:user:password` locks a person's keys until their recovery phrase or a known
+device opens them again.
+
+**Your password no longer reaches the server.** The sign-in form stretches it in the browser and
+sends only the result. Each account moves over on its next sign-in, which signs its other browsers
+out once. Signing in now needs JavaScript. A password an administrator chose works once: the person
+picks their own straight after.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Migration:** going back below this version leaves every account that moved over unable to sign in
+until `app:user:password` resets it.
+
+**Encrypted and signed mail opens and is checked.** OpenPGP (PGP/MIME and inline) and S/MIME mail
+opens in your browser, attachments included; the server keeps no readable copy, so such mail is left
+out of search and the assistant. A signature says what it is worth: checked, unconfirmed, from an
+unknown key, or not matching. [#28](https://github.com/karatektus/pl_mail/issues/28), by
+@pmdevelopment.
+
+**Writing encrypted mail.** When everybody you write to has a key, the message is encrypted
+automatically: a lock on each recipient, *Encrypted* in the header, and a lock in the toolbar to
+switch it per message. The draft is encrypted before it is saved, the subject travels inside, and a
+reply to encrypted mail stays encrypted. When only some recipients have a key, a note says so; Settings
+→ Encryption → *Sending* can refuse to send unencrypted instead. Your public key travels with every
+message so other programs can answer encrypted.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Contacts' keys, and a warning when one changes.** plMail finds a contact's key in their mail, on
+their domain's Web Key Directory or on public key servers (keys.openpgp.org, Mailvelope), or you
+import it under Settings → Encryption → Contacts' keys. A different key turning up later is not used
+until you accept it, and verifying a fingerprint marks the contact's signatures as checked. Key
+server lookups can be switched off there.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Migration:** `APP_KEY_SERVERS` chooses the key servers, or switches them off when empty.
+
+**S/MIME certificates, beside OpenPGP.** Import your certificate (`.p12` or `.pfx`) under Settings →
+Encryption. S/MIME mail opens and is checked, contacts' certificates are kept from their signed
+mail, and plMail encrypts or signs with S/MIME when OpenPGP is not possible for everyone on a
+message. Old-style files locked with 3DES, RC2 or RC4, as Windows exports them, open too.
+[#28](https://github.com/karatektus/pl_mail/issues/28),
+[#372](https://github.com/karatektus/pl_mail/issues/372), by @pmdevelopment.
+
+**Publish your key, so others can find it.** Each key can be published to keys.openpgp.org from
+Settings → Encryption → *Show keys*, and the installation can publish everyone's key in its own Web
+Key Directory, which Thunderbird, Proton and GnuPG look up by themselves. **Check from outside**
+shows what the world sees. [#28](https://github.com/karatektus/pl_mail/issues/28), by
+@pmdevelopment.
+
+**Migration:** the Web Key Directory stays off until `APP_WKD_DOMAINS` names the installation's
+domains and `openpgpkey.<domain>` (or the website's `/.well-known/openpgpkey/`) points at plMail.
+Publishing to keys.openpgp.org needs it in `APP_KEY_SERVERS`.
+
+**Encryption with single sign-on, and no prompt at sign-in.** An account that signs in only through
+single sign-on sets an **encryption passphrase** of its own. A session that did not sign in with
+the password form is asked for the password or passphrase once, the first time something needs the
+keys, and **Not now** leaves them locked.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Encrypted mail can be kept readable on your own server, if you choose.** Settings → Encryption →
+*Decrypted mail on this server*, per account and off by default: your browser then hands the server
+a decrypted copy, so search, rules and the assistant work on that mail, while your mail provider
+still sees only ciphertext. Switching off deletes the copies.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment.
+
+**Migration:** `APP_E2E_SERVER_PLAINTEXT=forbid` turns the option off for the whole installation.
+
+**The plMail apps read and send encrypted mail.** Pairing a device brings your keys along, sealed,
+with the key that opens them only in the QR code. The app can have the server check an S/MIME
+signer and keep the sender's certificate.
+[#28](https://github.com/karatektus/pl_mail/issues/28), by @pmdevelopment;
+[#320](https://github.com/karatektus/pl_mail/issues/320).
+
 ## v0.3.9 — 2026-10-23
 
 <!-- highlight -->
@@ -238,8 +468,8 @@ labels, All Mail, Unread and search, because the conversation then carried the T
 that arrived in it afterwards, by its references or by its subject, was unread mail the phone app
 showed and the web did not. A conversation now leaves those lists only once every message of it is
 in the bin. One that you deleted whole still leaves its labels, as before. A partly deleted
-conversation is listed in Trash too, and opening it still shows the deleted messages with the rest.
-No schema change. [#268](https://github.com/karatektus/pl_mail/issues/268).
+conversation is listed in Trash too. No schema change.
+[#268](https://github.com/karatektus/pl_mail/issues/268).
 
 **A long message scrolls in the expanded compose window.** Expanded, the editor stayed 170px tall
 and cut a longer message off mid-line, with nothing to scroll. It now fills the window and grows
