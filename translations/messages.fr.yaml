@@ -5076,6 +5076,7 @@ whats_new:
             failed: 'La page n’a pas pu être capturée, rien ne sera donc joint.'
             label: 'Joindre une capture de la page où vous étiez'
             preview: 'La capture qui sera jointe'
+            share: 'La prendre plutôt en partageant cet onglet'
             taking: 'Capture en cours…'
         send: 'Envoyer un avis'
         sent:
@@ -5127,3 +5128,5 @@ sign_in_protection:
         bad_network: 'L’une des entrées n’est ni une adresse ni une plage.'
         no_networks: 'Ajoutez au moins une adresse avant d’activer le verrou.'
         would_lock_out: 'Cette liste n’inclut pas votre propre adresse (%ip%) : l’enregistrer vous bloquerait. Ajoutez-la et réessayez.'
+topbar:
+    download_apps: 'Télécharger les applications'

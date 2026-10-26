@@ -71,6 +71,12 @@ Nothing about it is hidden from the person sending it.
             <p class="text-xs text-ink-faint" data-whats-new--feedback-target="status" aria-live="polite"
                data-taking="{{ 'whats_new.feedback.screenshot.taking'|trans }}"
                data-failed="{{ 'whats_new.feedback.screenshot.failed'|trans }}"></p>
+            {# BearerMail: when drawing the page fails, the browser's own screen capture. #}
+            <button type="button" hidden data-whats-new--feedback-target="share"
+                    data-action="whats-new--feedback#shareScreen"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-soft hover:bg-hover cursor-pointer">
+                <i class="fa-solid fa-display" aria-hidden="true"></i>{{ 'whats_new.feedback.screenshot.share'|trans }}
+            </button>
             <img alt="{{ 'whats_new.feedback.screenshot.preview'|trans }}" hidden
                  data-whats-new--feedback-target="preview"
                  class="max-h-40 rounded-lg border border-line">

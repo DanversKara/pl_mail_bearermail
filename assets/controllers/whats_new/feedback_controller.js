@@ -21,6 +21,13 @@ import { Controller } from "@hotwired/stimulus"
  * html-to-image is imported on the tick, not at page load: almost nobody sends
  * feedback, and nobody else should download a page renderer for it.
  *
+ * BearerMail: it failed on real pages ("could not be captured"), so it now
+ * tries twice — the second time without web fonts, iframes and video, which
+ * are what the renderer most often chokes on — and a picture it cannot load
+ * becomes a blank pixel rather than a failure. When both fail, and the browser
+ * can share its screen, a button offers to take the picture that way: the
+ * browser asks which tab, and one frame of it is kept.
+ *
  * ## The sending
  *
  * Posted with fetch() and put into the dialog here, rather than left to Turbo.
@@ -32,7 +39,7 @@ import { Controller } from "@hotwired/stimulus"
  * visible and names its cause.
  */
 export default class extends Controller {
-    static targets = ["toggle", "data", "status", "preview", "submit", "failure"]
+    static targets = ["toggle", "data", "status", "preview", "submit", "failure", "share"]
 
     static MAX_WIDTH = 1600
 
@@ -46,33 +53,99 @@ export default class extends Controller {
         this.submitTarget.disabled = true
 
         try {
-            const { toJpeg } = await import("html-to-image")
-            const backdrop = document.getElementById("modal-backdrop")
-            const width = document.documentElement.clientWidth
-
-            const url = await toJpeg(document.body, {
-                quality: 0.8,
-                pixelRatio: Math.min(1, this.constructor.MAX_WIDTH / Math.max(1, width)),
-                filter: (node) => node !== backdrop,
-                backgroundColor: getComputedStyle(document.body).backgroundColor,
-            })
+            const url = await this._render()
 
             if (false === this.toggleTarget.checked) {
                 return
             }
 
-            this.dataTarget.value = url
-            this.previewTarget.src = url
-            this.previewTarget.hidden = false
-            this.statusTarget.textContent = ""
+            this._use(url)
         } catch (error) {
             console.warn("[whats-new] screenshot failed", error)
             this.toggleTarget.checked = false
             this._clear()
             this.statusTarget.textContent = this.statusTarget.dataset.failed
+            if (this.hasShareTarget && navigator.mediaDevices?.getDisplayMedia) {
+                this.shareTarget.hidden = false
+            }
         } finally {
             this.submitTarget.disabled = false
         }
+    }
+
+    /** The page drawn in the browser; a second, plainer attempt when the first fails. */
+    async _render() {
+        const { toJpeg } = await import("html-to-image")
+        const backdrop = document.getElementById("modal-backdrop")
+        const width = document.documentElement.clientWidth
+        const options = {
+            quality: 0.8,
+            pixelRatio: Math.min(1, this.constructor.MAX_WIDTH / Math.max(1, width)),
+            backgroundColor: getComputedStyle(document.body).backgroundColor,
+            cacheBust: false,
+            // A picture that will not load is a blank pixel, not a failed screenshot.
+            imagePlaceholder: "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
+        }
+
+        try {
+            return await toJpeg(document.body, { ...options, filter: (node) => node !== backdrop })
+        } catch (first) {
+            console.warn("[whats-new] screenshot, first attempt", first)
+            const plain = (node) =>
+                node !== backdrop && !["IFRAME", "VIDEO", "OBJECT", "EMBED"].includes(node.tagName)
+            return await toJpeg(document.body, { ...options, skipFonts: true, filter: plain })
+        }
+    }
+
+    /**
+     * The fallback: the browser's own screen capture. It asks which tab or window
+     * to share, one frame is drawn into a canvas, and the sharing stops at once.
+     */
+    async shareScreen() {
+        this.shareTarget.hidden = true
+        this.statusTarget.textContent = this.statusTarget.dataset.taking
+        this.submitTarget.disabled = true
+        let stream = null
+
+        try {
+            stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: "browser" },
+                audio: false,
+                preferCurrentTab: true,
+                selfBrowserSurface: "include",
+            })
+            const video = document.createElement("video")
+            video.muted = true
+            video.playsInline = true
+            video.srcObject = stream
+            await video.play()
+            await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+            const scale = Math.min(1, this.constructor.MAX_WIDTH / Math.max(1, video.videoWidth))
+            const canvas = document.createElement("canvas")
+            canvas.width = Math.round(video.videoWidth * scale)
+            canvas.height = Math.round(video.videoHeight * scale)
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height)
+
+            this.toggleTarget.checked = true
+            this._use(canvas.toDataURL("image/jpeg", 0.8))
+        } catch (error) {
+            console.warn("[whats-new] screen capture failed", error)
+            this.toggleTarget.checked = false
+            this._clear()
+            this.statusTarget.textContent = this.statusTarget.dataset.failed
+        } finally {
+            stream?.getTracks().forEach((track) => track.stop())
+            this.submitTarget.disabled = false
+        }
+    }
+
+    _use(url) {
+        this.dataTarget.value = url
+        this.previewTarget.src = url
+        this.previewTarget.hidden = false
+        this.statusTarget.textContent = ""
+        if (this.hasShareTarget) this.shareTarget.hidden = true
     }
 
     async send(event) {
