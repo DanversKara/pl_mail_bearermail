@@ -65,6 +65,12 @@ security:
             pattern: ^/branding/
             security: false
 
+        # BearerMail: Dovecot's auth-policy hook. No user, only the shared key
+        # (MailAuthPolicyController checks it).
+        mail_policy:
+            pattern: ^/internal/mail-auth-policy$
+            security: false
+
         # The Web Key Directory: people's public OpenPGP keys, for mail
         # programs to find by address. Outside security for the reasons
         # `branding` gives — the caller is a mail program with no session, an
@@ -168,6 +174,7 @@ security:
         # only what such a caller could infer by trying the app anyway — see
         # App\Controller\HealthController on why it stays deliberately vague.
         - { path: ^/healthz$, roles: PUBLIC_ACCESS }
+        - { path: ^/internal/mail-auth-policy$, roles: PUBLIC_ACCESS }
         # CSP violation reports. The browser sends these itself, about a
         # resource its own policy refused to load, so there is nothing of ours
         # in the request: no token, no header we chose, and on the login page no
@@ -235,6 +242,15 @@ security:
         # App\Controller\Sharing\BookingController, which also says why there is
         # no CSRF token on a page that deliberately starts no session.
         - { path: ^/book/, roles: PUBLIC_ACCESS }
+        # BearerMail: a Drive share link (/s/<token> and /s/<token>/download).
+        # Same reasoning as /share/ above: the recipient has no account, the
+        # token (32 bytes of CSPRNG) is the gate, an optional password is a
+        # second one and is rate-limited — see App\Controller\Drive\ShareController.
+        - { path: '^/s/[a-f0-9]{64}(/download|/report)?$', roles: PUBLIC_ACCESS }
+        # BearerMail: a note share link (/n/<token>, and /n/<token>/save for a
+        # collaborator link). Same reasoning as /s/ — see
+        # App\Controller\Notes\NoteShareController.
+        - { path: '^/n/[a-f0-9]{64}(/save|/media/[a-f0-9]{24})?$', roles: PUBLIC_ACCESS }
         # The code form sits between the two factors: the password is in, the
         # second factor is not, and ROLE_USER has not been granted yet. It must
         # be reachable in exactly that state and in no other, which is what

@@ -1155,6 +1155,7 @@ admin:
         two_factor_short: 2FA
     version:
         hint: The build this ship be sailin' — the release, an' the commit she were built from.
+        copy: Copy the build %version% to yer clipboard
     mail_logins:
         heading: "Barrin' the gangway"
         help: "When an address gets the secret word wrong too often on the mail server (mail apps on port 993), it be barred — even the right word be refused from it. The web an' phone apps, an' devices on yer home network, be never touched."
@@ -1282,7 +1283,6 @@ admin:
             2fa_disabled: "Second lock removed"
             api_token_created: "API token forged"
             api_token_revoked: "API token scuttled"
-        copy: Copy the build %version% to yer clipboard
 # The All Mail lists — every conversation outside Spam and the bin
 # (LabelRole::AllMail). Their heading is sidebar.nav.all_mail.
 all_mail:

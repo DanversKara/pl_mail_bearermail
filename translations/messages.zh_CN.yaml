@@ -67,6 +67,133 @@ account:
         smtp: SMTP
     updated: 账户已更新
 admin:
+    security:
+        events:
+            api_token_revoked: '已撤销 API 令牌'
+            api_token_created: '已创建 API 令牌'
+            2fa_disabled: '已关闭两步验证'
+            2fa_enabled: '已启用两步验证'
+            password_change: '密码已更改'
+            login_failure: '登录失败'
+            login_success: '登录成功'
+            none: '还没有安全事件。'
+            title: '最近的安全事件'
+            mail_login_blocked: '地址已被邮件服务器封锁（密码错误次数过多）'
+        suspicious:
+            attempts: '过去一小时内的登录失败次数'
+            title: '可疑地址'
+    mail_server:
+        dynamic_dns:
+            cron: 'plMail 每 5 分钟自动检查一次——无需 cron 任务。只会联系 Cloudflare，而且仅在设置了这些值之后。'
+            setup: '将以下内容写入 .env.mail.local（与 compose.yaml 同目录），然后重新创建容器：'
+            intro: '如果你的服务器使用 IP 会变化的家庭宽带，此功能会让你的 Cloudflare DNS A 记录始终指向它。'
+            heading: '动态 DNS'
+        dns:
+            missing: '缺失'
+            ok: '正常'
+            actual: '实际'
+            expected: '预期'
+            hint: '点击“检查 DNS”以查询 %domain% 的记录。'
+            check: '检查 DNS'
+            intro: '你的域名收发邮件所需的记录。点击“检查 DNS”以确认它们能被解析。'
+            heading: 'DNS 记录'
+            no_domain: '在 .env.mail.local 中设置 MAIL_DOMAIN 以检查你的 DNS 记录。'
+        dmarc:
+            count: '数量'
+            ip: 'IP'
+            failed: '失败'
+            messages: '邮件'
+            none: '还没有报告。它们每天发送到你 DMARC rua 标签中的地址。'
+            uploaded: '报告已解析。'
+            upload_invalid: '请先选择一个报告文件。'
+            upload: '解析报告'
+            intro: '收件方（Google、Microsoft……）每天发送报告，显示谁以你的域名发送了邮件。上传报告（.zip、.gz、.xml）即可查看哪些 IP 通过、哪些失败。'
+            heading: 'DMARC 报告'
+        relay:
+            status:
+                direct: '直接投递'
+                active: '中继已启用'
+            saved: '中继已保存。邮件服务器会在几秒内采用。'
+            save: '保存中继'
+            password_set: '已保存密码。'
+            password_help: '服务商的密钥。留空则保留已保存的密钥。'
+            password_label: '密码'
+            username_help: '服务商的 API 密钥（Mailjet）或用户名。'
+            username_label: '用户名'
+            host_help: '服务商的 SMTP 服务器，放在方括号中并带端口——例如 [in-v3.mailjet.com]:587。'
+            host_label: '中继主机'
+            intro: '你的邮件服务器发送外发邮件的去处。留空则直接投递，或填写 Mailjet 等服务商以提高送达率。更改会在几秒内生效——无需重启。'
+            heading: '外发中继'
+    drive:
+        people:
+            disabled: '云盘已关闭'
+            default: '默认'
+            quota: '单独限制（MB）'
+            files: '{1}1 个文件|[0,Inf[%count% 个文件'
+            of: '/'
+            help: '限制留空则使用默认值。关闭云盘也会使此人分享的所有链接失效。'
+            heading: '每人存储用量'
+        reports:
+            dismiss: '忽略'
+            disable: '关闭所有者的云盘'
+            revoke: '撤销链接'
+            open: '打开链接'
+            reporter: '举报人'
+            owner: '所有者'
+            none: '还没有人举报链接。'
+            heading: '被举报的链接'
+        limits:
+            max_file_help: '超过此大小的上传会被拒绝。服务器本身最多接受 %php%。'
+            max_file: '单个文件最大（MB）'
+            default_quota_help: '适用于没有单独限制的所有人。0 = 不限。'
+            default_quota: '每人存储空间（MB）'
+            heading: '云盘限制'
+        saved:
+            report: '举报已处理。'
+            user: '已保存。'
+            settings: '云盘限制已保存。'
+        save: '保存'
+    mail_logins:
+        error:
+            bad_ip: '这不是一个 IP 地址。'
+        saved:
+            untrusted: '已从始终允许中移除。'
+            trusted: '已解除封锁并始终允许。'
+            unblocked: '已解除封锁。'
+            settings: '已保存。'
+        trusted:
+            add: '添加'
+            add_label: 'IP 地址'
+            help: '这里的地址永远不会被封锁——例如你的家庭或办公网络。搜索“我的 IP 是多少”即可找到你的地址。'
+            heading: '始终允许'
+        failing:
+            count: '%count% / %max% 次错误密码'
+            heading: '多次失败，尚未封锁（最近 24 小时）'
+        blocked:
+            times: '已被封锁 %count% 次'
+            forever: '直到解除封锁'
+            until: '直到 %date%'
+            since: '封锁于 %date%'
+            none: '没有被封锁的地址。'
+            heading: '当前已封锁'
+        untrust: '移除'
+        trust: '始终允许'
+        unblock_trust: '解除封锁并始终允许'
+        unblock: '解除封锁'
+        tried: '尝试'
+        save: '保存'
+        block_hours_help: '0 = 直到你在此处解除封锁。'
+        block_hours: '封锁时长（小时）'
+        window: '时间范围（分钟）'
+        max_failures: '允许的错误密码次数'
+        enabled: '密码错误次数过多后封锁地址'
+        state:
+            waiting: '正在等待邮件服务器'
+            'off': '关'
+            'on': '开'
+        not_connected: '正在等待邮件服务器：请重启一次（./update.sh 会这样做），它才会开始向本页查询。'
+        help: '当某个地址在邮件服务器上（端口 993 的邮件应用）多次输错密码时，它会被封锁——即使密码正确也会被拒绝。网页版、手机应用以及你家庭网络中的设备永远不受影响。'
+        heading: '邮件登录封锁'
     accounts:
         account: 账户
         heading: 账户
@@ -667,6 +794,9 @@ admin:
         page: 页码
         refresh: 刷新
     nav:
+        security: '安全'
+        mail_server: '邮件服务器'
+        drive: '云盘'
         address: 地址
         ai: AI
         backup: 备份
@@ -987,6 +1117,23 @@ admin:
             push_on: 推送已开启
         watch_expiry: 监听到期时间
     updates:
+        install:
+            failed: '失败：%error%'
+            never: '尚无'
+            last: '上次安装'
+            seen: '服务器上次查询'
+            setup:
+                body: '应用无法替换自己的容器，所以由服务器来安装。通过 SSH，在 BearerMail 的安装目录中运行一次：'
+                heading: '此服务器尚未设置'
+            auto:
+                hint: '服务器会在夜间安装，安装前先保存一份数据库副本。需要在服务器上计划运行 bin/auto-update，只需设置一次。'
+                name: '自动安装'
+            notify:
+                hint: '在此处和推送中提示；由管理员在服务器上安装。'
+                name: '通知我'
+            save: '保存'
+            label: '有更新时'
+        saved_install: '已保存。'
         heading: 更新
         header: '%version% 已可用'
         intro: 'plMail 每小时检查所关注的通道是否发布了新构建，并且每个构建只通知管理员一次：向其每台已注册推送的设备发送通知，并在此管理区域顶部显示提示。'
@@ -1029,6 +1176,7 @@ admin:
             all: '在 GitHub 查看所有更改'
             changelog: 更新日志
         how:
+            auto: '它会在今晚约 04:17 自动安装。若要立即安装，请在服务器上运行：'
             heading: 更新方法
             body: '拉取新镜像并重新创建容器；在 NAS 上则重新部署应用。plMail 启动时会迁移数据库，因此请先阅读更新日志中的“Before you upgrade”部分。'
         privacy: '检查会向镜像仓库查询最新的 %image% 镜像，并向 api.github.com 查询自此构建以来的更改。除了这些请求本身，不会发送有关此部署的其他信息。'
@@ -1046,6 +1194,13 @@ admin:
         delete_confirm: '移除 %name%？该用户的邮件将保留在数据库中，但无法再登录。'
         edit: 编辑用户
         field:
+            mailbox_help: '可选。只需输入 @ 前面的名字——例如 <b>anna</b> 会生成 <b>anna@%domain%</b>（输入完整地址也可以）。这里不需要密码：邮箱使用上方的密码，也就是此人登录所用的密码。它会被添加为此人的邮件账户，因此可以立即收发邮件。对于使用自己邮箱的人请留空。'
+            mailbox: '邮箱'
+            drive_disabled_help: '阻止上传，并使此人分享的所有链接失效。'
+            drive_disabled: '关闭云盘'
+            drive_quota_default: '默认'
+            drive_quota_help: '留空 = 使用“管理 → 云盘”中的默认值。0 = 不限。'
+            drive_quota: '云盘存储空间（MB）'
             email: 电子邮件地址
             is_admin: 管理员
             is_admin_help: 可以访问此面板、管理用户及配置服务商，但不能读取其他人的邮件。
@@ -1233,6 +1388,7 @@ calendar:
         no_copies: 未选择任何日历，因此未作更改。请至少勾选一个日历。
         read_only: 此日程仅在只读日历中，因此保持原样。
     event:
+        add_from_drive: '从云盘添加'
         alert:
             action:
                 display: 通知
@@ -1522,6 +1678,37 @@ clipboard:
     copied: 已复制
     copy_failed: 复制失败
 compose:
+    insert_calendar_link: '插入日历共享链接'
+    insert_drive_file: '从云盘插入文件'
+    calendar_picker:
+        failed: '无法加载你的共享链接。'
+        close: '关闭'
+        open: '打开共享设置'
+        empty: '还没有共享的日历或预约页面。请在“设置 → 共享”中创建。'
+        hint: '为了你的安全，链接只在创建时显示一次。请在“设置 → 共享”中新建一个并粘贴到这里。'
+        booking: '预约页面'
+        calendars: '共享的日历'
+        title: '日历链接'
+    drive_picker:
+        copied: '链接已复制——粘贴到你的邮件中即可。'
+        failed: '无法连接到你的云盘。请重试。'
+        open: '打开云盘'
+        empty: '你的云盘中还没有文件。请先上传文件。'
+        search: '搜索你的文件……'
+        title: '从云盘插入'
+    insert_event: '从日历插入日程'
+    event_picker:
+        attach_failed: '已添加详情，但无法附加日历文件。'
+        failed: '无法加载你的日程。'
+        where: '地点'
+        when: '时间'
+        hint: '以 .ics 文件附加，对方一点即可添加。'
+        empty: '未来四个月内没有日程。'
+        search: '搜索你的日程'
+        title: '插入日程'
+    too_large_drive:
+        status: '文件太大无法附加——正在上传到你的云盘……'
+        note: '文件太大无法作为附件，已放在我的云盘中。请在此下载：'
     ai:
         accept: 插入
         disabled: 写作辅助已关闭。
@@ -2192,12 +2379,25 @@ header:
         sign_out: 退出登录
         signed_in_as: 当前登录为
 inbox:
+    flood:
+        body: '过去 15 分钟内 %account% 收到了 %count% 封邮件。邮件轰炸有时被用来掩盖安全提醒——请检查是否有你意料之外的密码重置或通知。'
+        title: '检测到异常的邮件激增。'
     empty: 此选项卡中没有邮件。
     empty_account: 此账户尚未收到邮件。
 insights:
+    meeting:
+        no_time: '未说明时间'
+        add: '添加到日历'
+        heading: '看起来像个安排'
+    otp:
+        expires: '{1}1 分钟后过期|]1,Inf[%count% 分钟后过期'
+        code_aria: '验证码 %code%'
+        copy: '复制验证码'
+        heading: '验证码'
     card:
         heading: 从此会话中发现
     kind:
+        meeting: '安排'
         flight: 航班
         github-issue: 议题
         github-pr: 拉取请求
@@ -2404,6 +2604,12 @@ login:
         prompt: '还没有账户？'
     tagline: '登录你的账户'
 message:
+    deceptive_link:
+        body: '某个链接的文字显示的是一个地址，实际却指向别处。点击前请先将鼠标悬停查看。'
+        title: '此邮件包含误导性链接。'
+    forged_sender:
+        body: '邮件服务器检查了发件人身份（SPF、DKIM、DMARC），但未通过。请谨慎对待链接和附件。'
+        title: '此邮件可能并非来自其声称的发件人。'
     actions:
         archive: '归档'
         delete: '删除此邮件'
@@ -2980,6 +3186,11 @@ settings:
         setup_hint: '将你的电子邮件地址用作用户名，应用密码用作密码。如果应用要求填写服务器或 JMAP URL，请使用此地址，不要使用仅接受 POST 请求的 /jmap/api 地址。'
         subheading: '登录支持 JMAP 的第三方邮件应用。每个应用使用独立密码，可单独撤销。'
     appearance:
+        web_icon:
+            envelope: 'BearerMail 信封'
+            logo: 'pl 徽标'
+            subheading: '浏览器标签页和顶部栏的图片。下方的“徽标”会列出与之相配的 Android 图标。'
+            heading: '应用图标'
         accent:
             heading: '强调色'
         background:
@@ -3042,6 +3253,9 @@ settings:
                 subtle: '柔和'
             unreadEmphasis: '未读行样式'
         logo:
+            android_icons: 'Android 图标'
+            bearermail_white: '白色'
+            bearermail_navy: '藏青色'
             colour: '颜色'
             custom:
                 error_missing: '没有收到文件。请选择一个 SVG 文件后重试。'
@@ -3458,6 +3672,8 @@ settings:
         subheading: '所有账户的撰写窗口行为。'
     insights:
         extractor:
+            meeting_hint: '普通邮件中的“上午 10 点在……见”，附带一个添加到日历的按钮。'
+            meeting: '安排'
             flight: '航班'
             flight_hint: '从航空预订和办理值机的邮件中提取航班号与出发时间。'
             github: 'GitHub'
@@ -3722,6 +3938,7 @@ settings:
         show_hint: '关闭后，更新完成时不会自动打开任何内容，顶栏的 ? 也不会显示圆点。仍可通过 ? → 更新内容查看。'
         subheading: 'plMail 更新后向你显示的内容。'
     nav:
+        smtp_keys: 'SMTP 密钥'
         accounts: '邮件账户'
         ai: '助手'
         aliases: '别名'
@@ -4113,6 +4330,7 @@ sidebar:
     new_mail_here: '%where% 中有新邮件'
     new_mail_here_count: '%where% 中有 %count% 封新邮件'
     nav:
+        drive: '云盘'
         all_mail: '所有邮件'
         archive: '归档'
         calendar: '日历'
@@ -4341,6 +4559,7 @@ whats_new:
             same: '和以前一样'
             worse: '更差'
         screenshot:
+            share: '改为通过共享此标签页来截图'
             failed: '无法截取页面，因此不会附加截图。'
             label: '附上刚才所在页面的截图'
             preview: '将要附加的截图'
@@ -4671,3 +4890,276 @@ contacts:
         unsure_one: "这一行应归入哪里？"
         use_as: "用作…"
         you_placed: "此行由你归类"
+drive:
+    public:
+        too_many: '尝试次数过多。请等几分钟后再试。'
+    wrong_password: '密码不正确。'
+    protected_hint: '此文件受保护。请输入密码后下载。'
+    revoke_confirm: '撤销此链接？拥有它的人将无法再下载该文件。'
+    revoke: '撤销'
+    link_protected: '密码'
+    link_expires: '%date% 过期'
+    link_meta: '{0}创建于 %date% · 尚未下载|{1}创建于 %date% · 1 次下载|]1,Inf[创建于 %date% · %count% 次下载'
+    copy: '复制'
+    copy_link: '复制链接'
+    share_created_protected: '现在复制它。请单独发送密码——不要放在同一封邮件里。'
+    share_created_hint: '现在复制它，发送给需要该文件的人。'
+    share_created: '链接已创建'
+    create_link: '创建链接'
+    share_bad_date: '请选择一个未来的过期日期。'
+    share_hint: '任何拥有链接的人都能下载该文件。'
+    share_expires: '过期日期（可选）'
+    share_password: '密码（可选）'
+    new_link: '新建链接'
+    no_links: '还没有链接。任何拥有链接的人都能下载该文件，所以只与你信任的人分享。'
+    active_links: '有效链接'
+    shared_count: '{1}已通过 1 个链接分享|]1,Inf[已通过 %count% 个链接分享'
+    share_title: '分享“%name%”'
+    share: '分享'
+    deleted: '文件已删除。'
+    delete_confirm: '删除“%name%”？指向它的所有分享链接都将失效。此操作无法撤销。'
+    delete: '删除'
+    download: '下载'
+    folder_delete_confirm: '删除文件夹“%name%”及其中的所有内容？此操作无法撤销。'
+    folder_deleted: '文件夹已删除。'
+    folder_created: '文件夹已创建。'
+    rename_folder: '重命名文件夹'
+    rename_file: '重命名文件'
+    rename: '重命名'
+    create: '创建'
+    folder_name: '文件夹名称'
+    new_folder: '新建文件夹'
+    files: '文件'
+    folders: '文件夹'
+    more: '更多操作'
+    actions: '操作'
+    modified: '修改时间'
+    size: '大小'
+    name: '名称'
+    search: '搜索此文件夹'
+    grid_view: '网格视图'
+    list_view: '列表视图'
+    view: '视图'
+    no_match: '没有匹配的文件或文件夹。'
+    empty_hint: '用按钮上传文件，或将文件拖到本页任意位置。'
+    empty_folder: '此文件夹是空的'
+    empty: '你的云盘是空的'
+    drop_here: '拖放到此处以上传到 %folder%'
+    uploaded_many: '文件已上传。'
+    uploaded: '文件已上传。'
+    uploading: '正在上传……'
+    upload_done: '已上传'
+    upload_failed: '上传失败。'
+    upload_too_large: '该文件超过了服务器允许的大小。'
+    upload_invalid: '请先选择一个文件。'
+    upload_files: '上传文件'
+    upload: '上传'
+    quota_exceeded: '你的云盘剩余空间不足以存放该文件。'
+    max_upload: '每个文件最大 %size%'
+    storage: '已用空间'
+    usage_unlimited: '已用 %used%'
+    usage: '已用 %used% / %quota%'
+    breadcrumbs: '文件夹路径'
+    title: '云盘'
+    disabled_notice: '你的账户的云盘已被关闭。请联系管理员。'
+    disabled_title: '云盘已关闭'
+    report:
+        reasons:
+            other: '其他问题'
+            copyright: '侵犯版权'
+            illegal: '违法内容'
+            phishing: '钓鱼或诈骗'
+            malware: '病毒或恶意软件'
+            spam: '垃圾或不需要的内容'
+        too_many: '来自你所在网络的举报过多。请稍后再试。'
+        back: '返回文件'
+        submit: '提交举报'
+        email: '你的邮箱，如果希望收到回复（可选）'
+        details: '还有其他需要说明的吗？（可选）'
+        reason: '有什么问题？'
+        thanks: '谢谢——我们已收到你的举报，会尽快调查。如果你留下了邮箱，确认邮件已在路上。'
+        link: '举报此链接'
+        title: '举报此链接'
+smtp_key:
+    done: '完成'
+    not_synced: '密钥已保存，但无法通知邮件服务器：共享的 mail_config 卷未挂载。请使用 --profile mail 启动服务。'
+    use: '以 %email% 发信。提交端口只在 Docker 网络内开放（主机 mta，端口 587，无 TLS）；如需在其他机器上使用此密钥，请先用真实证书公开端口 587——参见自托管邮件服务器指南。'
+    secret: '密码'
+    username: '用户名'
+    server: '服务器'
+    shown_once: '现在复制密码——之后无法再次显示。'
+    created_title: 'SMTP 密钥已创建'
+    account_invalid: '请选择你的一个邮件账户。'
+    name_required: '请给密钥起个名字。'
+    revoked: 'SMTP 密钥已撤销。'
+    revoke_confirm: '撤销此密钥？使用它的任何程序都将无法再发信。'
+    revoke: '撤销'
+    last_used: '上次使用'
+    created: '创建时间'
+    no_accounts: '请先添加一个邮件账户。'
+    none: '还没有 SMTP 密钥。'
+    create: '创建密钥'
+    account: '发件地址'
+    name_placeholder: '例如：夜间备份脚本'
+    name: '名称'
+    intro: '供脚本和设备（打印机、备份任务）通过你自己的邮件服务器发信、而无需你邮箱密码的凭据。每个密钥只能以其创建时对应的地址发信，并可单独撤销。需要自托管的邮件服务器。'
+    title: 'SMTP 密钥'
+notes:
+    link_types:
+        mail: '邮件'
+        contact: '联系人'
+        file: '文件'
+        event: '日程'
+    colors:
+        gray: '灰色'
+        brown: '棕色'
+        pink: '粉色'
+        purple: '紫色'
+        blue: '蓝色'
+        teal: '青色'
+        green: '绿色'
+        yellow: '黄色'
+        orange: '橙色'
+        red: '红色'
+    empty:
+        trash: '回收站中没有笔记。'
+        archive: '归档的笔记会显示在此。'
+        notes: '你在这里或手机上添加的笔记会显示在此。'
+    views:
+        trash: '回收站'
+        archive: '归档'
+        notes: '笔记'
+    color_none: '无颜色'
+    color: '颜色'
+    empty_search: '没有匹配此搜索的笔记。'
+    delete_forever_confirm: '永久删除这条笔记？此操作无法撤销。'
+    delete_forever: '永久删除'
+    restore: '恢复'
+    delete: '移到回收站'
+    unarchive: '取消归档'
+    archive: '归档'
+    unpin: '取消置顶'
+    pin: '置顶'
+    edited: '编辑于 %when%'
+    more_items: '+ 另外 %count% 项'
+    empty_note: '空笔记'
+    untitled: '无标题笔记'
+    others: '其他'
+    pinned: '已置顶'
+    save: '保存'
+    add: '添加'
+    as_checklist: '清单'
+    checklist_hint: '每行一项。在已完成的项目前加上 [x]。'
+    checklist_placeholder: '每行一项'
+    take_a_note: '记点什么……'
+    title_placeholder: '标题'
+    search: '搜索笔记'
+    back: '返回'
+    title: '笔记'
+    nav: '笔记'
+    format:
+        bullets: '项目符号列表'
+        heading: '标题'
+        underline: '下划线'
+        italic: '斜体'
+        bold: '粗体'
+    new_list: '新建清单'
+    new_note: '新建笔记'
+    none_linked: '还没有笔记。'
+    add_note: '添加笔记'
+    close: '关闭'
+    redo: '重做'
+    undo: '撤销'
+    hide_checkboxes: '隐藏复选框'
+    show_checkboxes: '显示复选框'
+    add_link: '链接'
+    unlink: '移除链接'
+    labels_placeholder: '标签，用逗号分隔'
+    remove_item: '移除项目'
+    list_item: '列表项'
+    save_failed: '未保存——请检查网络连接'
+    saved: '已保存'
+    saving: '正在保存……'
+    reminder:
+        failed: '无法保存提醒。请重试。'
+        remove: '移除提醒'
+        save: '设置'
+        pick: '日期和时间'
+        week: '下周'
+        tomorrow: '明天早上'
+        later: '今天晚些时候'
+        title: '提醒我'
+    share:
+        expires_in:
+            365: '1 年'
+            30: '30 天'
+            7: '7 天'
+            1: '1 天'
+        create: '创建链接'
+        allow_edit: '允许拥有链接的人编辑（协作者）'
+        expiry: '有效期'
+        password_optional: '密码（可选）'
+        views: '{0}尚未打开|{1}已打开 1 次|]1,Inf[已打开 %count% 次'
+        never_expires: '永不过期'
+        expired: '已于 %date% 过期'
+        expires: '%date% 过期'
+        has_password: '密码'
+        view_only: '仅查看'
+        can_edit: '可编辑'
+        delete: '删除链接'
+        copy_failed: '无法复制'
+        copied: '已复制'
+        copy: '复制链接'
+        download_png: '下载 .png'
+        download_txt: '下载 .txt'
+        editable_hint: '任何拥有此链接的人都能编辑这条笔记。更改会在输入时自动保存。'
+        too_many: '尝试次数过多。请等几分钟后再试。'
+        wrong_password: '密码不正确。'
+        open: '打开笔记'
+        password: '密码'
+        locked: '此笔记受保护'
+        page_title: '共享的笔记'
+        heading: '分享与下载'
+        done_items: '{1}已完成（1）|]1,Inf[已完成（%count%）'
+    media:
+        save_drawing: '保存绘图'
+        cancel: '取消'
+        clear: '清除'
+        pen_size: '笔触大小'
+        eraser: '橡皮擦'
+        mic_denied: '麦克风被阻止。请在浏览器中允许本网站使用麦克风，然后重试。'
+        failed: '未能保存。请重试。'
+        delete: '移除'
+        record: '录制语音笔记'
+        draw: '绘图'
+        add_image: '添加图片'
+sign_in_protection:
+    error:
+        would_lock_out: '该列表不包含你自己的地址（%ip%），保存后会把你锁在外面。请添加后再保存。'
+        no_networks: '开启锁定前请至少添加一个地址。'
+        bad_network: '其中一项不是地址或范围。'
+    refused:
+        body: '此服务器只允许从所有者的网络打开管理后台。你当前的连接地址是 %ip%。'
+        heading: '无法从此处访问管理后台'
+    admin_lock:
+        overridden: '服务器上设置了 ADMIN_NETWORK_LOCK=off，因此此锁定未生效。'
+        not_included: '不在列表中'
+        included: '在列表中'
+        you_are: '你当前的连接地址'
+        networks_help: '每行一个：一个地址（203.0.113.7）或一个范围（192.168.1.0/24）。家庭地址变化后被锁在外面？在服务器上运行：docker compose exec php bin/console app:security:admin-unlock'
+        networks: '允许的地址'
+        help: '从其他任何地方访问，管理后台都会显示“不可用”。邮件、日历和其他一切在任何地方都照常可用。'
+        label: '仅允许从这些地址打开管理后台'
+    two_factor:
+        everyone: '所有人'
+        admins: '管理员'
+        'off': '关'
+        help: '适用的人下次使用网页版时会被要求设置，且无法关闭。手机和邮件应用仍可使用各自的应用密码。'
+        label: '要求两步验证登录'
+    cannot_disable: '此服务器要求两步验证登录，因此无法关闭。'
+    two_factor_needed: '此服务器要求两步验证登录。请在下方设置，以继续使用网页版。'
+    save: '保存'
+    saved: '已保存。'
+    heading: '登录保护'
+topbar:
+    download_apps: '下载应用'

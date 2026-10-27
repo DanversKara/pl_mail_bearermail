@@ -126,6 +126,8 @@ const SECTIONS = [
     "swipe-actions",
     "calendar-behaviour",
     "contacts",
+    // BearerMail: SMTP keys for scripts and devices.
+    "smtp-keys",
 ] as const;
 
 /**
