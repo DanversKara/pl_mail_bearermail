@@ -509,6 +509,15 @@ class MessageSendService
 
         $this->attachPublicKey($account, $email, $fromAddress);
 
+        // A message with nothing in it — a subject and no body, say — is still
+        // a message. Symfony refuses to send an Email with no text, HTML or
+        // attachment ("A message must have a text or an HTML part or
+        // attachments"), and the send job retried that five times and dropped
+        // it. An empty text part is what every mail program sends instead.
+        if (null === $email->getTextBody() && null === $email->getHtmlBody() && [] === $email->getAttachments()) {
+            $email->text((string) $message->bodyText);
+        }
+
         return $email;
     }
 
