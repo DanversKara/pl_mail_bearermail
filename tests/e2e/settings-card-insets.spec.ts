@@ -302,6 +302,10 @@ async function settle(page: Page): Promise<void> {
     const frames = page.locator(`${WRAPPER} turbo-frame[src]`);
 
     for (let index = 0; index < (await frames.count()); index++) {
+        // A lazy frame only fetches once it is near the viewport. On a phone
+        // the settings nav sits above the section (BearerMail's has one more
+        // row, SMTP keys), which can leave a frame below the fold.
+        await frames.nth(index).scrollIntoViewIfNeeded();
         await expect(frames.nth(index)).toHaveAttribute("complete", "");
     }
 }
