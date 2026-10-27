@@ -103,7 +103,7 @@ test.describe("contacts' keys", () => {
 
         const banner = page.getByTestId("crypto-banner");
 
-        await expect(banner).toContainText("Signed with a different key than the one plMail knows for this sender");
+        await expect(banner).toContainText("Signed with a different key than the one BearerMail knows for this sender");
         await expect(banner.getByRole("button", { name: "Use the new key" })).toBeVisible();
     });
 
@@ -157,7 +157,7 @@ test.describe("contacts' keys", () => {
         const attached = page.getByTestId("crypto-attached-key");
 
         await expect(attached).toHaveAttribute("data-state", "changed");
-        await expect(attached).toContainText("It differs from the key plMail knows for this sender");
+        await expect(attached).toContainText("It differs from the key BearerMail knows for this sender");
 
         await attached.getByRole("button", { name: "Use this key instead" }).click();
 

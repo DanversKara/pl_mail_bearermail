@@ -161,7 +161,7 @@ test.describe("save to", () => {
         const group = page.getByRole("radiogroup", { name: "Save to" });
         await expect(group.getByRole("radio")).toHaveCount(3);
         await expect(group).not.toContainText("Company directory");
-        await expect(page.getByText("Kept in plMail only.")).toBeVisible();
+        await expect(page.getByText("Kept in BearerMail only.")).toBeVisible();
 
         await group.getByText("Family").click();
         await expect(page.getByText("Goes to Family on Nextcloud (test)")).toBeVisible();

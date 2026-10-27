@@ -151,7 +151,27 @@ jobs:
             - name: Run PHPUnit tests
               run: |
                   docker compose -f compose.test.yaml run --rm --no-deps \
-                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh
+                    --entrypoint docker-php-entrypoint app sh bin/test-unit.sh --log-junit /app/phpunit-junit.xml
+
+            # BearerMail: the run log cannot always be downloaded, so the
+            # failures are also written as one annotation on the check.
+            - name: PHPUnit failures, as an annotation
+              if: failure()
+              run: |
+                  python3 - <<'PY'
+                  import xml.etree.ElementTree as ET
+                  try:
+                      root = ET.parse("phpunit-junit.xml").getroot()
+                  except Exception as e:
+                      print(f"::error::no junit file: {e}"); raise SystemExit
+                  lines = []
+                  for case in root.iter("testcase"):
+                      for bad in list(case.findall("failure")) + list(case.findall("error")):
+                          text = (bad.text or bad.get("message") or "").strip().splitlines()
+                          lines.append(f"{case.get('class')}::{case.get('name')} — {' / '.join(text[:3])[:300]}")
+                  body = "%0A".join(l.replace("%", "%25").replace("\r", "").replace("\n", " ") for l in lines[:150])
+                  print(f"::error title=PHPUnit ({len(lines)} failing)::{body}")
+                  PY
 
             - name: Collect the stack's log
               if: ${{ !cancelled() }}
