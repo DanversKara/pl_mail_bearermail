@@ -68,6 +68,20 @@ final class OutgoingSenderNameAndImagesTest extends KernelTestCase
         self::assertStringContainsString('data:image/png', (string) $message->bodyHtml, 'the stored body is not rewritten');
     }
 
+    /** A subject and nothing else: sent with an empty text part, not refused by the mailer. */
+    public function testAMessageWithNoBodyStillHasSomethingToSend(): void
+    {
+        $account           = $this->account();
+        $message           = $this->message($account, 'me@example.test');
+        $message->bodyHtml = null;
+        $message->bodyText = null;
+
+        $email = $this->build($message, $account);
+        $email->ensureValidity();
+
+        self::assertSame('', $email->getTextBody());
+    }
+
     private function build(Message $message, Account $account): Email
     {
         $service = self::getContainer()->get(MessageSendService::class);
