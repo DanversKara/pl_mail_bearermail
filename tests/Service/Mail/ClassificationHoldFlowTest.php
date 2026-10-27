@@ -6,6 +6,7 @@ namespace App\Tests\Service\Mail;
 
 use App\Domain\DTO\Mail\IngestedMessage;
 use App\Domain\Enum\Mail\CategorySource;
+use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\MessageCategory;
 use App\Entity\Ai\AiSettings;
 use App\Entity\Mail\Account;
@@ -31,12 +32,14 @@ use App\Service\Ai\PromptLibrary;
 use App\Service\Mail\MessageCategorizer;
 use App\Service\Ai\OllamaClient;
 use App\Service\Ai\OpenAiClient;
+use App\Service\Label\LabelResolver;
 use App\Service\Mail\HeldMailReleaser;
 use App\Service\Mail\PostIngestPipeline;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\NullLogger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -154,6 +157,37 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         }
     }
 
+    /**
+     * An import is bulk work, and a week's limit in Admin → AI (#208) means a
+     * week for it too — even though the mail is recent enough for every other
+     * step's thirty days.
+     */
+    public function testAnImportDoesNotQueueMailOlderThanTheLimit(): void
+    {
+        $this->assistantSorts(backlogDays: 7);
+        // No importFinished(): the folder has never completed a sync.
+
+        $this->ingest($this->message('last-fortnight', '-10 days'));
+
+        self::assertNotContains(ClassifyMailMessage::class, $this->classesOn('enrich'));
+        self::assertContains(ExtractEventsMessage::class, $this->classesOn('enrich'), 'only the sorting is limited');
+    }
+
+    /**
+     * The same message, arriving on a finished account: live mail is never
+     * limited, however low the number. Not held, so it takes the chunked path
+     * rather than the one-message envelope held mail always gets.
+     */
+    public function testLiveMailIsQueuedHoweverLowTheLimit(): void
+    {
+        $this->assistantSorts(hold: false, backlogDays: 1);
+        $this->importFinished();
+
+        $this->ingest($this->message('last-fortnight', '-10 days'));
+
+        self::assertContains(ClassifyMailMessage::class, $this->classesOn('enrich_live'));
+    }
+
     public function testArrivingMailIsKeptOutOfTheTabsWhileTheAssistantSorts(): void
     {
         $this->assistantSorts();
@@ -213,6 +247,52 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         self::assertSame(0, $releaser->release([$message]));
     }
 
+    /**
+     * The sidebar's Inbox row and the category tabs light up for the same
+     * arrival at the same moment (#371).
+     *
+     * The tabs have never shown held mail; the sidebar's Inbox dot and badge
+     * did, so a new message announced itself in two steps a model call apart.
+     * Both read the counts of one answer, so agreeing in the data is what
+     * makes them agree on the screen.
+     */
+    public function testHeldMailLightsTheSidebarAndTheTabsTogether(): void
+    {
+        $this->assistantSorts();
+        $this->importFinished();
+
+        $message = $this->message('together', '-1 minute');
+        $message->addLabel(self::getContainer()->get(LabelResolver::class)->systemLabel(LabelRole::Inbox, $this->account));
+        $this->em->flush();
+
+        $this->ingest($message);
+
+        self::assertTrue($message->isCategoryHeld());
+
+        $threads = self::getContainer()->get(MessageThreadRepository::class);
+        $now     = new DateTimeImmutable('+1 second');
+        $inbox   = LabelRole::Inbox->value;
+
+        // A held thread still comes back from the grouped count, under '':
+        // its NULL category folded to a key no tab has. Nothing else may.
+        $tabs = $threads->countNewByCategoryForUnifiedInbox($this->user, $now);
+        unset($tabs['']);
+
+        self::assertSame([], $tabs, 'held mail is in no tab');
+        self::assertSame(0, $threads->countNewPerRole($this->user, $now)[$inbox] ?? 0, 'so the Inbox dot waits too');
+        self::assertSame(0, $threads->countUnreadPerRole($this->user)[$inbox] ?? 0, 'and so does the Inbox badge');
+
+        self::getContainer()->get(HeldMailReleaser::class)->release([$message]);
+        $this->em->refresh($message->thread);
+
+        // Keyed by the tab the release filed it in, whichever the rules chose.
+        $tab = (string) $message->thread->category?->value;
+
+        self::assertSame(1, $threads->countNewByCategoryForUnifiedInbox($this->user, $now)[$tab] ?? 0);
+        self::assertSame(1, $threads->countNewPerRole($this->user, $now)[$inbox] ?? 0);
+        self::assertSame(1, $threads->countUnreadPerRole($this->user)[$inbox] ?? 0);
+    }
+
     public function testMailHeldTooLongIsFoundByTheSweep(): void
     {
         $this->assistantSorts();
@@ -233,9 +313,9 @@ final class ClassificationHoldFlowTest extends KernelTestCase
 
     /**
      * The model host is a box on somebody's network and may simply be off.
-     * Held mail must come out anyway, at once, under the rules' answer. It
-     * is stamped as asked, like any other unanswered message: the question was
-     * put once and is not put again.
+     * Held mail must come out anyway, at once, under the rules' answer. It is
+     * not stamped as asked, because nothing was: the catch-up sweep offers it
+     * again once the host is back (#222).
      */
     public function testAHostThatDoesNotAnswerReleasesTheMailUnderTheRules(): void
     {
@@ -250,8 +330,68 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         $this->em->refresh($message->thread);
 
         self::assertFalse($message->isCategoryHeld());
-        self::assertNotNull($message->aiCategorisedAt);
+        self::assertNull($message->aiCategorisedAt, 'an unreachable host asked nothing');
         self::assertSame(MessageCategory::Primary, $message->thread->category);
+    }
+
+    /**
+     * #222. A minute's outage left 327 messages with no category and no second
+     * attempt, because the failed call was stamped as an answer. A refusal
+     * that says "not now" is the same case: a credential being rotated, a
+     * proxy in front of a host that is restarting, a rate limit, any 5xx.
+     */
+    #[DataProvider('passingRefusals')]
+    public function testARefusalThatWillPassLeavesTheMessageForTheCatchUp(int $status): void
+    {
+        $message = $this->askedAbout(new MockResponse('', ['http_code' => $status]));
+
+        self::assertNull($message->aiCategorisedAt, $status . ' is not an answer');
+        self::assertContains((int) $message->id, $this->unclassified());
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function passingRefusals(): iterable
+    {
+        foreach ([401, 403, 408, 429, 500, 502, 503, 504] as $status) {
+            yield (string) $status => [$status];
+        }
+    }
+
+    /**
+     * A refusal of the request itself comes back the same on every retry: a
+     * content filter's 400 for this mail, a 413, a 422. Retried, a handful of
+     * them would take the catch-up's whole budget (it offers the newest
+     * unstamped mail first) every quarter of an hour, for good. And a 404 is a
+     * model the host does not have: a setting to change, not an outage.
+     */
+    #[DataProvider('lastingRefusals')]
+    public function testARefusalThatWouldRepeatIsStamped(int $status): void
+    {
+        $message = $this->askedAbout(new MockResponse('', ['http_code' => $status]));
+
+        self::assertNotNull($message->aiCategorisedAt, $status . ' would only repeat');
+        self::assertNotContains((int) $message->id, $this->unclassified());
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function lastingRefusals(): iterable
+    {
+        foreach ([400, 404, 413, 422] as $status) {
+            yield (string) $status => [$status];
+        }
+    }
+
+    /**
+     * The other half of the promise: a host that did answer is not asked
+     * twice, however useless the answer. The stamp is what keeps a message the
+     * model cannot sort from being offered on every pass for ever.
+     */
+    public function testAHostThatAnswersWithNothingUsableIsNotAskedAgain(): void
+    {
+        $message = $this->askedAbout(new MockResponse((string) json_encode(['message' => ['content' => 'hmm']])));
+
+        self::assertNotNull($message->aiCategorisedAt);
+        self::assertNotContains((int) $message->id, $this->unclassified());
     }
 
     /**
@@ -367,12 +507,39 @@ final class ClassificationHoldFlowTest extends KernelTestCase
      */
     private function handlerWithAModelThatSays(string $answer): ClassifyMailHandler
     {
+        return $this->handlerAround(new MockResponse((string) json_encode(['message' => ['content' => $answer]])));
+    }
+
+    /** One fresh message put to a host that gives this response, and the message as the handler left it. */
+    private function askedAbout(MockResponse $response): Message
+    {
+        $this->assistantSorts();
+        $this->importFinished();
+
+        $message = $this->message('asked', '-1 minute');
+        $this->ingest($message);
+
+        ($this->handlerAround($response))(new ClassifyMailMessage([(int) $message->id]));
+
+        $this->em->refresh($message);
+
+        return $message;
+    }
+
+    /** @return list<int> what the catch-up sweep would offer this person */
+    private function unclassified(): array
+    {
+        return self::getContainer()->get(MessageRepository::class)->unclassifiedIdsForUser((int) $this->user->id, 100);
+    }
+
+    private function handlerAround(MockResponse $response): ClassifyMailHandler
+    {
         $container = self::getContainer();
 
         $assistant = new AiAssistant(
             $container->get(AiSettingsRepository::class),
             new OllamaClient(
-                new MockHttpClient(new MockResponse((string) json_encode(['message' => ['content' => $answer]]))),
+                new MockHttpClient($response),
                 new NullLogger(),
             ),
             new OpenAiClient(new MockHttpClient([]), new NullLogger()),
@@ -436,7 +603,7 @@ final class ClassificationHoldFlowTest extends KernelTestCase
     }
 
     /** The installation has the assistant sorting mail, and so does this person. */
-    private function assistantSorts(CategorySource $source = CategorySource::Assistant, bool $hold = true): void
+    private function assistantSorts(CategorySource $source = CategorySource::Assistant, bool $hold = true, int $backlogDays = AiSettings::DEFAULT_CATEGORISE_BACKLOG_DAYS): void
     {
         $settings = $this->em->getRepository(AiSettings::class)->findOneBy([]) ?? new AiSettings();
 
@@ -446,6 +613,7 @@ final class ClassificationHoldFlowTest extends KernelTestCase
         $settings->categorisationEnabled = true;
         $settings->holdUntilClassified   = $hold;
         $settings->holdMaxSeconds        = AiSettings::DEFAULT_HOLD_MAX_SECONDS;
+        $settings->categoriseBacklogDays = $backlogDays;
 
         $this->em->persist($settings);
 

@@ -64,3 +64,4 @@ todo.md
 /build/
 ###< plmail site ###
 .claude/
+phpunit-junit.xml

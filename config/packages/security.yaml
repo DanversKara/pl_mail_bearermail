@@ -71,6 +71,19 @@ security:
             pattern: ^/internal/mail-auth-policy$
             security: false
 
+        # The Web Key Directory: people's public OpenPGP keys, for mail
+        # programs to find by address. Outside security for the reasons
+        # `branding` gives — the caller is a mail program with no session, an
+        # answer is the same for everybody and should be cacheable as such,
+        # and a request that read the session would be rewritten to private.
+        # With no firewall there is also no login redirect to answer a miss
+        # with: every miss is the controller's own uniform 404. Anchored to the
+        # directory's own prefix and nothing wider. See
+        # App\Controller\Crypto\WkdController.
+        wkd:
+            pattern: ^/\.well-known/openpgpkey/
+            security: false
+
         main:
             lazy: true
             provider: app_user_provider
@@ -229,14 +242,13 @@ security:
         # App\Controller\Sharing\BookingController, which also says why there is
         # no CSRF token on a page that deliberately starts no session.
         - { path: ^/book/, roles: PUBLIC_ACCESS }
-        # A Drive share link (/s/<token> and /s/<token>/download). Same
-        # reasoning as /share/ above: the recipient has no account, the token
-        # (32 bytes of CSPRNG) is the gate, an optional password is a second
-        # one and is rate-limited — see App\Controller\Drive\ShareController.
+        # BearerMail: a Drive share link (/s/<token> and /s/<token>/download).
+        # Same reasoning as /share/ above: the recipient has no account, the
+        # token (32 bytes of CSPRNG) is the gate, an optional password is a
+        # second one and is rate-limited — see App\Controller\Drive\ShareController.
         - { path: '^/s/[a-f0-9]{64}(/download|/report)?$', roles: PUBLIC_ACCESS }
-        # A note share link (/n/<token>, and /n/<token>/save for a collaborator
-        # link). Same reasoning as /s/: the 32-byte token is the gate, an
-        # optional password a second one, rate-limited — see
+        # BearerMail: a note share link (/n/<token>, and /n/<token>/save for a
+        # collaborator link). Same reasoning as /s/ — see
         # App\Controller\Notes\NoteShareController.
         - { path: '^/n/[a-f0-9]{64}(/save|/media/[a-f0-9]{24})?$', roles: PUBLIC_ACCESS }
         # The code form sits between the two factors: the password is in, the
@@ -259,6 +271,12 @@ security:
         # check still runs per fetch in App\Service\Mail\ImageProxyFetcher. See
         # App\Controller\Mail\ImageProxyController for the full argument.
         - { path: ^/mail/image-proxy$, roles: PUBLIC_ACCESS }
+        # An inline (cid:) image of a message, anonymous for the same reason as
+        # the proxy above: the sandboxed body sends no session cookie, so behind
+        # ROLE_USER every inline image was a 302 to /login. The gate is the HMAC
+        # over the part id that the route checks itself, and it serves nothing
+        # but raster images. See App\Controller\Mail\InlineAttachmentController.
+        - { path: ^/mail/inline/\d+$, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:

@@ -26,17 +26,18 @@ final readonly class OidcGlobal
     }
 
     /**
+     * Whether the login page shows the password form. False only on an install
+     * whose administrator made single sign-on the only way in.
+     */
+    public function passwordLoginAllowed(): bool
+    {
+        return $this->settings->current()->allowsPasswordLogin();
+    }
+
+    /**
      * The provider's name as the operator wants it on the button, or null for
      * the generic wording.
      */
-    /** BearerMail: whether the login page shows only the provider's button. */
-    public function hidePasswordForm(): bool
-    {
-        $config = $this->settings->current();
-
-        return true === $config->isEnabled() && true === $config->hidePasswordForm;
-    }
-
     public function label(): ?string
     {
         $label = trim($this->settings->current()->buttonLabel);

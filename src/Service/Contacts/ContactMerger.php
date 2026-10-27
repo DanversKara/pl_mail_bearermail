@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Contacts;
 
+use App\Domain\Exception\ContactReadOnlyException;
 use App\Domain\Helper\AddressHelper;
 use App\Entity\Contacts\Contact;
 use App\Entity\Contacts\ContactAddress;
@@ -20,12 +21,21 @@ use Doctrine\ORM\EntityManagerInterface;
  * within the 90-day window.
  *
  * Child rows (emails/phones/addresses) move to the kept contact, deduplicated
- * on their normalized values. Empty scalar fields on the kept contact are
- * filled from the merged ones; tags are unioned; notes are appended.
+ * on their normalized values. Empty scalar fields (and the birthday) on the
+ * kept contact are filled from the merged ones; tags and the labelled lists
+ * (dates, relations, websites, chat, custom fields) are unioned; notes are
+ * appended.
  * Relations involving merged contacts are repointed to the kept contact
  * (pre-checked for unique-key duplicates, which are dropped instead).
  * Merged contacts' photos are left on disk (orphaned) — only the kept
  * contact's photo is retained.
+ *
+ * Contacts in synced address books merge like any other, and their servers
+ * follow (ContactSyncTracker): the kept contact's card is updated, and the
+ * merged ones' cards are deleted. So an undo brings the merged contacts back
+ * as plMail's own — their cards are gone from the server — and the kept one's
+ * card is put back as it was. A contact in a read-only book cannot take part:
+ * neither its card nor its deletion would be accepted.
  */
 final class ContactMerger
 {
@@ -55,6 +65,12 @@ final class ContactMerger
             }
             $this->assertOwner($contact, $user);
             $merged[] = $contact;
+        }
+
+        foreach ([$keep, ...$merged] as $contact) {
+            if (false === $contact->isEditable()) {
+                throw new ContactReadOnlyException(sprintf('Contact %d is in a read-only address book.', $contact->id));
+            }
         }
 
         $snapshot = [
@@ -97,10 +113,14 @@ final class ContactMerger
         $this->assertOwner($keep, $user);
 
         $keptSnapshot = $record->snapshot['kept'] ?? [];
-        foreach (['displayName', 'givenName', 'familyName', 'nickname', 'company', 'jobTitle', 'notes'] as $key) {
+        foreach (['displayName', ...ContactFields::SCALARS, 'birthday'] as $key) {
             $keep->{$key} = $keptSnapshot[$key] ?? null;
         }
+        $keep->displayName ??= 'Unnamed contact';
         $keep->tags = $keptSnapshot['tags'] ?? [];
+        foreach (ContactFields::LISTS as $list) {
+            $keep->{$list} = ContactFields::clean($list, $keptSnapshot[$list] ?? []);
+        }
 
         $currentPhoto = $keep->photoPath;
         $snapshotPhoto = $keptSnapshot['photoPath'] ?? null;
@@ -122,10 +142,14 @@ final class ContactMerger
         // Recreate merged contacts. NOTE: they get new ids.
         foreach ($record->snapshot['merged'] ?? [] as $mergedSnapshot) {
             $recreated = Contact::create($user, (string) ($mergedSnapshot['displayName'] ?? 'Unnamed contact'));
-            foreach (['givenName', 'familyName', 'nickname', 'company', 'jobTitle', 'notes', 'photoPath', 'source'] as $key) {
+            foreach ([...ContactFields::SCALARS, 'birthday', 'photoPath'] as $key) {
                 $recreated->{$key} = $mergedSnapshot[$key] ?? null;
             }
+            $recreated->source = (string) ($mergedSnapshot['source'] ?? 'manual');
             $recreated->tags = $mergedSnapshot['tags'] ?? [];
+            foreach (ContactFields::LISTS as $list) {
+                $recreated->{$list} = ContactFields::clean($list, $mergedSnapshot[$list] ?? []);
+            }
             $this->em->persist($recreated);
             $this->recreateChildren($recreated, $mergedSnapshot);
         }
@@ -197,12 +221,17 @@ final class ContactMerger
 
     private function fillScalars(Contact $keep, Contact $merged): void
     {
-        foreach (['givenName', 'familyName', 'nickname', 'company', 'jobTitle'] as $key) {
+        foreach ([...array_diff(ContactFields::SCALARS, ['notes']), 'birthday'] as $key) {
             if ((null === $keep->{$key} || '' === $keep->{$key})
                 && null !== $merged->{$key} && '' !== $merged->{$key}
             ) {
                 $keep->{$key} = $merged->{$key};
             }
+        }
+
+        // The kept contact's rows first; the cleaner drops the repeats.
+        foreach (ContactFields::LISTS as $list) {
+            $keep->{$list} = ContactFields::clean($list, [...$keep->{$list}, ...$merged->{$list}]);
         }
     }
 
@@ -301,12 +330,9 @@ final class ContactMerger
         return [
             'id' => $contact->id,
             'displayName' => $contact->displayName,
-            'givenName' => $contact->givenName,
-            'familyName' => $contact->familyName,
-            'nickname' => $contact->nickname,
-            'company' => $contact->company,
-            'jobTitle' => $contact->jobTitle,
-            'notes' => $contact->notes,
+            ...array_combine(ContactFields::SCALARS, array_map(static fn (string $key): ?string => $contact->{$key}, ContactFields::SCALARS)),
+            'birthday' => $contact->birthday,
+            ...array_combine(ContactFields::LISTS, array_map(static fn (string $list): array => $contact->{$list}, ContactFields::LISTS)),
             'tags' => $contact->tags,
             'photoPath' => $contact->photoPath,
             'source' => $contact->source,

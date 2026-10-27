@@ -87,11 +87,18 @@ final class ThreadListQueryBudgetTest extends WebTestCase
      * first shipped as an account read plus a count per account, which is what
      * took both lists past their ceilings.
      */
-    // Twenty-nine: upstream's sidebar change sequence (one MAX over an index,
-    // per page that has a sidebar — SidebarCounts::changeSequence()) plus
-    // BearerMail's flood banner above. A list-frame navigation draws no
-    // sidebar, so FRAME_BUDGET below only carries the flood banner.
-    private const int BUDGET = 29;
+    // 28 since the sidebar reads the user's change sequence when it is drawn
+    // (SidebarCounts::changeSequence()): one MAX over an index, per page that
+    // has a sidebar and not per row. A list-frame navigation draws no sidebar
+    // and FRAME_BUDGET below is unchanged.
+    //
+    // 29 since the sidebar marks Drafts while a draft's send has finally
+    // failed (#125, SidebarCounts::unsentDrafts()): one COUNT over a partial
+    // index that holds only the marked rows, per page with a sidebar. Not per
+    // row, and not in a frame, so FRAME_BUDGET is unchanged again.
+    //
+    // 30 with BearerMail's flood banner on top (one query per page).
+    private const int BUDGET = 30;
 
     /**
      * The ceiling for the INBOX alone: one above BUDGET, and the one read that
