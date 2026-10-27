@@ -1,30 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 /**
- * contacts--form: the dynamic email/phone/address rows on the contact form.
- *
- * Rows are server-rendered with explicit numeric indexes; "add" clones a
- * <template> with the container's next index (a counter that only goes up,
- * so removing a row can never collide two indexes). Removed rows simply
- * never submit — update() treats the submitted set as replace-all.
+ * contacts--form: the address book's two upload forms — a contact's photo,
+ * which submits itself once a file is chosen, and the import page's file
+ * picker. The contact form itself is contacts--editor.
  *
  * No inline handlers anywhere: the app's CSP refuses them.
  */
 export default class extends Controller {
-    static targets = [
-        "emailRows", "emailTemplate",
-        "phoneRows", "phoneTemplate",
-        "addressRows", "addressTemplate",
-        "fileInput", "uploadBtn", "status",
-    ]
-
-    addEmail()   { this.#add(this.emailRowsTarget, this.emailTemplateTarget) }
-    addPhone()   { this.#add(this.phoneRowsTarget, this.phoneTemplateTarget) }
-    addAddress() { this.#add(this.addressRowsTarget, this.addressTemplateTarget) }
-
-    removeRow(event) {
-        event.currentTarget.closest("[data-row]")?.remove()
-    }
+    static targets = ["fileInput", "uploadBtn", "status"]
 
     /** Auto-submit the photo upload form when a file is chosen. */
     submitForm(event) {
@@ -69,14 +53,5 @@ export default class extends Controller {
         if (this.hasStatusTarget) {
             this.statusTarget.textContent = this.statusTarget.dataset.uploading || "Uploading…"
         }
-    }
-
-    #add(container, template) {
-        const index = parseInt(container.dataset.nextIndex || "0", 10)
-        container.insertAdjacentHTML(
-            "beforeend",
-            template.innerHTML.replaceAll("__INDEX__", String(index)),
-        )
-        container.dataset.nextIndex = String(index + 1)
     }
 }

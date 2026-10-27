@@ -1,4 +1,4 @@
-<!-- translated-from: install/upgrading.md sha1:feaedccb543ce01869ebaccc3daa8c6d6949f6d4 -->
+<!-- translated-from: install/upgrading.md sha1:1ff7c6b0c69b60318e36f8311b06d1b26958866f -->
 # Aktualisieren
 
 plMail migriert seine eigene Datenbank beim Start. Diese eine Entscheidung prägt alles auf dieser
@@ -51,6 +51,7 @@ Der Release-Workflow veröffentlicht ein Multi-Architektur-Manifest und richtet 
 |---|---|
 | `latest` | der jüngsten **Veröffentlichung** — er bewegt sich nur, wenn ein `v*`-Tag gepusht wird |
 | `main` | der Spitze des Standard-Branches, veröffentlicht oder nicht |
+| `milestone-v0.3.8` | der Arbeit, die für eine Veröffentlichung auf ihrem Milestone-Branch gesammelt wird, bevor sie `main` erreicht. Zum frühen Ausprobieren einer Veröffentlichung; er kann Migrationen enthalten, die `main` noch nicht hat, deshalb ist der Weg zurück zu `main` nicht immer möglich |
 | `0.0.16` | einer Veröffentlichung, festgenagelt. Ohne führendes `v`: Der Git-Tag heißt `v0.0.16`, der Image-Tag nicht |
 | `0.0` | dem neuesten Patch einer Minor-Linie |
 | `sha-1a2b3c` | einem Commit, exakt festgenagelt |
@@ -188,6 +189,14 @@ solange es noch nie gefragt hat, wie du es einplanst.
 beim Start, wie jedes Upgrade; der Dump ist der Weg zurück (siehe [Zurückrollen](#zurückrollen)).
 Ein `git pull`, der nicht vorspulen kann, weil auf dem Server eine versionierte Datei geändert wurde,
 hält die Installation an, bevor irgendetwas geholt wird.
+
+**Ohne Installation, die du fragen kannst**, folgst du den Veröffentlichungen auf GitHub. Jede
+getaggte Veröffentlichung ab v0.3.0 hat eine Seite unter
+[Releases](https://github.com/karatektus/pl_mail/releases), mit ihren Notizen aus `CHANGELOG.md` und
+dem Image, das du ziehst. Ein Feedreader kann `https://github.com/karatektus/pl_mail/releases.atom`
+abonnieren, und **Watch → Custom → Releases** im Repository schickt dir eine GitHub-Benachrichtigung.
+Die Seite erscheint erst, wenn das Image der Veröffentlichung veröffentlicht ist; was sie ankündigt,
+lässt sich also auch ziehen.
 
 **Der Fehlerfall ist eine Prüfung, die die Registry nicht erreicht.** Eine Installation hinter einer
 Firewall bekommt keine Antwort. Die Seite sagt das und behält, was die letzte beantwortete Prüfung

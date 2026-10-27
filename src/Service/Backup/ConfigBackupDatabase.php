@@ -285,8 +285,10 @@ final readonly class ConfigBackupDatabase
             'categorisationEnabled' => $settings->categorisationEnabled,
             'holdUntilClassified'   => $settings->holdUntilClassified,
             'holdMaxSeconds'        => $settings->holdMaxSeconds,
+            'categoriseBacklogDays' => $settings->categoriseBacklogDays,
             'writingHelpEnabled'    => $settings->writingHelpEnabled,
             'summaryEnabled'        => $settings->summaryEnabled,
+            'contactHelpEnabled'    => $settings->contactHelpEnabled,
             'prompts'               => $prompts,
         ];
     }
@@ -373,8 +375,14 @@ final readonly class ConfigBackupDatabase
         // thing that quietly switches a behaviour off.
         $settings->holdUntilClassified   = false !== ($values['holdUntilClassified'] ?? true);
         $settings->holdMaxSeconds        = is_int($values['holdMaxSeconds'] ?? null) ? $values['holdMaxSeconds'] : AiSettings::DEFAULT_HOLD_MAX_SECONDS;
+        // The same rule, and it has teeth here: an older backup restored as 0
+        // would switch the age limit off, and the first catch-up after the
+        // restore would set off down the whole history. Out-of-range values
+        // are left for AiSettings::bulkSortCutoff() to clamp.
+        $settings->categoriseBacklogDays = is_int($values['categoriseBacklogDays'] ?? null) ? $values['categoriseBacklogDays'] : AiSettings::DEFAULT_CATEGORISE_BACKLOG_DAYS;
         $settings->writingHelpEnabled    = true === ($values['writingHelpEnabled'] ?? false);
         $settings->summaryEnabled        = true === ($values['summaryEnabled'] ?? false);
+        $settings->contactHelpEnabled    = true === ($values['contactHelpEnabled'] ?? false);
 
         $prompts = $values['prompts'] ?? [];
 
@@ -469,8 +477,6 @@ final readonly class ConfigBackupDatabase
             'scopes'               => $config->scopes,
             'autoCreate'           => $config->autoCreate,
             'requireVerifiedEmail' => $config->requireVerifiedEmail,
-            'straightToProvider'   => $config->straightToProvider,
-            'hidePasswordForm'     => $config->hidePasswordForm,
         ];
     }
 
@@ -490,8 +496,13 @@ final readonly class ConfigBackupDatabase
         // Off only when the backup says so in as many words: a document that
         // lost the key must not come back with the check switched off.
         $config->requireVerifiedEmail = false !== ($values['requireVerifiedEmail'] ?? true);
-        $config->straightToProvider   = true === ($values['straightToProvider'] ?? false);
-        $config->hidePasswordForm     = true === ($values['hidePasswordForm'] ?? false);
+        // "Single sign-on only" is deliberately not in the backup, and is switched
+        // off here. The account links it depends on (who has signed in through
+        // the provider) are not restored, so bringing it back would shut a
+        // freshly restored install out of its own password form. An
+        // administrator ticks it again once they have signed in through the
+        // provider.
+        $config->passwordLoginDisabled = false;
 
         if (null === $config->id) {
             $this->entityManager->persist($config);

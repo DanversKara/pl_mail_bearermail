@@ -87,21 +87,14 @@ class OidcConfig
     public bool $requireVerifiedEmail = true;
 
     /**
-     * BearerMail: the login page sends visitors straight to the provider
-     * instead of showing the button and the password form. /login?password=1
-     * still shows the form, and so does the page after a sign-out or a failed
-     * sign-in, so nobody is ever shut out by a provider that is down.
+     * Single sign-on is the only way in: the login page shows no password form
+     * and the server refuses a password sign-in. Takes effect only while the
+     * registration is whole and in force — see OidcConfiguration::allowsPasswordLogin()
+     * — so a half-finished or removed provider can never leave an install with
+     * no way in at all.
      */
-    #[ORM\Column(name: 'straight_to_provider', options: ['default' => false])]
-    public bool $straightToProvider = false;
-
-    /**
-     * BearerMail: the login page shows only the provider's button. The
-     * password form is still there at /login?password=1 and whenever a
-     * sign-in failed, so a provider that is down never locks anyone out.
-     */
-    #[ORM\Column(name: 'hide_password_form', options: ['default' => false])]
-    public bool $hidePasswordForm = false;
+    #[ORM\Column(options: ['default' => false])]
+    public bool $passwordLoginDisabled = false;
 
     /**
      * Whether this row alone is enough to sign people in. A method rather than

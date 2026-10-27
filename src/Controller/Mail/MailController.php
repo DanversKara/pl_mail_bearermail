@@ -7,6 +7,7 @@ use App\Domain\DTO\Mail\InboxTab;
 use App\Domain\Enum\Mail\LabelRole;
 use App\Domain\Enum\Mail\ListSortOrder;
 use App\Domain\Enum\Mail\MessageCategory;
+use App\Entity\Insight\MailInsight;
 use App\Entity\Label\Label;
 use App\Entity\Mail\Account;
 use App\Entity\Mail\Message;
@@ -25,7 +26,9 @@ use App\Service\Ai\ThreadSummaryStore;
 use App\Service\Ai\ThreadTranscript;
 use App\Service\Mail\DeceptiveLinkChecker;
 use App\Service\Mail\FloodDetector;
+use App\Service\Mail\BinView;
 use App\Service\Mail\InboxTabs;
+use App\Service\Mail\MailPlacement;
 use App\Service\Mail\NewMailMarkers;
 use App\Service\Mail\SenderAuthentication;
 use App\Service\Mail\SidebarCounts;
@@ -60,6 +63,7 @@ final class MailController extends AbstractController
         private readonly AccountRepository $accountRepository,
         private readonly ThreadListRenderer $listRenderer,
         private readonly MailInsightRepository $insightRepository,
+        private readonly MailPlacement $placement,
         private readonly ThreadSummariser $summariser,
         private readonly ThreadTranscript $transcript,
         private readonly ThreadSummaryStore $summaries,
@@ -69,8 +73,33 @@ final class MailController extends AbstractController
         private readonly DeceptiveLinkChecker $linkChecker,
         private readonly FloodDetector $floodDetector,
         private readonly InboxTabs $inboxTabs,
+        private readonly BinView $bin,
     )
     {
+    }
+
+    /**
+     * The insight strip over a conversation — none at all while it is in Spam
+     * (#304).
+     *
+     * The strip restates the mail's claim in the app's own voice, with a
+     * "track parcel" button on it, and a spam mail's claim is the thing not to
+     * vouch for: the link is the phishing. The body below is still there to
+     * read, under the renderer's spam rules (MessageRenderer). Moving the mail
+     * out of Spam brings the strip back, since nothing is deleted.
+     *
+     * Spam only, not the bin: binned mail is the user's own, and its facts are
+     * as true as they were (MailInsightRepository::leaveOutSpam()).
+     *
+     * @return list<MailInsight>
+     */
+    private function insightCards(MessageThread $thread): array
+    {
+        if (MailPlacement::SPAM === $this->placement->of($thread)) {
+            return [];
+        }
+
+        return $this->insightRepository->forThread($thread);
     }
 
     /** Rows per page, for every list view and the pagination that clamps them. */
@@ -962,6 +991,11 @@ final class MailController extends AbstractController
             $payload[NewMailMarkers::roleKey($role)] = $newMail->forRole($role);
         }
 
+        // The warning on Drafts while any draft's send has finally failed
+        // (#125). Its own "unsent:" family, so a number meant for it cannot
+        // be read as a badge's, nor a badge's as it. See _unsent_mark.html.twig.
+        $payload['unsent:role:drafts'] = $counts->unsentDrafts();
+
         // One key per label now that the sidebar renders labels directly —
         // this used to also emit "node:<path>" keys for the merged tree.
         $labels = $this->labelRepository->findVisibleForUser($this->getUser());
@@ -1003,7 +1037,7 @@ final class MailController extends AbstractController
 
         // The conversation's insight cards, drawn above the body — one indexed
         // read by thread, empty for almost every thread and cheap when it is.
-        $insights = $this->insightRepository->forThread($thread);
+        $insights = $this->insightCards($thread);
 
         // Whether the From domain is authentic, per the receiving server's
         // Authentication-Results header. A Fail gets a banner in the template.
@@ -1056,7 +1090,7 @@ final class MailController extends AbstractController
         // the reply zone quotes and what opens expanded.
         // forThreadView(): the same list with each message's labels and parts
         // loaded alongside, so the pane does not lazy-load them one by one.
-        $messages = $this->messageRepository->forThreadView($thread);
+        $messages = $this->side($this->messageRepository->forThreadView($thread));
         $latest   = [] === $messages ? null : $messages[array_key_last($messages)];
 
         // The allowlist and correspondent checks every message's render asks,
@@ -1068,7 +1102,7 @@ final class MailController extends AbstractController
         }
 
         // Same read as message() above, for the same card in the same place.
-        $insights = $this->insightRepository->forThread($thread);
+        $insights = $this->insightCards($thread);
 
         $summary = $this->storedSummary($thread, $messages);
 
@@ -1090,6 +1124,33 @@ final class MailController extends AbstractController
             'insights' => $insights,
             'summary'  => $summary,
         ]);
+    }
+
+    /**
+     * The side of the conversation being looked at: its deleted messages when
+     * it was opened from Trash, the others from anywhere else.
+     *
+     * A message moved to Trash stays in its conversation, and the conversation
+     * in its other lists until all of it is deleted (#268). Opened from the
+     * Inbox it showed the deleted drafts among the live mail; opened from
+     * Trash, the live mail it was not listed there for. Each list now opens
+     * what it listed, as the Android app does. A side with nothing on it is a
+     * conversation wholly on the other — reached by a link or a search hit —
+     * and is shown whole rather than empty.
+     *
+     * @param list<Message> $messages
+     *
+     * @return list<Message>
+     */
+    private function side(array $messages): array
+    {
+        $inBin = $this->bin->isOpen();
+        $kept  = array_values(array_filter(
+            $messages,
+            fn (Message $message): bool => (MailPlacement::TRASH === $this->placement->of($message)) === $inBin,
+        ));
+
+        return [] === $kept ? $messages : $kept;
     }
 
     /**

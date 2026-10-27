@@ -22,6 +22,10 @@ answer the chip is absent entirely rather than reading "development" beside ever
 Two images can both call themselves `main`, which is why the commit is shown next to the label and
 not instead of it.
 
+A click on the chip copies both, label and commit with one space between them
+(`milestone-v0.4.0 0805208`), ready for a bug report or a deploy command; its clipboard icon turns
+into a tick to say so. It also works on a phone and on an instance served over plain HTTP.
+
 ## System
 
 Live panels, refreshed every ten seconds. Each can be collapsed, and a collapsed card shows a
@@ -302,8 +306,8 @@ appears only when there is something in it, and names how many.
 
 ## Integrations
 
-Two things live here: which file services this installation offers, and the OAuth applications users
-sign into their mail with.
+Three things live here: which file services this installation offers, the server address for its
+calendar services, and the OAuth applications users sign into their mail with.
 
 **Mail sign-in** holds the Google and Microsoft client id and secret, the Microsoft tenant, and for
 Gmail the Pub/Sub topic and push verification token. Leaving any of them empty falls back to the
@@ -323,6 +327,23 @@ appear.
   provider's console.
 - **Server address**, for the self-hosted ones. Leave it empty and each user enters their own; set
   it and every user is pinned to that server.
+
+**Calendars** lists CalDAV and calendar feeds below the file services, with the same row and the same
+**Configure** form. Both are offered to every user whatever is set here, so the row says **Offered
+to everyone** and the form has no switch. Nextcloud is not repeated there: it is configured once
+among the file services, and its calendars use that address.
+
+- **CalDAV** has the one setting the setup wizard may already have written: **Server address**. Set
+  it and every CalDAV connection finds its calendars on that server; clear it and each user's own
+  address counts again. A change applies the next time calendars are found on a connection.
+  Calendars already mirrored keep the address they were found at, and clearing an address in a
+  private range also ends its exemption from the private-network rule, so those calendars stop
+  syncing until the host is in `INTEGRATIONS_ALLOWED_HOSTS`. Once people have connected, the form
+  says how many connections a change reaches. See [CalDAV](../providers/caldav.md).
+- **Calendar feed** has no server to pin, because every feed is its own address, so its row has
+  nothing to configure. Only an address the setup wizard stored before is shown, with a
+  **Configure** button to clear it: such an address only lets feeds on its host past the
+  private-network rule.
 
 **Reuse Gmail credentials** and its Microsoft equivalent copy a client id and secret across
 server-side, without ever showing the secret. One Google Cloud project also covers Drive and Photos;
@@ -363,6 +384,12 @@ Two files, and neither is any use alone:
   while every installation has its own Firebase project, so it cannot be compiled in — the values
   are published in the JMAP session instead and the app builds its `FirebaseOptions` at runtime.
   They ship inside every Firebase APK and are public by nature, so they are stored in clear.
+
+  **The package to register** when you add the Android app to the Firebase project is
+  `de.pluetzner.plmail`, the app from the Play Store. The APKs released on GitHub were built as
+  `de.plmail.google`; a project that registered only that one keeps working as before. A file that
+  registers several packages is fine: plMail publishes the Play Store one where it is there, then
+  `de.plmail.google`, and otherwise the first app in the file.
 
 **A pair from two different projects is refused, saying which is which.** Nothing downstream can
 detect that mistake: the app registers happily against one project, the server sends happily to the
@@ -581,7 +608,7 @@ on the host itself applies. plMail cannot read that variable, so an empty box is
 nothing. Useful after a restart, and useful for finding out what a cold load actually costs on your
 hardware before you decide how long to hold it.
 
-### The four features are separate switches
+### The five features are separate switches
 
 They have very different costs, and very different consequences when the model is wrong.
 
@@ -591,17 +618,28 @@ They have very different costs, and very different consequences when the model i
 | **Sort mail into tabs** | Fills in a category when no rule recognised the message | On every message that arrives |
 | **Help me write** | Offers drafts and rewrites in the composer | Only when you ask |
 | **Thread summaries** | Writes a short account of a long conversation | Only when somebody asks for one |
+| **Contact help** | Reads a contact out of pasted text, and suggests updates to a contact from the signature of their latest mail | Only when somebody presses **Improve with AI** |
 
 Sorting is the one to be careful with: it runs unattended. It can only ever act as a tie-breaker —
 if a header, a Gmail label or the fact that you have written to somebody already decided the
 category, the model is not consulted and its opinion is not used. Switching it off needs no cleanup.
 
-Two things keep sorting from getting in the way of mail arriving:
+Three things keep sorting from getting in the way of mail arriving:
 
 - **Only recent mail is sorted as it comes in.** Mail from the last 30 days is asked about straight
   away. When you add an account, the rest of its mailbox is sorted afterwards, in the background,
   newest first, and only once the import has finished — so a first import is not hours of model
   calls with new mail waiting behind them.
+- **Imported mail is sorted only up to an age.** **Sort imported mail up to (days old)** is how far
+  back an import and that background pass go: 30 days by default. On a slow model host this is the
+  difference between an afternoon and several days — at twenty seconds a message, a mailbox of
+  14,000 is about 70 hours of the host. Mail older than that is never asked about. It keeps the tab
+  the ordinary rules gave it — Gmail's own category, a newsletter's or a mailing list's headers, the
+  fact that you write to the sender — and **Primary** when nothing recognised it, and it is found by
+  search like any other mail. New mail is always sorted, whatever date it carries. `0` sorts
+  everything. To have the older mail sorted once, when you choose, run
+  `php bin/console app:ai:classify-backlog --any-age --limit=20000` (add `--email=` for one person's
+  mail). Lowering the number also stops older mail that was already waiting in the queue.
 - **Wait for the assistant before showing new mail in a tab.** For people who let the assistant sort
   their mail, new mail is kept out of the inbox tabs for the moment the assistant needs, so it shows
   up once, in the right tab, instead of appearing in one and moving to another. **Wait at most** is
@@ -614,13 +652,20 @@ Two things keep sorting from getting in the way of mail arriving:
 
 Writing help never replaces what you wrote. It appends, so the original is always still there.
 
-Summaries are the most expensive of the four. They use the same writing model, but a whole
+Summaries are the most expensive of the five. They use the same writing model, but a whole
 conversation is a much larger prompt than a draft: on a 30B model and one GPU, expect around a
 minute for the first summary after a quiet spell and around half that once the model is warm. The
 GPU is held for the whole of it, so on a shared machine a summary is felt by everybody. Nothing is
 ever summarised on its own — no arriving message, no nightly pass — and a summary that has been
 written is kept and shown again, so opening the same conversation twice costs nothing the second
 time.
+
+Contact help sends text about somebody else: what a person pasted into a new contact, or a saved
+contact together with the signature block of the newest mail that contact sent — the part under
+`-- ` or under the closing ("Best regards"), never the body of the mail. A mail with neither sends
+nothing from that mail. Nothing it suggests is saved until the person ticks it and saves the
+contact. Without it, pasting still works: plMail reads the text by rules, and only the button that
+asks the model goes away.
 
 ### Searching by meaning needs one pass first
 
@@ -692,7 +737,9 @@ become a second way into every mailbox on the install:
 
 - **Change an existing user's password.** The field exists on create and not on edit. Someone who
   has not signed in yet has no mail, so setting their initial password discloses nothing; changing
-  it afterwards would. A forgotten password is reset with `app:user:password` on the console.
+  it afterwards would. And even the initial one works only once: the person has to choose their own
+  the first time they sign in, so the one you typed stops being a way in. A forgotten password is
+  reset with `app:user:password` on the console, which makes the same one-time password.
 - **Remove anyone's second factor.** That is `app:user:2fa-disable` on the console, and only there.
 - **Read anyone's mail.** Nothing in this area touches an account or a message.
 
@@ -824,6 +871,11 @@ Monitoring data is kept by every stage. Clear the logs from **Logs**, and stale 
 and once a night, not on arrival — so the first search of the day is the one that pulls the day's
 mail in, and it pulls it in for the search after it, not for itself. Ordinary search finds new mail
 straight away, which is why this is usually invisible.
+
+**An `--any-age` run reaches only as far as its `--limit`.** The scheduled pass that follows it stops
+at the age limit again, so a run with the default limit of 200 sorts 200 older messages and leaves
+the rest. Give it a limit as large as the mail you want sorted. It also does nothing while the last
+pass is still in the queue, and says so — run it again once that has drained.
 
 **The reported-mail export is other people's mail.** It is a plain, unencrypted JSON file holding
 the text of messages your users decided to hand over — unlike the config backup, which is encrypted

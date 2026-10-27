@@ -68,18 +68,44 @@ final class ContactObjectMapper
         return [
             'id' => (string) $contact->id,
             'displayName' => $contact->displayName,
+            'namePrefix' => $contact->namePrefix,
             'givenName' => $contact->givenName,
+            'middleName' => $contact->middleName,
             'familyName' => $contact->familyName,
+            'nameSuffix' => $contact->nameSuffix,
+            'phoneticGivenName' => $contact->phoneticGivenName,
+            'phoneticMiddleName' => $contact->phoneticMiddleName,
+            'phoneticFamilyName' => $contact->phoneticFamilyName,
             'nickname' => $contact->nickname,
             'company' => $contact->company,
+            'phoneticCompany' => $contact->phoneticCompany,
+            'department' => $contact->department,
             'jobTitle' => $contact->jobTitle,
+            'officeLocation' => $contact->officeLocation,
             'notes' => $contact->notes,
+            // YYYY-MM-DD, or --MM-DD when the year is not known.
+            'birthday' => $contact->birthday,
             'tags' => array_values($contact->tags),
             'photoUrl' => $this->photoUrl($contact),
             'emails' => $emails,
             'phones' => $phones,
             'addresses' => $addresses,
+            // Labelled lists; a label outside ContactFields' own is a
+            // provider's custom one, shown as it is.
+            'dates' => $contact->dates,
+            'relations' => $contact->relations,
+            'urls' => $contact->urls,
+            'ims' => $contact->ims,
+            'customFields' => $contact->customFields,
             'updatedAt' => $this->utcOrNull($contact->updatedAt),
+            // Where it lives: null for plMail's own contacts, else the synced
+            // address book (Nextcloud, a CardDAV server) it mirrors, by id and
+            // by the name Settings → Contacts shows.
+            'addressBookId' => null === $contact->addressBook?->id ? null : (string) $contact->addressBook->id,
+            'addressBookName' => $contact->addressBook?->name,
+            // A read-only book's contacts are shown, never changed:
+            // Contact/set answers forbidden to an update or a destroy.
+            'isReadOnly' => false === $contact->isEditable(),
         ];
     }
 
