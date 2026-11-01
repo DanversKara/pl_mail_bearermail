@@ -23,6 +23,13 @@ namespace App\Domain\Helper;
  * decrypted mail (App\Service\Crypto\DecryptedMail). Kept apart from the raw
  * source, which stays the ciphertext that arrived.
  *
+ * A decrypted file is plaintext end-to-end-encrypted mail, so new files are
+ * written locked down (0700 directories, 0600 files): the storage volume is
+ * shared by every container, and the default umask would leave them readable
+ * by any of them. Files written before this are NOT retroactively tightened
+ * — tighten them on the host, and note that backups exclude these files
+ * entirely (see BackupCommand).
+ *
  * UNDER raw/, in a `sealed` directory of its own beside the accounts' ones,
  * because raw/ is a volume every container shares. The files were first kept
  * in var/sealed/, which the stock compose.yaml mounts nowhere: the web
@@ -51,10 +58,15 @@ readonly class SealedMessageStorage
         $path = $this->path($messageId, $kind);
 
         if (false === is_dir(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
+            mkdir(dirname($path), 0700, true);
         }
 
         file_put_contents($path, $content);
+
+        // Sealed content is never world-readable, whatever the umask: a
+        // decrypted copy is plaintext mail, and a draft sealed to its own
+        // key is still only for its owner.
+        @chmod($path, 0600);
     }
 
     public function read(int $messageId, string $kind): ?string
