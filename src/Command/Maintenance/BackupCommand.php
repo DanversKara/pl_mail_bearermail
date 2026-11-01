@@ -204,6 +204,34 @@ final class BackupCommand extends Command
             if (false === $process->isSuccessful()) {
                 $io->warning(sprintf('Could not copy %s: %s', $subdirectory, trim($process->getErrorOutput())));
             }
+
+            if (true === $process->isSuccessful() && 'raw' === $subdirectory) {
+                $this->excludeDecryptedMail($io, $destination);
+            }
+        }
+    }
+
+    /**
+     * Decrypted mail must never ride along in a backup. A backup is copied
+     * somewhere, kept somewhere, and restored somewhere — every one of those
+     * is a new reader for plaintext end-to-end-encrypted mail that the
+     * account holder chose to keep only on this server. The ciphertext the
+     * mail arrived as is still in raw/ beside it, so a restore loses nothing
+     * that cannot be decrypted again in the browser; what it loses is the
+     * convenience copy, which is the point.
+     */
+    private function excludeDecryptedMail(SymfonyStyle $io, string $destination): void
+    {
+        $excluded = 0;
+
+        foreach (glob($destination.'/raw/sealed/*/decrypted.eml') ?: [] as $decrypted) {
+            if (@unlink($decrypted)) {
+                $excluded++;
+            }
+        }
+
+        if ($excluded > 0) {
+            $io->text(sprintf('  excluded %d decrypted message(s) — re-decrypt from the ciphertext after restore', $excluded));
         }
     }
 

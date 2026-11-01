@@ -77,4 +77,32 @@ final class EscapingStylesInMailTest extends TestCase
         self::assertStringContainsString('background-position: center', $html);
         self::assertStringContainsString('position: relative', $html);
     }
+
+    /** Code smuggled as paint is dropped at ingest, at either strength. */
+    public function testCodeInStylesIsDropped(): void
+    {
+        $html = $this->sanitizer->sanitizeFragment(
+            '<div style="color: red; background: url(javascript:alert(1)); width: expression(alert(1)); behavior: url(x.htc)">x</div>',
+        );
+
+        self::assertStringContainsString('color: red', $html);
+        self::assertStringNotContainsString('javascript:', $html);
+        self::assertStringNotContainsString('expression(', $html);
+        self::assertStringNotContainsString('behavior', $html);
+    }
+
+    /**
+     * Remote images in styles are NOT stripped here: that is tracking, not
+     * code, and RemoteContentBlocker rewrites it at render time (proxied
+     * when allowed, `none` when blocked). Stripping it at ingest would
+     * break trusted senders' backgrounds the blocker would otherwise proxy.
+     */
+    public function testRemoteStyleUrlsSurviveIngestForTheBlocker(): void
+    {
+        $html = $this->sanitizer->sanitizeFragment(
+            '<div style="background: url(https://example.com/bg.png)">x</div>',
+        );
+
+        self::assertStringContainsString('example.com/bg.png', $html);
+    }
 }

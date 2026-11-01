@@ -31,6 +31,20 @@ use Symfony\Component\HtmlSanitizer\Visitor\AttributeSanitizer\AttributeSanitize
  *                newsletters do position absolutely, which is why this half is
  *                not applied to mail that is only being read.
  *
+ * On top of both, at every strength, declarations that try to run code
+ * through CSS are dropped outright: `javascript:`/`vbscript:` URLs,
+ * `expression(...)`, and the `behavior`/`-moz-binding` properties. No modern
+ * browser executes any of these from a stylesheet, and no genuine mail uses
+ * them — but they are the one thing in a style attribute that is code rather
+ * than paint, so they do not survive ingest even though the frame CSP would
+ * refuse them anyway.
+ *
+ * What this deliberately does NOT do is strip remote `url(...)` references:
+ * those are tracking, not code, and RemoteContentBlocker already rewrites
+ * them at render time (proxied when remote content is allowed, `none` when
+ * it is not). Stripping them here would break trusted senders' backgrounds
+ * that the blocker would otherwise proxy.
+ *
  * This is one of two layers. The other is in the stylesheets: the composer's
  * editor and the print page's body are containing blocks that clip, so a
  * declaration that got past this — in a body stored before it existed, or
@@ -84,6 +98,18 @@ final readonly class EscapingStyleAttributeSanitizer implements AttributeSanitiz
                 || (true === $this->composing && true === str_contains($rest, 'absolute'));
         }
 
-        return true === $this->composing && 'z-index' === $property;
+        if (true === $this->composing && 'z-index' === $property) {
+            return true;
+        }
+
+        // Code smuggled as paint. Dead in every modern browser, dropped
+        // anyway: a style attribute is the one place in a sanitised body
+        // where a value can still name a script, and nothing genuine is
+        // lost by refusing it here rather than trusting the frame CSP to.
+        return 'behavior' === $property
+            || '-moz-binding' === $property
+            || true === str_contains($rest, 'javascript:')
+            || true === str_contains($rest, 'vbscript:')
+            || true === str_contains($rest, 'expression(');
     }
 }
