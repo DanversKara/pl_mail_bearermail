@@ -19,6 +19,7 @@ to the full editor instead, which opens with all of it filled in.
 Variables: books (the writable synced address books).
 #}
 {% extends 'contacts/_layout.html.twig' %}
+{% import '_partials/_select.html.twig' as select %}
 
 {% block title %}{{ 'contacts.new'|trans }} — {{ 'app.name'|trans }}{% endblock %}
 
@@ -67,6 +68,7 @@ Variables: books (the writable synced address books).
     openExisting:  'contacts.quick.open_existing'|trans,
     useAs:         'contacts.quick.use_as'|trans,
     ignore:        'contacts.quick.ignore'|trans,
+    selectNoResults: 'form.select.no_results'|trans,
     noName:        'contacts.quick.no_name'|trans,
     reading:       'contacts.editor.reading'|trans,
     fix:           'contacts.quick.fix_parts'|trans,
@@ -181,6 +183,7 @@ Variables: books (the writable synced address books).
         <div class="flex items-start gap-2.5 py-1.5 border-b border-line last:border-b-0" data-row>
             <input type="checkbox" class="mt-2.5 w-4 h-4 accent-[var(--color-accent)] shrink-0" checked data-keep>
             <select class="h-9 w-36 shrink-0 rounded-lg border border-transparent hover:border-line bg-transparent px-1 text-xs font-semibold cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    {{ select.enhance() }}
                     data-kind title="{{ 'contacts.quick.change_type'|trans }}" aria-label="{{ 'contacts.quick.change_type'|trans }}"></select>
             <div class="flex-1 min-w-0 flex flex-col">
                 <input class="w-full h-9 px-2 rounded-lg border border-transparent hover:border-line focus:border-field bg-transparent text-sm text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"

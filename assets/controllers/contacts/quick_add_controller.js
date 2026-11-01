@@ -230,7 +230,20 @@ export default class extends Controller {
             text.className = "flex-1 basis-56 min-w-0 text-sm font-mono text-ink break-words"
             text.textContent = line
             const select = document.createElement("select")
-            select.className = "h-8 rounded-lg border border-field bg-field px-2 text-sm text-ink shrink-0"
+            // A <select> ui--select will pick up: without these attributes it
+            // stays native, and a native popup is drawn by the OS — white over
+            // this dark dialog — where no stylesheet can reach it. Same stamp
+            // the rule builder puts on its own dynamic selects; setAttribute,
+            // not dataset, because the double dash does not survive dataset's
+            // camel-casing. select-field, not the old field classes: Tom
+            // Select copies the class list onto its wrapper, and select-field
+            // is the one its stylesheet knows to undo there.
+            select.className = "select-field h-8 text-sm shrink-0"
+            select.setAttribute("data-controller", "ui--select")
+            select.setAttribute(
+                "data-ui--select-i18n-value",
+                JSON.stringify({ noResults: this.stringsValue.selectNoResults }),
+            )
             select.setAttribute("aria-label", `${this.stringsValue.useAs}: ${line}`)
             select.add(new Option(this.stringsValue.useAs, ""))
             for (const type of ["company", "jobTitle", "department", "notes"]) select.add(new Option(this.stringsValue.kinds[type], type))
