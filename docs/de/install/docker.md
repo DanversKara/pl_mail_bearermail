@@ -1,4 +1,4 @@
-<!-- translated-from: install/docker.md sha1:7f7d4c7947af320a5352b506a22158112cc0683e -->
+<!-- translated-from: install/docker.md sha1:f2f56e323658eef4bc83fa334595c509e8c946a3 -->
 # Installation mit Docker Compose
 
 Der unterstützte Weg, von Anfang bis Ende: was du brauchst, was `docker compose up` tatsächlich tut,
@@ -21,8 +21,8 @@ einige Details — siehe [Plattform-Hinweise](platforms.md).
 Über die Dimensionierung lohnt es sich nachzudenken, eine feste Regel gibt es nicht. PHPs
 `memory_limit` steht im Image auf `2G`, jeder der vier Messenger-Worker ist durch
 `--memory-limit=256M` begrenzt und startet sich bei `--time-limit=3600` neu, und Postgres, der
-Mercure-Hub und der IMAP-Supervisor wollen jeweils ihren eigenen Anteil obendrauf. Die Worker, der
-Hub und der IMAP-Supervisor teilen sich einen Container, ein Speicherlimit darauf gilt also für alle
+Mercure-Hub und die Push-Listener wollen jeweils ihren eigenen Anteil obendrauf. Die Worker, der
+Hub und die Push-Listener teilen sich einen Container, ein Speicherlimit darauf gilt also für alle
 zusammen. Der erste
 Abgleich eines großen Postfachs ist die anstrengendste Phase überhaupt.
 
@@ -153,7 +153,8 @@ bis zu dreißig Sekunden, wenn er abgestürzt ist.
 | Prozess | Was darin läuft | Wofür er da ist |
 |---|---|---|
 | `mercure` | Der Mercure-Hub, 1.x | Live-Aktualisierungen — die Mailliste, die sich von selbst auffrischt |
-| `imap-supervisor` | `app:imap:supervise` | Startet und überwacht je einen `app:imap:idle`-Prozess pro IDLE-fähigem Postfach, damit gewöhnliche IMAP-Mail in dem Moment ankommt, in dem sie eintrifft |
+| `imap-listener` | `app:imap:listen` | Hält IMAP IDLE auf allen IDLE-fähigen Ordnern, alle in diesem einen Prozess, damit gewöhnliche IMAP-Mail in dem Moment ankommt, in dem sie eintrifft |
+| `jmap-listener` | `app:jmap:listen` | Hält die Push-Verbindung für alle JMAP-Konten |
 | `worker-export` | `messenger:consume export` | Alles, was plMail verlässt, und die einzige Warteschlange, auf die jemand wartet. In einem eigenen Prozess, damit ein Versand nie hinter einem Abgleich steht |
 | `worker-ingest` | `messenger:consume ingest` | Mail abholen, die gerade ankommt, und nur das |
 | `worker-backlog` | `messenger:consume ingest_backlog` | Die Vorgeschichte eines Postfachs beim ersten Import, Seite für Seite. In einem eigenen Prozess, damit gerade ankommende Mail nie dahinter steht |
