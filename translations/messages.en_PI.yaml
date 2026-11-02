@@ -1151,7 +1151,7 @@ admin:
             drive_disabled: "Close the hold"
             drive_disabled_help: "Blocks uploads an' stops every link this hand has shared."
             mailbox: Post barrel
-            mailbox_help: 'Optional. Write only the name afore the @ — <b>anna</b> makes <b>anna@%domain%</b> (the whole address works too). No secret word here: the post barrel takes the Password above, the same one this hand signs in with. Leave it empty for one who brings their own.'
+            mailbox_help: 'Optional. Write only the name afore the @ — <b>anna</b> makes <b>anna@%domain%</b> (the whole address works too). No secret word here: the post barrel gets a random one only BearerMail knows — not the Password above. Leave it empty for one who brings their own.'
             password_help: 'A one-time word: th'' hand chooses their own th'' first time they come aboard. A forgotten word be reset at th'' console with `app:user:password`.'
         flash:
             deactivated: 'Clapped in irons. No boardin'' until ye strike them.'
