@@ -21,7 +21,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *
  *   app:mail:mailbox list
  *   app:mail:mailbox create anna            (asks for the password)
- *   app:mail:mailbox password anna          (new password for a mailbox plMail made)
+ *   app:mail:mailbox password anna          (a password you choose, for a mail program
+ *                                            like Thunderbird; BearerMail's account follows)
  *   app:mail:mailbox remove anna            (stops logins and delivery; the Maildir stays)
  *   app:mail:mailbox rotate anna | --all     (a random password nobody knows, saved
  *                                            into the plMail account that syncs it)
@@ -121,8 +122,15 @@ final class MailboxCommand extends Command
 
                         return Command::FAILURE;
                     }
-                    $this->mailboxes->save($address, $this->askPassword($io));
-                    $io->success(sprintf('New password set for %s. Update it in the plMail account that signs in with it.', $address));
+                    $password = $this->askPassword($io);
+                    $this->mailboxes->save($address, $password);
+                    $updated = $this->updateAccounts($address, $password);
+                    $this->em->flush();
+                    $io->success(sprintf(
+                        'New password set for %s, and saved into %d BearerMail account(s) so they keep syncing. A mail program like Thunderbird can sign in with it on port 993.',
+                        $address,
+                        $updated,
+                    ));
 
                     return Command::SUCCESS;
 
@@ -222,28 +230,34 @@ final class MailboxCommand extends Command
             $password = MailServerMailboxes::randomPassword();
             $this->mailboxes->save($address, $password);
 
-            $updated = 0;
-
-            /** @var list<Account> $accounts */
-            $accounts = $this->accounts->findBy(['authType' => 'password']);
-
-            foreach ($accounts as $account) {
-                if (true === MailServerMailboxes::isBuiltInServer($account->imapHost)
-                    && $address === $this->mailboxes->addressFor((string) $account->username)) {
-                    $account->password = $password;
-                    ++$updated;
-                }
-            }
-
-            $rows[] = [$address, (string) $updated];
+            $rows[] = [$address, (string) $this->updateAccounts($address, $password)];
         }
 
         $this->em->flush();
 
         $io->table(['Mailbox', 'plMail accounts updated'], $rows);
-        $io->success('Done. A mail program outside plMail that signed in with the old password needs an app password or SMTP key now.');
+        $io->success('Done. Nobody knows these passwords, so a mail program like Thunderbird can no longer sign in to these mailboxes on port 993; set one with "app:mail:mailbox password <name>" for anyone who needs that. BearerMail and its apps are unaffected.');
 
         return Command::SUCCESS;
+    }
+
+    /** Writes the password into every plMail account that syncs this mailbox; returns how many. */
+    private function updateAccounts(string $address, string $password): int
+    {
+        $updated = 0;
+
+        /** @var list<Account> $accounts */
+        $accounts = $this->accounts->findBy(['authType' => 'password']);
+
+        foreach ($accounts as $account) {
+            if (true === MailServerMailboxes::isBuiltInServer($account->imapHost)
+                && $address === $this->mailboxes->addressFor((string) $account->username)) {
+                $account->password = $password;
+                ++$updated;
+            }
+        }
+
+        return $updated;
     }
 
     private function askPassword(SymfonyStyle $io): string
