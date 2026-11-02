@@ -112,6 +112,12 @@ final readonly class MailServerMailboxes
         return \in_array(strtolower(trim($address)), $this->envAddresses(), true);
     }
 
+    /** A mailbox password for plMail's own use: 192 random bits, hex. */
+    public static function randomPassword(): string
+    {
+        return bin2hex(random_bytes(24));
+    }
+
     /**
      * Creates the mailbox, or sets a new password on one plMail made earlier.
      *

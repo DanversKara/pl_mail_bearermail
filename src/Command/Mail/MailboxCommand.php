@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command\Mail;
 
+use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Mail\Account;
 use App\Repository\Mail\AccountRepository;
 use App\Service\Mail\MailServerMailboxes;
@@ -22,6 +23,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  *   app:mail:mailbox create anna            (asks for the password)
  *   app:mail:mailbox password anna          (new password for a mailbox plMail made)
  *   app:mail:mailbox remove anna            (stops logins and delivery; the Maildir stays)
+ *   app:mail:mailbox rotate anna | --all     (a random password nobody knows, saved
+ *                                            into the plMail account that syncs it)
  *   app:mail:mailbox from-accounts [--dry-run]
  *
  * "from-accounts" repairs people added before plMail could create mailboxes:
@@ -39,6 +42,7 @@ final class MailboxCommand extends Command
     public function __construct(
         private readonly MailServerMailboxes $mailboxes,
         private readonly AccountRepository $accounts,
+        private readonly EntityManagerInterface $em,
     ) {
         parent::__construct();
     }
@@ -46,9 +50,10 @@ final class MailboxCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('action', InputArgument::REQUIRED, 'list, create, password, remove or from-accounts')
+            ->addArgument('action', InputArgument::REQUIRED, 'list, create, password, remove, rotate or from-accounts')
             ->addArgument('address', InputArgument::OPTIONAL, 'Local part or full address on MAIL_DOMAIN')
-            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'from-accounts: only show what would be created');
+            ->addOption('dry-run', null, InputOption::VALUE_NONE, 'from-accounts: only show what would be created')
+            ->addOption('all', null, InputOption::VALUE_NONE, 'rotate: every mailbox plMail manages');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -83,6 +88,13 @@ final class MailboxCommand extends Command
             return $this->fromAccounts($io, true === $input->getOption('dry-run'));
         }
 
+        if ('rotate' === $action && true === $input->getOption('all')) {
+            return $this->rotate($io, array_values(array_filter(
+                $this->mailboxes->existing(),
+                fn (string $address): bool => false === $this->mailboxes->isFromEnvironment($address),
+            )));
+        }
+
         $address = $this->mailboxes->addressFor((string) $input->getArgument('address'));
         if (null === $address) {
             $io->error(sprintf('Give a local part or an address on %s.', (string) $this->mailboxes->domain()));
@@ -114,6 +126,15 @@ final class MailboxCommand extends Command
 
                     return Command::SUCCESS;
 
+                case 'rotate':
+                    if (false === $this->mailboxes->exists($address)) {
+                        $io->error(sprintf('%s does not exist.', $address));
+
+                        return Command::FAILURE;
+                    }
+
+                    return $this->rotate($io, [$address]);
+
                 case 'remove':
                     if (true === $this->mailboxes->isFromEnvironment($address)) {
                         $io->error(sprintf('%s is in MAIL_ACCOUNTS; remove it there.', $address));
@@ -135,7 +156,7 @@ final class MailboxCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->error(sprintf('Unknown action "%s". Use list, create, password, remove or from-accounts.', $action));
+        $io->error(sprintf('Unknown action "%s". Use list, create, password, remove, rotate or from-accounts.', $action));
 
         return Command::INVALID;
     }
@@ -183,6 +204,44 @@ final class MailboxCommand extends Command
         $io->success([] === $created
             ? 'Every account on the built-in server already has a mailbox.'
             : sprintf('%d mailbox(es) %s. They can sign in now and receive mail within about 15 seconds.', \count($created), $dryRun ? 'would be created' : 'created'));
+
+        return Command::SUCCESS;
+    }
+
+    /**
+     * A new random password on each mailbox, written into every plMail account
+     * that signs in to it, so the sync carries on and nobody else can.
+     *
+     * @param list<string> $addresses
+     */
+    private function rotate(SymfonyStyle $io, array $addresses): int
+    {
+        $rows = [];
+
+        foreach ($addresses as $address) {
+            $password = MailServerMailboxes::randomPassword();
+            $this->mailboxes->save($address, $password);
+
+            $updated = 0;
+
+            /** @var list<Account> $accounts */
+            $accounts = $this->accounts->findBy(['authType' => 'password']);
+
+            foreach ($accounts as $account) {
+                if (true === MailServerMailboxes::isBuiltInServer($account->imapHost)
+                    && $address === $this->mailboxes->addressFor((string) $account->username)) {
+                    $account->password = $password;
+                    ++$updated;
+                }
+            }
+
+            $rows[] = [$address, (string) $updated];
+        }
+
+        $this->em->flush();
+
+        $io->table(['Mailbox', 'plMail accounts updated'], $rows);
+        $io->success('Done. A mail program outside plMail that signed in with the old password needs an app password or SMTP key now.');
 
         return Command::SUCCESS;
     }

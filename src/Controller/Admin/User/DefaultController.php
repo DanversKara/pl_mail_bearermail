@@ -159,11 +159,7 @@ final class DefaultController extends AbstractController
 
                 if ('' !== $mailbox) {
                     try {
-                        $this->mailboxProvisioner->provision(
-                            $user,
-                            $mailbox,
-                            (string) $form->get('plainPassword')->getData(),
-                        );
+                        $this->mailboxProvisioner->provision($user, $mailbox);
                     } catch (\Throwable $e) {
                         $refusal = trim(($refusal ?? '') . ' ' . $e->getMessage());
                     }

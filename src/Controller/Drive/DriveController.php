@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Drive;
 
+use App\Domain\Helper\InlineDisposition;
+use App\Domain\Helper\DriveServedType;
 use App\Controller\ChecksCsrf;
 use App\Entity\Drive\DriveFile;
 use App\Entity\Drive\DriveFolder;
@@ -303,7 +305,11 @@ final class DriveController extends AbstractController
         }
 
         $response = new BinaryFileResponse($this->storage->path($file));
-        $response->headers->set('Content-Type', $file->mimeType);
+        $response->headers->set('Content-Type', DriveServedType::of($file->mimeType));
+        // Not for a PDF: Chrome will not draw one in a sandboxed document.
+        if ('application/pdf' !== DriveServedType::of($file->mimeType)) {
+            $response->headers->set('Content-Security-Policy', InlineDisposition::SANDBOX_CSP);
+        }
         // Inline only for types a browser shows without running anything of
         // the file's own; everything else is a download.
         $inline = $request->query->getBoolean('preview') && $this->isSafeInline($file->mimeType);
@@ -534,7 +540,7 @@ final class DriveController extends AbstractController
 
     private function isSafeInline(string $mime): bool
     {
-        return \in_array($mime, ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'application/pdf', 'text/plain', 'video/mp4', 'audio/mpeg'], true);
+        return DriveServedType::isSafe($mime);
     }
 
     private function asciiFallback(string $name): string

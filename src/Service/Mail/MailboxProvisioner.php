@@ -29,8 +29,14 @@ final readonly class MailboxProvisioner
      * @throws \InvalidArgumentException when the address is unusable or already exists
      * @throws \RuntimeException         when there is no built-in mail server
      */
-    public function provision(User $user, string $localPartOrAddress, string $password): Account
+    public function provision(User $user, string $localPartOrAddress): Account
     {
+        // A password nobody types. The administrator knows the person's first
+        // sign-in password, and this one used to be it — never changed when
+        // they chose their own, and good on IMAP from anywhere. plMail is the
+        // only thing that signs in here; it keeps this in the account.
+        $password = MailServerMailboxes::randomPassword();
+
         $address = $this->mailboxes->addressFor($localPartOrAddress);
         if (null === $address) {
             throw new \InvalidArgumentException(sprintf('"%s" is not an address this mail server can host.', $localPartOrAddress));
