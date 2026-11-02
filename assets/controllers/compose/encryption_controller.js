@@ -435,6 +435,13 @@ export default class extends Controller {
         }
 
         for (const marker of markers) {
+            // A message id and nothing else (ReplyDraftBuilder::quote()).
+            if (false === /^\d+$/.test(marker.dataset.quoteSealed ?? "")) {
+                marker.remove();
+
+                continue;
+            }
+
             try {
                 const response = await fetch(this.rawUrlValue.replace("__ID__", marker.dataset.quoteSealed), { cache: "no-store" });
                 const opened = await openEncrypted(new Uint8Array(await response.arrayBuffer()), this.#ring);
@@ -443,7 +450,11 @@ export default class extends Controller {
                 this.#replySubject(opened.subject);
 
                 if (null !== opened.html) {
-                    holder.innerHTML = await this.#clean(opened.html);
+                    // A quote is somebody else's mail: it may not carry a
+                    // marker of its own, or the next time this draft opens the
+                    // composer would decrypt whichever message it names and
+                    // paste it into a reply to them.
+                    holder.innerHTML = await this.#clean(opened.html, true);
                 } else {
                     holder.textContent = opened.text ?? "";
                     holder.innerHTML = holder.innerHTML.replace(/\n/g, "<br>");
@@ -781,13 +792,24 @@ export default class extends Controller {
         };
     }
 
-    /** Decrypted HTML, made fit for the editor — which is the app's own page. */
-    async #clean(html) {
+    /**
+     * Decrypted HTML, made fit for the editor — which is the app's own page.
+     *
+     * $quoted: the HTML is a message being answered, not the person's own
+     * draft, so it keeps none of the composer's markers — data-quote-sealed
+     * least of all, since that one makes the composer fetch and decrypt.
+     */
+    async #clean(html, quoted = false) {
         const { default: DOMPurify } = await import("dompurify");
 
         return DOMPurify(window).sanitize(html, {
             FORBID_TAGS: ["style", "script", "iframe", "frame", "object", "embed", "form", "input", "button", "base", "meta", "link"],
-            ADD_ATTR: ["data-quoted", "data-pl-signature", "data-quote-sealed", "data-pl-var", "data-pl-signature-pinned", "target"],
+            ADD_ATTR: true === quoted
+                ? ["target"]
+                : ["data-quoted", "data-pl-signature", "data-quote-sealed", "data-pl-var", "data-pl-signature-pinned", "target"],
+            FORBID_ATTR: true === quoted ? ["data-quote-sealed"] : [],
+            // DOMPurify keeps every data-* by default; a stranger's quote gets none.
+            ALLOW_DATA_ATTR: false === quoted,
         });
     }
 

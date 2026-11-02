@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Drive;
 
+use App\Domain\Helper\InlineDisposition;
+use App\Domain\Helper\DriveServedType;
 use App\Entity\Drive\DriveFile;
 use App\Entity\Drive\DriveFolder;
 use App\Entity\Drive\DriveShare;
@@ -212,7 +214,11 @@ final class DriveApiController extends AbstractController
         }
 
         $response = new BinaryFileResponse($this->storage->path($file));
-        $response->headers->set('Content-Type', $file->mimeType);
+        $response->headers->set('Content-Type', DriveServedType::of($file->mimeType));
+        // Not for a PDF: Chrome will not draw one in a sandboxed document.
+        if ('application/pdf' !== DriveServedType::of($file->mimeType)) {
+            $response->headers->set('Content-Security-Policy', InlineDisposition::SANDBOX_CSP);
+        }
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
