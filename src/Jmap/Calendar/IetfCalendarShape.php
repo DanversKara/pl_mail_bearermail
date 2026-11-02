@@ -55,6 +55,8 @@ final class IetfCalendarShape
         'id', 'created', 'updated', 'sequence', 'isDraft', 'isOrigin', 'utcStart', 'utcEnd',
         'baseEventId', 'blobId', 'prodId', 'isRecurring', self::IS_RECURRING, 'kind', 'source',
         'recurrenceIdTimeZone',
+        // BearerMail: published by CalendarEvent/get for the phone's widget.
+        'isLinked',
     ];
 
     /** What plMail does not store, by what it means when absent. Absent, null and these say nothing. */

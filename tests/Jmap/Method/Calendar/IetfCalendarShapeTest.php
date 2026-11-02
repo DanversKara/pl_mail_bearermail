@@ -142,14 +142,14 @@ final class IetfCalendarShapeTest extends CalendarMethodTestCase
         self::assertSame('Planning', $this->events->find((int) $created['id'])?->title);
     }
 
-    /** Alerts plMail cannot keep are refused by name, not taken and lost. */
-    public function testAPropertyPlmailWouldDropIsStillRefused(): void
+    /** BearerMail keeps reminders (the phone sets them), so an alert is taken, not refused. */
+    public function testAnAlertIsKept(): void
     {
         $result = $this->set->handle(['accountId' => $this->accountId(), 'update' => [(string) $this->weekly->id => [
             'alerts' => ['a' => ['@type' => 'Alert', 'trigger' => ['@type' => 'OffsetTrigger', 'offset' => '-PT5M']]],
         ]]], $this->ietf());
 
-        self::assertSame(['alerts'], ((array) $result['notUpdated'])[(string) $this->weekly->id]['properties']);
+        self::assertSame([], (array) $result['notUpdated']);
     }
 
     public function testAnEventIsInExactlyOneCalendar(): void
