@@ -37,6 +37,8 @@ concurrency:
 jobs:
     build:
         name: Build
+        # BearerMail: upstream's GitHub Pages site; this fork's docs live on docs.bearermail.com.
+        if: github.repository == 'karatektus/pl_mail'
         runs-on: ubuntu-latest
 
         steps:
