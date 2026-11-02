@@ -67,6 +67,38 @@ final class DevicePairingEndpointTest extends WebTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
+    /**
+     * The panel says where to get the app before it offers to pair one (#402),
+     * as does the help menu, and links BearerMail's own app.
+     */
+    public function testThePairingPanelLinksTheAndroidApp(): void
+    {
+        $client = $this->boot();
+        $client->loginUser($this->seedUser());
+
+        $crawler = $client->request('GET', '/settings?section=app-passwords');
+
+        self::assertResponseIsSuccessful();
+
+        // BearerMail: our own download page and releases, never upstream's
+        // Google Play listing, which is a different app.
+        $download = (string) static::getContainer()->getParameter('app.apps_download_url');
+        self::assertNotSame('', $download);
+
+        $link = $crawler->filter('a[data-testid="native-apps-download"]');
+        self::assertSame(1, $link->count(), 'the settings page does not say where to get the app');
+        self::assertSame($download, $link->attr('href'));
+
+        self::assertSame(1, $crawler->filter('a[href="https://github.com/DanversKara/pl_mail_android_bearermail/releases/latest"]')->count());
+        self::assertSame(0, $crawler->filter('a[href*="de.pluetzner.plmail"]')->count(), 'upstream\'s Play listing is linked');
+
+        // The help menu links it too, and so does its copy in the user menu
+        // that a phone gets instead.
+        $listing = 'a[href="' . $download . '"]';
+        self::assertSame(1, $crawler->filter('[data-whats-new-menu] ' . $listing)->count());
+        self::assertSame(1, $crawler->filter('[data-whats-new-user-menu] ' . $listing)->count());
+    }
+
     public function testASignedInUserGetsAQrAndADeepLink(): void
     {
         $client = $this->boot();

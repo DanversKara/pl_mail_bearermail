@@ -1,4 +1,4 @@
-<!-- translated-from: install/upgrading.md sha1:1ff7c6b0c69b60318e36f8311b06d1b26958866f -->
+<!-- translated-from: install/upgrading.md sha1:312da280b7dda9c60f627c6bd585e974ce2cbeb3 -->
 # Aktualisieren
 
 plMail migriert seine eigene Datenbank beim Start. Diese eine Entscheidung prägt alles auf dieser
@@ -99,8 +99,8 @@ danach über **Administration → System** neu. Ein Worker hält Doctrines Metad
 Lebensdauer im Cache, kann nach einer Migration also weiter Spalten abfragen, die es nicht mehr
 gibt, bis ihn etwas neu startet. Dieser Knopf schreibt einen Zeitstempel in einen Cache-Pool, den
 sich die Container teilen; jeder Messenger-Worker vergleicht ihn in jeder Schleife mit seiner
-eigenen Startzeit und beendet sich, und `restart: unless-stopped` bringt ihn zurück. Der
-IMAP-Supervisor ist kein Messenger-Worker und liest dasselbe Signal selbst.
+eigenen Startzeit und beendet sich, und `restart: unless-stopped` bringt ihn zurück. Die
+Push-Listener sind keine Messenger-Worker und lesen dasselbe Signal selbst.
 
 **Der typische Fehlerfall ist, einen einzelnen Dienst zu aktualisieren.** Alle teilen sich das Image
 und alle migrieren; ein Stack, in dem nur `php` neu erzeugt wurde, hat Worker, die den Code von

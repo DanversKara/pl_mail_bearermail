@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha1:0e49641e7b820808103bdfa170adf5fc40294474 -->
+<!-- translated-from: README.md sha1:f6b727922ea25d2831e0acecce6f3b50a4aadb29 -->
 
 # plMail-Dokumentation
 
@@ -67,6 +67,7 @@ wo der Mechanismus dahinter steht.
 |---|---|
 | [Docker Compose](install/docker.md) | Der unterstützte Weg, von Anfang bis Ende |
 | [Hinweise zu den Plattformen](install/platforms.md) | Linux, Windows über WSL2, macOS und NAS-Geräte |
+| [Unraid](install/unraid.md) | Ein plMail-Container neben einem Postgres-Container, aus Community Applications |
 | [Hinter einem Reverse Proxy](install/reverse-proxy.md) | TLS, `APP_PUBLIC_URL`, `TRUSTED_PROXIES` — und was ohne sie kaputtgeht |
 | [Konfigurationsreferenz](install/configuration.md) | Jede Umgebungsvariable, was sie tut und was passiert, wenn sie falsch steht |
 | [Selbst gehosteter Mailserver](install/self-hosted-mail-server.md) | Postfix, Dovecot und DKIM für deine eigene Domain, im selben Compose-Stack: DNS, Relay, SMTP-Schlüssel, dynamisches DNS (nur auf Englisch) |
@@ -85,6 +86,7 @@ Jede Seite nennt die genaue Konsole, die genauen Häkchen und die genauen Redire
 | [Google](providers/google.md) | Cloud-Projekt, OAuth-Client, Scopes für Mail und Kalender, Pub/Sub für Gmail-Push, Watch-Kanäle für den Kalender und Domain-Verifizierung |
 | [Microsoft](providers/microsoft.md) | App-Registrierung in Azure, Redirect-URIs, delegierte Berechtigungen, Wahl des Tenants, Graph-Abonnements |
 | [IMAP und SMTP](providers/imap-smtp.md) | Gewöhnliche Postfächer, IDLE, und die Einstellungen, über die sich die Server uneinig sind |
+| [JMAP](providers/jmap.md) | Stalwart, Fastmail und andere JMAP-Server: Mail, Kalender und Kontakte mit einer Anmeldung, Senden über den Server, und Push |
 | [CalDAV](providers/caldav.md) | Discovery, App-Passwörter, und die Server, die getestet wurden |
 | [CardDAV](providers/carddav.md) | Adressbücher von Nextcloud und anderen Servern: Vorschläge beim Schreiben, Bearbeiten, und Synchronisation in beide Richtungen |
 | [ICS-Feeds](providers/ics-feeds.md) | Einen veröffentlichten Kalender per URL abonnieren, und warum manche Adressen abgelehnt werden |
@@ -103,6 +105,7 @@ plMail prüft oder erweitert, statt es zu betreiben.
 | [Die Sync-Engine](internals/calendar-sync-engine.md) | Der Treibervertrag, den jeder Anbieter erfüllt, Push-Kanäle, Deduplizierung |
 | [KI-Unterstützung](internals/ai-assist.md) | Die optionalen Modell-Funktionen: was standardmäßig aus ist und warum das Vektor-Design ohne pgvector auskommt |
 | [Terminerkennung](internals/event-extraction.md) | Wie aus einer Einladung und wie aus einem Satz ein Kalendereintrag wird |
+| [Ordner und Labels](internals/folders-and-labels.md) | Ein Ordner ist ein Ort, ein Label eine Markierung: das Modell, die Ordneraktionen bei IMAP und die Schritte, die noch kommen |
 | [JMAP](internals/jmap.md) | Was umgesetzt ist, was bewusst nicht, und die Id-Räume |
 | [Sicherheitsmodell](internals/security-model.md) | Verschlüsselung im Ruhezustand, die Geheimnisdatei, Token, und was ein öffentlicher Link erreicht |
 
