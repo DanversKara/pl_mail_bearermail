@@ -43,6 +43,12 @@
                                 uri query {
                                         replace authorization REDACTED
                                 }
+                                # BearerMail: shared secrets that arrive as
+                                # headers. Caddy already hides Cookie and
+                                # Authorization; these it would print.
+                                request>headers>X-Mail-Policy-Key replace REDACTED
+                                request>headers>X-Goog-Channel-Token replace REDACTED
+                                request>headers>X-Csrf-Token replace REDACTED
                         }
                 }
         }
