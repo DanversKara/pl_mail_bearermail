@@ -12,9 +12,11 @@ use App\Service\Mail\SignatureImporter;
 use App\Service\Mail\SignatureProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\Turbo\TurboBundle;
@@ -121,6 +123,61 @@ final class SignatureController extends AbstractController
         $this->em->flush();
 
         return $this->streamResponse($request, 'settings.signature.saved');
+    }
+
+    /**
+     * Use an uploaded image as part of the account signature.
+     *
+     * The picture a logo already is, without the HTML round trip: the file is
+     * read, base64'd into a data: source and put below whatever the account
+     * already signs with — the text stays, the image sits under it. It goes
+     * through the same import a typed signature does, so what is stored is
+     * sanitised, and what the sender later turns into an inline part is
+     * exactly what the panel showed after the upload.
+     *
+     * The caps are the importer's own, and the failure is a 400 for the same
+     * reason the profile pad's is: an image that cannot be a signature is a
+     * bad request, not a signature with a hole in it.
+     */
+    #[Route('/image', name: 'image', methods: ['POST'])]
+    public function uploadImage(Request $request, Account $account): Response
+    {
+        $this->assertCsrf($request, 'settings-signature-image' . $account->id);
+        $this->denyAccessUnlessGranted(OwnershipVoter::OWN, $account);
+
+        $file = $request->files->get('image');
+
+        if (false === $file instanceof UploadedFile || false === $file->isValid()) {
+            throw new BadRequestHttpException('No image.');
+        }
+
+        $mime = strtolower(trim((string) $file->getMimeType()));
+
+        if (
+            false === in_array($mime, SignatureImporter::EMBEDDABLE, true)
+            || (int) $file->getSize() > SignatureImporter::MAX_IMAGE_BYTES
+        ) {
+            throw new BadRequestHttpException('Not an acceptable signature image.');
+        }
+
+        $bytes = file_get_contents($file->getPathname());
+
+        if (false === $bytes || '' === $bytes) {
+            throw new BadRequestHttpException('No image.');
+        }
+
+        $img = sprintf('<img src="data:%s;base64,%s" alt="">', $mime, base64_encode($bytes));
+
+        $existing = (string) $account->getSetting(Account::SETTING_SIGNATURE, '');
+        $combined = '' === trim($existing) ? $img : $existing . '<br>' . $img;
+
+        $account->setSetting(
+            Account::SETTING_SIGNATURE,
+            $this->importer->import($combined)->html,
+        );
+        $this->em->flush();
+
+        return $this->streamResponse($request, 'settings.signature.image.saved');
     }
 
     /**

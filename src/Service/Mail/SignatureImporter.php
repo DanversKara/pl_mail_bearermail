@@ -42,13 +42,19 @@ use Dom\HTMLDocument;
  */
 final readonly class SignatureImporter
 {
-    /** One image. A logo is a few kilobytes; a photograph is not a signature. */
-    private const int MAX_IMAGE_BYTES = 256 * 1024;
+    /**
+     * One image. A logo is a few kilobytes; a photograph is not a signature.
+     *
+     * Public because the upload endpoint validates against the same caps: an
+     * image this would not embed stays out there too, rather than being
+     * stored as a remote URL nobody asked for.
+     */
+    public const int MAX_IMAGE_BYTES = 256 * 1024;
 
     /** Everything embedded in one signature. */
     private const int MAX_TOTAL_BYTES = 768 * 1024;
 
-    private const array EMBEDDABLE = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    public const array EMBEDDABLE = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
 
     /**
      * The scaffolding of a whole document. Pasting a full page as a signature

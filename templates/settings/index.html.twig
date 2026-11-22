@@ -610,6 +610,20 @@ the links that leave the app (a provider's consent screen, an .ics download).
                                                 </div>
                                             {% endblock %}
                                         {% endembed %}
+                                        {# The handwritten signature, moved from Profile: a
+                                           signature is a signature, and the drawn one belongs
+                                           with the written ones. Its own card, outside the
+                                           #settings-signature div the stream replaces — a
+                                           signature save must never wipe a half-drawn pad. #}
+                                        {% embed 'settings/_card.html.twig' with {
+                                            heading:    'settings.handwriting.heading'|trans,
+                                            subheading: 'settings.handwriting.subheading'|trans,
+                                            padded:     true,
+                                        } %}
+                                            {% block body %}
+                                                {% include 'settings/_handwriting.html.twig' %}
+                                            {% endblock %}
+                                        {% endembed %}
                                     {% elseif section == 'templates' %}
                                         {# ONE card holding both the tree and the editor, where
                                            filters put the editor in a second card below the

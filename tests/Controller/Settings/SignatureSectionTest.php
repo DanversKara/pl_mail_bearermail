@@ -14,6 +14,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * The Signatures settings section.
@@ -41,11 +42,25 @@ final class SignatureSectionTest extends WebTestCase
 {
     private const string ADMIN_EMAIL = 'e2e-admin@plmail.test';
 
+    /** A one-pixel PNG, the same one SignatureImporterTest uses. */
+    private const string PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
     private EntityManagerInterface $em;
     private Connection $connection;
 
+    /** @var list<string> temp files the upload tests made, for tearDown */
+    private array $tmpFiles = [];
+
     protected function tearDown(): void
     {
+        foreach ($this->tmpFiles as $path) {
+            if (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        $this->tmpFiles = [];
+
         if (true === isset($this->connection) && true === $this->connection->isTransactionActive()) {
             $this->connection->rollBack();
         }
@@ -358,7 +373,229 @@ final class SignatureSectionTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    // ── the image upload ─────────────────────────────────────────────────────
+
+    /**
+     * The fourth way to have a signature: a file, not a drawing, not text,
+     * not HTML. The picture goes BELOW what is already there — the words
+     * stay — and what is stored is the same data: image the importer would
+     * have made of a pasted <img>.
+     */
+    public function testUploadingAnImageAppendsItBelowTheExistingSignature(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'image@joder.dev');
+
+        $account->setSetting(Account::SETTING_SIGNATURE, '<p>Best</p>');
+        $this->em->flush();
+
+        $url  = '/account/' . $account->id . '/signature/image';
+        $file = $this->pngFile();
+
+        $client->request('POST', $url, ['_token' => $this->csrf($client, $url)], ['image' => $file]);
+
+        self::assertResponseRedirects('/settings?section=signature');
+
+        $stored = (string) $this->reload($account)->getSetting(Account::SETTING_SIGNATURE);
+
+        self::assertStringContainsString('Best', $stored, 'the text stays');
+        // The sanitiser writes the base64 padding as &#61; in attribute
+        // values; the embedder reads that form back at send time, so the
+        // stored HTML carries the escaped padding, not a bare ==.
+        self::assertStringContainsString('src="data:image/png;base64,' . str_replace('=', '&#61;', self::PNG) . '"', $stored);
+        self::assertGreaterThan(
+            strpos($stored, 'Best'),
+            strpos($stored, 'data:image/png'),
+            'the image sits below the text, not above it',
+        );
+
+        $this->unlink($file);
+    }
+
+    /**
+     * Nothing to sit below on an empty signature: just the picture, with no
+     * stray break in front of it.
+     */
+    public function testUploadingAnImageToAnEmptySignatureStoresJustTheImage(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'empty-image@joder.dev');
+
+        $this->em->flush();
+
+        $url  = '/account/' . $account->id . '/signature/image';
+        $file = $this->pngFile();
+
+        $client->request('POST', $url, ['_token' => $this->csrf($client, $url)], ['image' => $file]);
+
+        self::assertResponseRedirects('/settings?section=signature');
+
+        $stored = (string) $this->reload($account)->getSetting(Account::SETTING_SIGNATURE);
+
+        // Same escaped padding as the append test: the sanitiser writes =
+        // as &#61;, and the embedder reads that form back at send time.
+        self::assertStringContainsString('src="data:image/png;base64,' . str_replace('=', '&#61;', self::PNG) . '"', $stored);
+        self::assertStringNotContainsString('<br>', $stored);
+
+        $this->unlink($file);
+    }
+
+    public function testUploadingANonImageIsRefused(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'not-image@joder.dev');
+
+        $this->em->flush();
+
+        $url  = '/account/' . $account->id . '/signature/image';
+        $path = tempnam(sys_get_temp_dir(), 'sig');
+        file_put_contents($path, 'this is not an image');
+
+        $client->request('POST', $url, ['_token' => $this->csrf($client, $url)], [
+            'image' => new UploadedFile($path, 'notes.txt', 'text/plain', null, true),
+        ]);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertNull($this->reload($account)->getSetting(Account::SETTING_SIGNATURE));
+
+        unlink($path);
+    }
+
+    /**
+     * The cap is the importer's own: an image it would not embed is not
+     * stored as a remote URL either.
+     */
+    public function testUploadingAnOversizeImageIsRefused(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'big-image@joder.dev');
+
+        $this->em->flush();
+
+        $url  = '/account/' . $account->id . '/signature/image';
+        $file = $this->pngFile(256 * 1024 + 1);
+
+        $client->request('POST', $url, ['_token' => $this->csrf($client, $url)], ['image' => $file]);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertNull($this->reload($account)->getSetting(Account::SETTING_SIGNATURE));
+
+        $this->unlink($file);
+    }
+
+    public function testUploadingAnImageWithoutACsrfTokenIsRefused(): void
+    {
+        $client  = static::createClient();
+        $user    = $this->boot($client);
+        $account = $this->account($user, 'nocsrf-image@joder.dev');
+
+        $this->em->flush();
+
+        $client->request('POST', '/account/' . $account->id . '/signature/image', [], [
+            'image' => $this->pngFile(),
+        ]);
+
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testUploadingAnImageToAnUnknownAccountIsRefused(): void
+    {
+        $client = static::createClient();
+        $user   = $this->boot($client);
+        $this->account($user, 'known@joder.dev');
+        $this->em->flush();
+
+        $client->request('POST', '/account/999999/signature/image', [
+            '_token' => 'not-the-token',
+        ], [
+            'image' => $this->pngFile(),
+        ]);
+
+        // No such account, so there is nothing to own — and the token is
+        // wrong besides. Either way it is not a 200 with a stored image.
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    // ── the move ─────────────────────────────────────────────────────────────
+
+    /**
+     * The handwritten signature used to live under Profile. It lives under
+     * Signatures now: the pad is on the signature page, and the profile
+     * page no longer carries it.
+     */
+    public function testTheHandwritingCardLivesUnderSignaturesNow(): void
+    {
+        $client = static::createClient();
+        $user   = $this->boot($client);
+        $this->account($user, 'moved@joder.dev');
+        $this->em->flush();
+
+        $crawler = $client->request('GET', '/settings?section=signature');
+
+        self::assertResponseIsSuccessful();
+        // Not assertSelectorTextContains('h2', …): the first h2 on the page
+        // is the Signatures card's own, and the handwriting card is the
+        // second one — the heading is asserted as page text instead.
+        self::assertStringContainsString('Handwritten signature', $crawler->text());
+        self::assertSame(
+            1,
+            $crawler->filter('canvas[data-settings--signature-pad-target="ink"]')->count(),
+            'the draw pad is on the signature page',
+        );
+
+        $crawler = $client->request('GET', '/settings?section=profile');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('Handwritten signature', $crawler->text());
+        self::assertSame(
+            0,
+            $crawler->filter('canvas[data-settings--signature-pad-target="ink"]')->count(),
+            'and no longer on the profile page',
+        );
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * A PNG upload, padded to a size when the test wants one over the cap.
+     *
+     * Padding with null bytes leaves the header intact, so the mime guesser
+     * still reads image/png — the size check is the only thing being tested.
+     */
+    private function pngFile(int $padTo = 0): UploadedFile
+    {
+        $bytes = (string) base64_decode(self::PNG, true);
+
+        if ($padTo > strlen($bytes)) {
+            $bytes .= str_repeat("\0", $padTo - strlen($bytes));
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'sig') . '.png';
+
+        file_put_contents($path, $bytes);
+
+        $this->tmpFiles[] = $path;
+
+        return new UploadedFile($path, 'logo.png', 'image/png', null, true);
+    }
+
+    private function unlink(UploadedFile $file): void
+    {
+        $path = $file->getPathname();
+
+        if (is_file($path)) {
+            unlink($path);
+        }
+
+        $this->tmpFiles = array_values(array_filter(
+            $this->tmpFiles,
+            static fn (string $kept): bool => $kept !== $path,
+        ));
+    }
 
     /**
      * The token off the rendered panel, not one minted out of band.

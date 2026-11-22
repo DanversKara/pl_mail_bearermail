@@ -4712,6 +4712,11 @@ settings:
         for_alias: 'Yer mark fer %alias%'
         heading: Yer marks
         hint: 'Set at the foot o'' every new scroll, above the quoted words.'
+        image:
+            hint: 'PNG, JPEG, GIF or WebP, up to 256 KB. It be set below the words ye already carry — yer words stay.'
+            label: 'Or set a picture below yer mark'
+            saved: 'Picture added to yer mark.'
+            upload: 'Hoist a picture'
         label: 'Yer mark'
         overriding: 'That name carries a mark o'' its own now — carve it below.'
         per_address:

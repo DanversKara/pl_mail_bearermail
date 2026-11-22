@@ -4218,6 +4218,11 @@ settings:
         for_alias: '%alias% 的签名'
         heading: '签名'
         hint: '添加到每封新邮件的底部、引用回复的上方。'
+        image:
+            hint: 'PNG、JPEG、GIF 或 WebP，最大 256 KB。它会添加在已有文字下方，您的文字保持不变。'
+            label: '或在签名下方添加图片'
+            saved: '图片已添加到您的签名。'
+            upload: '上传图片'
         label: '签名'
         overriding: '此地址现已使用独立签名，可在下方编辑。'
         per_address:

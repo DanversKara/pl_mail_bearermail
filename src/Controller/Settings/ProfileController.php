@@ -143,7 +143,9 @@ final class ProfileController extends AbstractController
 
         $entityManager->flush();
 
-        return $this->redirectToRoute('app_settings_index', ['section' => 'profile']);
+        // The card lives under Signatures now, so a save lands back there —
+        // a redirect to Profile would show the form, not the pad just drawn on.
+        return $this->redirectToRoute('app_settings_index', ['section' => 'signature']);
     }
 
     /** Forget it, and delete the file rather than only the pointer. */
@@ -161,7 +163,7 @@ final class ProfileController extends AbstractController
 
         $entityManager->flush();
 
-        return $this->redirectToRoute('app_settings_index', ['section' => 'profile']);
+        return $this->redirectToRoute('app_settings_index', ['section' => 'signature']);
     }
 
     /**
