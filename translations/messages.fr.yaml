@@ -3966,9 +3966,11 @@ settings:
             subheading: 'L''image de l''onglet du navigateur et de la barre du haut. Logo ci-dessous liste ensuite les icônes Android assorties.'
             logo: 'Le logo ci-dessous'
             envelope: 'Enveloppe BearerMail'
+            bear: 'Ours'
         logo:
             bearermail_navy: 'Marine'
             bearermail_white: 'Blanc'
+            bear: 'Ours'
             android_icons: 'Icônes Android'
             colour: 'Couleur'
             custom:

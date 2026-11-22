@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BearerMail logo">
+  <!-- Bear ears -->
+  <circle cx="19" cy="13" r="7" fill="#1890ff"/>
+  <circle cx="45" cy="13" r="7" fill="#1890ff"/>
+  <circle cx="19" cy="13" r="3.5" fill="#8cc8ff"/>
+  <circle cx="45" cy="13" r="3.5" fill="#8cc8ff"/>
+  <!-- Badge -->
+  <rect x="8" y="12" width="48" height="44" rx="11" fill="#1890ff"/>
+  <!-- Envelope -->
+  <rect x="17" y="26" width="30" height="20" rx="2.5" fill="#ffffff"/>
+  <path d="M18.5 28.5 L32 39 L45.5 28.5" fill="none" stroke="#1890ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -3645,9 +3645,11 @@ settings:
             subheading: 'The colours flown on yer browser tab an'' the top bar. Logo below then lists the Android icons to match.'
             logo: 'pl logos'
             envelope: 'BearerMail envelope'
+            bear: 'Bear'
         logo:
             bearermail_navy: 'Navy'
             bearermail_white: 'White'
+            bear: 'Bear'
             android_icons: 'Android icons'
             colour: 'Colours'
             custom:

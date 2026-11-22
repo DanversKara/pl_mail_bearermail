@@ -390,6 +390,7 @@
             {% set _customWorn = logo_custom() is not null %}
             {% set _classic = _motif.value == 'pl' and not _customWorn %}
             {% set _bearermail = a.webIcon == 'envelope' %}
+            {% set _bear = a.webIcon == 'bear' %}
             {% set _logoMode = not _classic and a.logoOriginal ? 'original' : (a.logoLinked ? 'linked' : 'independent') %}
             {% set _iconTile = 'group flex flex-col items-center gap-2 p-2 rounded-pane cursor-pointer hover:bg-hover transition-colors' %}
             {# `rounded-[22%]` is the tile's own corner (16 of 72 units, see
@@ -397,16 +398,16 @@
                edge — a pale icon on a pale card has no other edge to read. #}
             {% set _iconImage = 'size-12 rounded-[22%] ring-1 ring-line' %}
             {# App icon: the web portal's own picture, for the browser tab and the
-               top bar — the logo as set below, or the BearerMail envelope. Web
-               only: the Android launcher follows Logo. A radio pair carrying
-               the field, so save() sends the checked one. #}
+               top bar — the bear, the logo as set below, or the BearerMail
+               envelope. Web only: the Android launcher follows Logo. A radio
+               trio carrying the field, so save() sends the checked one. #}
             <section>
                 <div class="mb-3">
                     <h3 class="text-sm font-semibold text-ink">{{ 'settings.appearance.web_icon.heading'|trans }}</h3>
                     <p class="text-xs text-ink-faint mt-0.5">{{ 'settings.appearance.web_icon.subheading'|trans }}</p>
                 </div>
                 <div class="flex flex-wrap gap-3" role="radiogroup" aria-label="{{ 'settings.appearance.web_icon.heading'|trans }}">
-                    {% for choice in ['logo', 'envelope'] %}
+                    {% for choice in ['logo', 'envelope', 'bear'] %}
                         <label class="relative flex items-center gap-3 rounded-xl border border-line px-3 py-2 cursor-pointer hover:bg-hover has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
                             <input type="radio" name="webIcon" value="{{ choice }}" class="sr-only"
                                    data-settings--appearance-field="webIcon"
@@ -414,6 +415,8 @@
                                    {{ a.webIcon == choice ? 'checked' }}>
                             {% if choice == 'envelope' %}
                                 <img src="/icons/bearermail-web-192.png" alt="" width="48" height="48" class="size-12 object-contain">
+                            {% elseif choice == 'bear' %}
+                                <img src="/icons/bearermail-bear.svg" alt="" width="48" height="48" class="size-12 object-contain">
                             {% else %}
                                 <img data-web-icon-logo src="{{ logo_icon_url(a.effectiveLogoMotif, a.effectiveLogoPaint) }}" alt="" width="48" height="48" class="{{ _iconImage }}">
                             {% endif %}
@@ -440,7 +443,7 @@
                     <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3" role="group" aria-labelledby="logo-bearermail-label">
                         {# appIcon: `bearermail` is the navy artwork, `bearermail-white` the same on white. #}
                         {% for choice, variant in { 'bearermail': 'navy', 'bearermail-white': 'white' } %}
-                            {% set _on = a.appIcon == choice or (choice == 'bearermail' and a.appIcon not in ['bearermail', 'bearermail-white']) %}
+                            {% set _on = a.appIcon == choice or (choice == 'bearermail' and a.appIcon not in ['bear', 'bearermail', 'bearermail-white']) %}
                             <button type="button" data-bearermail-icon="{{ choice }}"
                                     data-action="click->settings--appearance#pickBearermailIcon"
                                     aria-pressed="{{ _on ? 'true' : 'false' }}"
@@ -452,7 +455,23 @@
                     </div>
                 </div>
 
-                <div data-logo-family="logo" {{ _bearermail ? 'hidden' : '' }}>
+                <div data-logo-family="bear" {{ _bear ? '' : 'hidden' }}>
+                    <span class="block text-xs font-medium text-ink-muted mb-1.5" id="logo-bear-label">
+                        {{ 'settings.appearance.logo.android_icons'|trans }}
+                    </span>
+                    <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3" role="group" aria-labelledby="logo-bear-label">
+                        {# appIcon: `bear` is the one bear picture; it has no variants. #}
+                        <button type="button" data-bear-icon="bear"
+                                data-action="click->settings--appearance#pickBearIcon"
+                                aria-pressed="{{ _bear ? 'true' : 'false' }}"
+                                class="{{ _iconTile }} {{ _bear ? 'ring-2 ring-accent' : '' }}">
+                            <img src="/icons/bearermail-bear.svg" alt="" width="48" height="48" class="{{ _iconImage }}" decoding="async">
+                            <span class="text-xs text-ink-soft text-center leading-tight">{{ 'settings.appearance.logo.bear'|trans }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div data-logo-family="logo" {{ (_bearermail or _bear) ? 'hidden' : '' }}>
                 {# Step one. `data-logo-icon` is the tile's own URL — the icon
                    route for this motif in its original design, versioned — and
                    the one URL the script builds every other tile URL from: a
@@ -513,7 +532,7 @@
                         {% endif %}
                     </div>
                     <input type="hidden" data-settings--appearance-field="appIcon"
-                           data-settings--appearance-target="appIcon" value="{{ _bearermail ? (a.appIcon starts with 'bearermail' ? a.appIcon : 'bearermail') : 'logo' }}">
+                           data-settings--appearance-target="appIcon" value="{{ _bear ? 'bear' : (_bearermail ? (a.appIcon starts with 'bearermail' ? a.appIcon : 'bearermail') : 'logo') }}">
                     <input type="hidden" data-settings--appearance-field="logoMotif"
                            data-settings--appearance-target="logoMotif" value="{{ _customWorn ? 'custom' : _motif.value }}">
 

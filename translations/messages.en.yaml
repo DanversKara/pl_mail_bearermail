@@ -3811,9 +3811,11 @@ settings:
             subheading: 'The picture for the browser tab and the top bar. Logo below then lists the Android icons that go with it.'
             logo: 'pl logos'
             envelope: 'BearerMail envelope'
+            bear: 'Bear'
         logo:
             bearermail_navy: 'Navy'
             bearermail_white: 'White'
+            bear: 'Bear'
             android_icons: 'Android icons'
             colour: 'Colour'
             custom:

@@ -3304,6 +3304,7 @@ settings:
     appearance:
         web_icon:
             envelope: 'BearerMail 信封'
+            bear: '熊'
             logo: 'pl 徽标'
             subheading: '浏览器标签页和顶部栏的图片。下方的“徽标”会列出与之相配的 Android 图标。'
             heading: '应用图标'
@@ -3372,6 +3373,7 @@ settings:
             android_icons: 'Android 图标'
             bearermail_white: '白色'
             bearermail_navy: '藏青色'
+            bear: '熊'
             colour: '颜色'
             custom:
                 error_missing: '没有收到文件。请选择一个 SVG 文件后重试。'

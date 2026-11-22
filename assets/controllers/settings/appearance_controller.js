@@ -488,22 +488,28 @@ export default class extends Controller {
      * bar, Android launcher). It has no colours, so step two hides.
      */
     /**
-     * App icon: the logo, or BearerMail. It sets the top bar and the tab, and
-     * picks which Android icons Logo lists — BearerMail's own artwork, or the
-     * motifs and their colours — so the launcher (appIcon) follows it.
+     * App icon: the bear, the logo, or BearerMail. It sets the top bar and
+     * the tab, and picks which Android icons Logo lists — the bear's one
+     * picture, BearerMail's own artwork, or the motifs and their colours —
+     * so the launcher (appIcon) follows it.
      */
     pickWebIcon() {
         const envelope = this.webEnvelope();
+        const bear = this.webBear();
 
         if (this.hasAppIconTarget) {
             const current = this.appIconTarget.value;
-            this.appIconTarget.value = envelope
-                ? (current.startsWith('bearermail') ? current : 'bearermail')
-                : 'logo';
+            this.appIconTarget.value = bear
+                ? 'bear'
+                : envelope
+                    ? (current.startsWith('bearermail') ? current : 'bearermail')
+                    : 'logo';
         }
 
+        const familyFor = { logo: 'logo', envelope: 'bearermail', bear: 'bear' };
+        const checked = this.element.querySelector('[data-settings--appearance-field="webIcon"]:checked')?.value;
         this.element.querySelectorAll('[data-logo-family]').forEach((family) => {
-            family.hidden = (family.dataset.logoFamily === 'bearermail') !== envelope;
+            family.hidden = family.dataset.logoFamily !== (familyFor[checked] ?? 'logo');
         });
 
         this.repaintLogo();
@@ -525,8 +531,27 @@ export default class extends Controller {
         this.queue();
     }
 
+    /** The bear as the Android icon: the launcher follows it. */
+    pickBearIcon(event) {
+        const choice = event.currentTarget.dataset.bearIcon;
+
+        if (this.hasAppIconTarget) {
+            this.appIconTarget.value = choice;
+        }
+
+        this.element.querySelectorAll('[data-bear-icon]').forEach((button) => {
+            this.markSelected(button, button.dataset.bearIcon === choice);
+        });
+
+        this.queue();
+    }
+
     webEnvelope() {
         return this.element.querySelector('[data-settings--appearance-field="webIcon"]:checked')?.value === 'envelope';
+    }
+
+    webBear() {
+        return this.element.querySelector('[data-settings--appearance-field="webIcon"]:checked')?.value === 'bear';
     }
 
     /**
@@ -631,6 +656,7 @@ export default class extends Controller {
         const motif = this.logoMotifTarget.value;
         const paint = this.logoPaint();
         const envelope = this.webEnvelope();
+        const bear = this.webBear();
 
         // The App icon choice's "logo" tile previews whatever Logo shows.
         this.element.querySelectorAll('[data-web-icon-logo]').forEach((image) => {
@@ -639,6 +665,9 @@ export default class extends Controller {
 
         document.querySelectorAll('[data-logo-live-envelope]').forEach((image) => {
             image.hidden = !envelope;
+        });
+        document.querySelectorAll('[data-logo-live-bear]').forEach((image) => {
+            image.hidden = !bear;
         });
         document.querySelectorAll('[data-logo-live-bearermail]').forEach((image) => {
             image.hidden = true;
@@ -651,6 +680,18 @@ export default class extends Controller {
             document.querySelectorAll('link[rel="icon"]').forEach((link) => {
                 link.setAttribute('type', 'image/png');
                 this.setIfChanged(link, 'href', '/icons/bearermail-web-192.png');
+            });
+
+            return;
+        }
+
+        if (bear) {
+            document.querySelectorAll('[data-logo-live-mark], [data-logo-live-icon]').forEach((el) => {
+                el.hidden = true;
+            });
+            document.querySelectorAll('link[rel="icon"]').forEach((link) => {
+                link.setAttribute('type', 'image/svg+xml');
+                this.setIfChanged(link, 'href', '/icons/bearermail-bear.svg');
             });
 
             return;

@@ -409,30 +409,34 @@ final class Appearance
     public bool $listAvatars = true;
 
     /**
-     * Which picture is the app's icon: 'logo' (the logo chosen above, in its
-     * paint) or 'bearermail' (the BearerMail artwork, a fixed picture that is
-     * not repainted; its tile sits in the Logo row). Applies to the logo and — through the
-     * Appearance object over JMAP — the Android launcher icon.
+     * Which picture is the app's icon: 'bear' (the bear, the icon an account
+     * starts on), 'logo' (the logo chosen above, in its paint) or 'bearermail'
+     * (the BearerMail artwork, a fixed picture that is not repainted; its tile
+     * sits in the Logo row). Applies to the logo and — through the Appearance
+     * object over JMAP — the Android launcher icon.
      */
-    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
-    public string $appIcon = self::APP_ICON_LOGO;
+    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'bear'])]
+    public string $appIcon = self::APP_ICON_BEAR;
 
+    public const string APP_ICON_BEAR = 'bear';
     public const string APP_ICON_LOGO = 'logo';
     public const string APP_ICON_BEARERMAIL = 'bearermail';
     public const string APP_ICON_BEARERMAIL_WHITE = 'bearermail-white';
-    public const array APP_ICONS = [self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL, self::APP_ICON_BEARERMAIL_WHITE];
+    public const array APP_ICONS = [self::APP_ICON_BEAR, self::APP_ICON_LOGO, self::APP_ICON_BEARERMAIL, self::APP_ICON_BEARERMAIL_WHITE];
 
     /**
-     * The web portal's own icon, the tab and the top bar: 'logo' (whatever
-     * Logo shows) or 'envelope' (the BearerMail envelope). Web only; the
-     * choice also sets appIcon: BearerMail's Android artwork, or the logo.
+     * The web portal's own icon, the tab and the top bar: 'bear' (the bear,
+     * the icon an account starts on), 'logo' (whatever Logo shows) or
+     * 'envelope' (the BearerMail envelope). Web only; the choice also sets
+     * appIcon: the bear, BearerMail's Android artwork, or the logo.
      */
-    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'logo'])]
-    public string $webIcon = self::WEB_ICON_LOGO;
+    #[ORM\Column(type: 'string', length: 16, options: ['default' => 'bear'])]
+    public string $webIcon = self::WEB_ICON_BEAR;
 
+    public const string WEB_ICON_BEAR = 'bear';
     public const string WEB_ICON_LOGO = 'logo';
     public const string WEB_ICON_ENVELOPE = 'envelope';
-    public const array WEB_ICONS = [self::WEB_ICON_LOGO, self::WEB_ICON_ENVELOPE];
+    public const array WEB_ICONS = [self::WEB_ICON_BEAR, self::WEB_ICON_LOGO, self::WEB_ICON_ENVELOPE];
 
     /**
      * The unread count beside each inbox tab's name.
@@ -701,8 +705,12 @@ final class Appearance
         if (true === isset($data['webIcon']) && true === \in_array($data['webIcon'], self::WEB_ICONS, true)) {
             $this->webIcon = $data['webIcon'];
             // The App icon picks the family Logo lists, and so the launcher.
-            // BearerMail keeps whichever of its Android icons was chosen.
-            if (self::WEB_ICON_ENVELOPE !== $this->webIcon) {
+            // BearerMail keeps whichever of its Android icons was chosen, and
+            // the bear is a family of its own: one picture, no variants, so a
+            // bear App icon stays the bear. Anything else is the logo.
+            if (self::WEB_ICON_BEAR === $this->webIcon) {
+                $this->appIcon = self::APP_ICON_BEAR;
+            } elseif (self::WEB_ICON_ENVELOPE !== $this->webIcon) {
                 $this->appIcon = self::APP_ICON_LOGO;
             } elseif (false === str_starts_with($this->appIcon, self::APP_ICON_BEARERMAIL)) {
                 $this->appIcon = self::APP_ICON_BEARERMAIL;

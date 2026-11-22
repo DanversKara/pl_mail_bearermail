@@ -67,8 +67,9 @@
         {% import '_partials/_logo_mark.html.twig' as logo %}
         {% set _logoCurrent = logo_current() %}
         {% set _webEnvelope = appearance().webIcon == 'envelope' %}
-        {% set _appIcon = not _webEnvelope and appearance().appIcon == 'bearermail' %}
-        {% set _logoClassic = not _webEnvelope and not _appIcon and _logoCurrent.custom is null and appearance().effectiveLogoMotif.value == 'pl' %}
+        {% set _bear = appearance().webIcon == 'bear' %}
+        {% set _appIcon = not _webEnvelope and not _bear and appearance().appIcon == 'bearermail' %}
+        {% set _logoClassic = not _webEnvelope and not _bear and not _appIcon and _logoCurrent.custom is null and appearance().effectiveLogoMotif.value == 'pl' %}
         {# BearerMail artwork as the app icon (Settings → Appearance → App icon):
            one fixed picture, in place of the logo marks below. #}
         <img src="/icons/bearermail-192.png" alt="" width="36" height="36" decoding="async" class="size-9 flex-shrink-0 rounded-lg"
@@ -76,13 +77,16 @@
         {# The web portal's own icon (Settings → Appearance → App icon). #}
         <img src="/icons/bearermail-web-192.png" alt="" width="36" height="36" decoding="async" class="size-9 flex-shrink-0 object-contain"
              data-logo-live-envelope {{ _webEnvelope ? '' : 'hidden' }}>
+        {# The bear as the web portal's own icon (Settings → Appearance → App icon). #}
+        <img src="/icons/bearermail-bear.svg" alt="" width="36" height="36" decoding="async" class="size-9 flex-shrink-0 object-contain"
+             data-logo-live-bear {{ _bear ? '' : 'hidden' }}>
         <span class="flex flex-shrink-0" data-logo-live-mark {{ _logoClassic ? '' : 'hidden' }}>
             {{- logo.mark(appearance().effectiveLogoStyle, 36, appearance().theme.isDark, true) -}}
         </span>
         {% for _chrome in ['light', 'dark'] %}
             <img data-logo-live-icon="{{ _chrome }}" alt="" width="36" height="36" decoding="async"
                  class="size-9 flex-shrink-0 {{ _chrome == 'dark' ? 'hidden dark:block' : 'dark:hidden' }}"
-                 {% if _logoClassic or _appIcon or _webEnvelope %}hidden{% else %}src="{{ _chrome == 'dark' ? _logoCurrent.barDark : _logoCurrent.bar }}"{% endif %}>
+                 {% if _logoClassic or _appIcon or _webEnvelope or _bear %}hidden{% else %}src="{{ _chrome == 'dark' ? _logoCurrent.barDark : _logoCurrent.bar }}"{% endif %}>
         {% endfor %}
         {# ClockPlacement::Brand: a second line under the wordmark, in width
            the brand already has (`md:w-52`), so nothing else in the topbar
