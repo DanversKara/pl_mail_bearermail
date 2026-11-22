@@ -599,6 +599,19 @@ controller instead — the scroll position and which trees are open.
            not tucked behind "More" (Settings → General → Sidebar); each is
            written out once, in system_row() above, so a row looks and takes
            drops the same in either place. #}
+        {# Backup mail: the off-site webmail at backup.bearermail.com, where
+           mail lands while this server is unreachable. A light pill with bold
+           red text, so it reads as a notice rather than one more folder — it
+           is the one row here that leaves the app entirely. Static for every
+           user; there is nothing to configure. #}
+        <a href="https://backup.bearermail.com"
+           target="_blank" rel="noopener"
+           data-action="{{ _drawerClose }}"
+           title="Open the backup mail server — check here if mail stops arriving"
+           class="mb-2 flex items-center justify-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+            <i class="fa-solid fa-server w-4" aria-hidden="true"></i>
+            <span class="rail-hide">BACKUP MAIL</span>
+        </a>
         {% for _row in sidebarCounts.topRows %}
             {{ macros.system_row(_row, false, _drawerClose) }}
         {% endfor %}
