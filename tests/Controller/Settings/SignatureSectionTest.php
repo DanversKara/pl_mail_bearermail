@@ -400,7 +400,10 @@ final class SignatureSectionTest extends WebTestCase
         $stored = (string) $this->reload($account)->getSetting(Account::SETTING_SIGNATURE);
 
         self::assertStringContainsString('Best', $stored, 'the text stays');
-        self::assertStringContainsString('src="data:image/png;base64,' . self::PNG . '"', $stored);
+        // The sanitiser writes the base64 padding as &#61; in attribute
+        // values; the embedder reads that form back at send time, so the
+        // stored HTML carries the escaped padding, not a bare ==.
+        self::assertStringContainsString('src="data:image/png;base64,' . str_replace('=', '&#61;', self::PNG) . '"', $stored);
         self::assertGreaterThan(
             strpos($stored, 'Best'),
             strpos($stored, 'data:image/png'),
@@ -431,7 +434,9 @@ final class SignatureSectionTest extends WebTestCase
 
         $stored = (string) $this->reload($account)->getSetting(Account::SETTING_SIGNATURE);
 
-        self::assertStringContainsString('src="data:image/png;base64,' . self::PNG . '"', $stored);
+        // Same escaped padding as the append test: the sanitiser writes =
+        // as &#61;, and the embedder reads that form back at send time.
+        self::assertStringContainsString('src="data:image/png;base64,' . str_replace('=', '&#61;', self::PNG) . '"', $stored);
         self::assertStringNotContainsString('<br>', $stored);
 
         $this->unlink($file);

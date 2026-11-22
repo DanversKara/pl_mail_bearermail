@@ -38,6 +38,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 const PAD = '[data-settings--signature-pad-target="ink"]';
+// The pad's own save button, by target — "Save signature" is also the
+// account editor's button, and the pad shares the Signatures section with
+// it, so the bare name resolves to two elements.
+const SAVE = '[data-settings--signature-pad-target="save"]';
 const STAMP = '[data-mail--pdf-sign-target="stamp"]';
 const PAGES = '[data-mail--pdf-viewer-target="stack"] canvas';
 
@@ -71,7 +75,7 @@ async function saveSignature(page: Page): Promise<void> {
     await page.goto("/settings?section=signature");
     await scribbleOn(page, PAD);
 
-    await page.getByRole("button", { name: "Save signature" }).click();
+    await page.locator(SAVE).click();
     await expect(page.getByAltText("Your saved signature")).toBeVisible();
 }
 
@@ -91,7 +95,7 @@ test.describe("a saved signature", () => {
     test("cannot be saved before anything is drawn", async ({ page }) => {
         await page.goto("/settings?section=signature");
 
-        await expect(page.getByRole("button", { name: "Save signature" })).toBeDisabled();
+        await expect(page.locator(SAVE)).toBeDisabled();
     });
 
     test("is offered in the reader and places without drawing again", async ({ page }) => {
