@@ -15,8 +15,8 @@ x-test-app: &test-app
   environment: &test-env
     APP_ENV: test
     APP_DEBUG: "1"
-    APP_SECRET: 282065e0f71bf96c0dbcf0496c1f5d3e
-    APP_ENCRYPTION_KEY: emL6R8zs0pSXCVV2HvVvbFubriWJIla7kgnqSGqCJ8E=
+    APP_SECRET: 1038139cf765089179bcf0d946770749
+    APP_ENCRYPTION_KEY: m89zSPl46L7wqgPGhTaeBlhyMqVQuD3usfH5YVwBrdA=
     DATABASE_URL: postgresql://app:app@database:5432/app?serverVersion=18&charset=utf8
     MESSENGER_TRANSPORT_DSN: in-memory://
     MESSENGER_BULK_DSN: doctrine://default?auto_setup=0
