@@ -10,6 +10,22 @@ The published image tags: `latest` follows the most recent release below,
 `main` follows the tip of the default branch, `milestone-vX.Y.Z` the work collected for that
 release before it reaches `main`, and `sha-…` pins one commit.
 
+## v0.5.7 — 2026-11-22
+
+**A BACKUP MAIL button above Inbox.** The sidebar now links straight to the backup mail
+server at backup.bearermail.com, so when mail stops arriving at home you can check the
+backup in one click, from the desktop sidebar and the mobile drawer alike.
+
+**The bear is the default app icon.** The bear mark is a third App icon choice beside
+the wax seal and the envelope, with its own Android-icons family, and it is now the
+default: new accounts start on the bear, and the top bar, tab favicon and live preview
+all draw it. The Android app follows over JMAP and wears the bear launcher icon after
+its next sync.
+
+**Migration:** Version20261122100000 backfills every existing account to the bear (both
+app_icon and web_icon) and moves the column defaults, so the flip reaches existing
+accounts, not just new ones. The data flip is not undone on rollback.
+
 ## v0.4.1 — 2026-10-31
 
 plMail now speaks JMAP, keeps folders and labels properly apart, and the compose window and filters
