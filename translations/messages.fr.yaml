@@ -5093,6 +5093,11 @@ settings:
         for_alias: 'Signature pour %alias%'
         heading: Signatures
         hint: 'Ajoutée en bas de chaque nouveau message, au-dessus de la réponse citée.'
+        image:
+            hint: 'PNG, JPEG, GIF ou WebP, jusqu’à 256 Ko. Elle est ajoutée sous le texte que vous avez déjà — vos mots restent.'
+            label: 'Ou ajoutez une image sous votre signature'
+            saved: 'Image ajoutée à votre signature.'
+            upload: 'Importer une image'
         label: Signature
         overriding: 'Cette adresse a maintenant sa propre signature — modifiez-la ci-dessous.'
         per_address:

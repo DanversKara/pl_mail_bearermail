@@ -4940,6 +4940,11 @@ settings:
         for_alias: 'Signatur für %alias%'
         heading: Signaturen
         hint: 'Steht am Ende jeder neuen Nachricht, oberhalb des zitierten Textes.'
+        image:
+            hint: 'PNG, JPEG, GIF oder WebP, bis zu 256 KB. Es wird unter den Text gesetzt, den Sie bereits haben – Ihre Worte bleiben.'
+            label: 'Oder fügen Sie ein Bild unter Ihrer Signatur hinzu'
+            saved: 'Bild zu Ihrer Signatur hinzugefügt.'
+            upload: 'Bild hochladen'
         label: Signatur
         overriding: 'Diese Adresse hat jetzt eine eigene Signatur — unten bearbeiten.'
         per_address:

@@ -4100,9 +4100,10 @@ settings:
         when: When
         yes: Yes
     handwriting:
-        # The HANDWRITTEN signature — a picture stamped onto a PDF. Not the
-        # `signature` section, which is the text appended to outgoing mail. The
-        # two are unrelated and the wording has to keep them apart.
+        # The HANDWRITTEN signature — a picture stamped onto a PDF. It lives
+        # in the `signature` section now, beside the mail signatures, but it
+        # is not one of them: the text appended to outgoing mail is a
+        # different thing, and the wording has to keep them apart.
         heading: Handwritten signature
         subheading: Draw it once, and place it on a PDF without drawing it again. It is a picture of your name, not a digital certificate.
         saved: Your saved signature
@@ -4925,6 +4926,11 @@ settings:
         for_alias: 'Signature for %alias%'
         heading: Signatures
         hint: 'Added to the bottom of every new message, above the quoted reply.'
+        image:
+            hint: 'PNG, JPEG, GIF or WebP, up to 256 KB. It is added below the text you already have — your words stay.'
+            label: 'Or add an image below your signature'
+            saved: 'Image added to your signature.'
+            upload: 'Upload image'
         label: Signature
         overriding: 'That address has its own signature now — edit it below.'
         per_address:
